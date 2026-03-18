@@ -28,14 +28,66 @@ jobs:
           gradle-version: '8.5'
 
       - name: Embed Google Fonts offline
-        run: python3 embed_fonts.py
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, base64, re, sys
 
-      - name: Build Debug APK
-        run: gradle assembleDebug
+          UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36'
 
-      - name: Upload APK artifact
+          def fetch_css(url):
+              req = urllib.request.Request(url, headers={'User-Agent': UA})
+              with urllib.request.urlopen(req) as r:
+                  return r.read().decode('utf-8')
+
+          def fetch_bytes(url):
+              with urllib.request.urlopen(url) as r:
+                  return r.read()
+
+          print("Fetching font CSS...")
+          css1 = fetch_css('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap')
+          css2 = fetch_css('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap')
+          combined = css1 + '\n' + css2
+
+          font_urls = re.findall(r'url\((https://[^)]+)\)', combined)
+          print(f"Found {len(font_urls)} font files")
+
+          for url in font_urls:
+              data = fetch_bytes(url)
+              b64 = base64.b64encode(data).decode('ascii')
+              combined = combined.replace(url, f'data:font/woff2;base64,{b64}')
+              print(f"  embedded: ...{url[-30:]}")
+
+          with open('app/src/main/assets/index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+
+          pattern = r'<link[^>]*fonts\.googleapis\.com[^>]*>'
+          replacement = f'<style>/* FONTS EMBEDDED OFFLINE */\n{combined}\n</style>'
+          new_html, count = re.subn(pattern, replacement, html)
+          print(f"Font replacements: {count}")
+
+          with open('app/src/main/assets/index.html', 'w', encoding='utf-8') as f:
+              f.write(new_html)
+          print("Done!")
+          PYEOF
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/scooterarmy.keystore
+
+      - name: Build Release APK
+        run: |
+          gradle assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/scooterarmy.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename APK
+        run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/scooterarmy-gps.apk
+
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: scooterarmy-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: scooterarmy-gps-signed
+          path: app/build/outputs/apk/release/scooterarmy-gps.apk
           retention-days: 30
