@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080808">
+<title>#scooterarmy</title>
+
+<!-- manifest handled by Android -->
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #080808;
+  --card:   #0f0f0f;
+  --border: #2a2a2a;
+  --chrome: #c8c8c8;
+  --steel:  #888;
+  --red:    #cc1a00;
+  --glow:   #ff4400;
+  --amber:  #ffb347;
+  --green:  #39ff14;
+  --blue:   #00b4ff;
+  --text:   #d4d4d4;
+  --muted:  #505050;
+  --dred:   #8b1a0a;
+  --panel-bg: #0c0c0c;
+  --panel-border: #303030;
+  --hex-color: rgba(255,255,255,0.018);
+}
+html,body { min-height:100%; }
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 0 60px;
+  background-image:
+    radial-gradient(ellipse at 50% 100%, rgba(200,60,0,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,100,0,0.10) 0%, transparent 35%),
+    radial-gradient(ellipse at 50% 0%,   rgba(0,0,0,0.7)     0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16'%3E%3Cpath d='M14 0 L28 8 L28 8 L14 16 L0 8 Z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='0.6'/%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 28px 16px;
+}
+body::after {
+  content:'';
+  position:fixed; bottom:0; left:0; right:0; height:120px;
+  background: linear-gradient(to top, rgba(180,40,0,0.18) 0%, rgba(255,80,0,0.08) 40%, transparent 100%);
+  pointer-events:none; z-index:0;
+}
+.wrap {
+  width:100%; max-width:430px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding: 0 14px 0;
+  position: relative; z-index:1;
+}
+.brand {
+  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900;
+  letter-spacing:.06em;
+  background: linear-gradient(180deg, #fff 0%, #aaa 40%, #ddd 60%, #888 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.9));
+  position:relative;
+}
+.brand .h {
+  background: linear-gradient(180deg, #ff6644 0%, #cc1a00 50%, #ff3300 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(255,68,0,0.7));
+}
+.gps-block { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.gps-row { display:flex; align-items:center; gap:6px; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.18em; color:var(--muted); }
+.sdot { width:8px; height:8px; border-radius:50%; background:#222; flex-shrink:0; transition:all .3s; }
+.sdot.active { background:var(--green); box-shadow:0 0 8px var(--green); animation:breathe 2.5s infinite; }
+.sdot.warn   { background:var(--amber); box-shadow:0 0 6px var(--amber); animation:blink 1s infinite; }
+.sdot.error  { background:var(--dred);  box-shadow:0 0 6px var(--dred);  animation:blink .4s infinite; }
+@keyframes blink   { 0%,100%{opacity:1}50%{opacity:.1} }
+@keyframes breathe { 0%,100%{opacity:1}50%{opacity:.5} }
+.sbars { display:flex; gap:2px; align-items:flex-end; height:12px; }
+.sbar { width:4px; border-radius:1px; background:#222; transition:background .5s; }
+.sbar:nth-child(1){height:3px;} .sbar:nth-child(2){height:6px;}
+.sbar:nth-child(3){height:9px;} .sbar:nth-child(4){height:12px;}
+.sbar.on { background:var(--green); }
+.acctxt { font-size:9px; color:#444; }
+.gps-info {
+  width:100%;
+  background: linear-gradient(180deg, #161616 0%, #0e0e0e 100%);
+  border: 1px solid #2a2a2a; border-top: 1px solid #3a3a3a;
+  border-radius:6px; padding:8px 12px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.5);
+}
+.gps-info-col { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
+.gps-info-col:not(:last-child) { border-right:1px solid #222; }
+.gi-lbl { font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700; letter-spacing:.2em; color:#444; text-transform:uppercase; }
+.gi-val { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:900; color:var(--chrome); letter-spacing:.05em; line-height:1.2; }
+.gi-val.good { color:var(--green); }
+.gi-val.ok   { color:var(--amber); }
+.gi-val.poor { color:#cc3300; }
+.gi-sub { font-size:8px; color:#333; letter-spacing:.08em; }
+.gauge-wrap { position:relative; width:320px; height:320px; flex-shrink:0; }
+canvas#gauge { display:block; }
+.spd-overlay {
+  position:absolute; bottom:50px; left:50%; transform:translateX(-50%);
+  text-align:center; pointer-events:none; white-space:nowrap;
+}
+.spd-num {
+  font-family:'Orbitron', 'Arial Black', Arial, sans-serif; font-size:72px; font-weight:900;
+  line-height:1; color:#fff; letter-spacing:-2px;
+  text-shadow:0 0 24px var(--glow),0 0 60px rgba(255,100,0,.25);
+  transition:color .25s,text-shadow .25s;
+}
+.spd-num.warn   { color:var(--amber); text-shadow:0 0 20px var(--amber),0 0 50px rgba(255,179,71,.35); }
+.spd-num.danger { color:var(--red);   text-shadow:0 0 20px var(--glow), 0 0 50px rgba(255,60,0,.5); }
+.spd-unit {
+  font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:.3em;
+  color:var(--muted); margin-top:3px; cursor:pointer; user-select:none; pointer-events:all;
+}
+.spd-unit:hover { color:var(--text); }
+.mode-tabs {
+  width:100%; display:flex; gap:0;
+  border:1px solid #2a2a2a; border-radius:6px; overflow:hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.mtab {
+  flex:1; padding:9px 6px; text-align:center;
+  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:.15em;
+  background: linear-gradient(180deg,#161616,#0e0e0e);
+  color:var(--muted); border:none; cursor:pointer; transition:all .2s;
+}
+.mtab.active {
+  background: linear-gradient(180deg,#200800,#120400);
+  color:var(--glow);
+  box-shadow:inset 0 -2px 0 var(--red), inset 0 1px 0 rgba(255,100,0,0.1);
+}
+.mtab:hover:not(.active) { color:var(--chrome); }
+.run-panel {
+  width:100%;
+  background: linear-gradient(180deg, #141414 0%, #0c0c0c 100%);
+  border: 1px solid #2e2e2e; border-top: 1px solid #3a3a3a;
+  border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:11px;
+  position:relative; overflow:hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 16px rgba(0,0,0,0.7);
+}
+.run-panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--red),var(--glow),var(--red),transparent);
+  opacity:.7;
+}
+.plabel { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.25em; color:#505050; text-transform:uppercase; }
+.tgt-row { display:flex; align-items:center; gap:8px; }
+.tgt-pre { font-size:12px; color:var(--muted); white-space:nowrap; }
+.tgt-inp {
+  flex:1; background:#0d0d0d; border:1px solid #2a2a2a; border-radius:4px;
+  color:var(--text); font-family:'Orbitron',sans-serif; font-size:22px; font-weight:700;
+  text-align:center; padding:6px 10px; outline:none; width:0;
+  transition:border-color .2s,box-shadow .2s; -moz-appearance:textfield;
+}
+.tgt-inp::-webkit-inner-spin-button,.tgt-inp::-webkit-outer-spin-button{-webkit-appearance:none;}
+.tgt-inp:focus { border-color:var(--red); box-shadow:0 0 8px rgba(255,60,0,.25); }
+.tgt-inp:disabled { opacity:.4; }
+.tgt-suf { font-size:12px; color:var(--muted); white-space:nowrap; min-width:36px; }
+.splits-row { display:flex; align-items:center; gap:8px; }
+.splits-label { font-size:11px; color:var(--muted); white-space:nowrap; }
+.splits-inp {
+  flex:1; background:#0d0d0d; border:1px solid #2a2a2a; border-radius:4px;
+  color:var(--text); font-family:'Share Tech Mono',monospace; font-size:12px;
+  text-align:left; padding:6px 10px; outline:none;
+  transition:border-color .2s;
+}
+.splits-inp:focus { border-color:var(--red); }
+.splits-inp:disabled { opacity:.4; }
+.splits-hint { font-size:9px; color:#333; letter-spacing:.05em; }
+.timer-big {
+  text-align:center; font-family:'Orbitron', 'Arial Black', Arial, sans-serif;
+  font-size:52px; font-weight:900; letter-spacing:.05em;
+  color:#fff; text-shadow:0 0 15px rgba(255,100,0,.15);
+  line-height:1; transition:color .3s,text-shadow .3s;
+}
+.timer-big.running { color:var(--amber); text-shadow:0 0 20px rgba(255,179,71,.5); }
+.timer-big.done    { color:var(--green); text-shadow:0 0 20px rgba(57,255,20,.5); }
+.timer-sub {
+  text-align:center; font-size:10px; letter-spacing:.18em;
+  color:var(--muted); text-transform:uppercase; min-height:14px; margin-top:-2px;
+}
+.prog-wrap { width:100%; height:4px; background:#1a1a1a; border-radius:2px; overflow:hidden; }
+.prog-fill {
+  height:100%; width:0%; border-radius:2px;
+  background:linear-gradient(90deg,var(--red),var(--amber));
+  box-shadow:0 0 8px var(--glow); transition:width .12s linear;
+}
+.prog-fill.done { background:var(--green); box-shadow:0 0 8px rgba(57,255,20,.6); width:100% !important; }
+.btn-row { display:flex; gap:8px; }
+.btn {
+  flex:1;
+  background: linear-gradient(180deg,#1a1a1a,#101010);
+  border:1px solid #303030; border-top-color:#3a3a3a;
+  color:var(--muted);
+  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:.2em; padding:10px; border-radius:4px; cursor:pointer;
+  text-transform:uppercase; transition:all .2s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.5);
+}
+.btn:disabled { opacity:.2; cursor:not-allowed; }
+.btn.primary  { border-color:#551500; border-top-color:#883300; color:var(--glow); background:linear-gradient(180deg,#200a00,#120400); }
+.btn.primary:hover:not(:disabled) { background:linear-gradient(180deg,#2e0e00,#1a0600); box-shadow:0 0 14px rgba(255,60,0,.25), inset 0 1px 0 rgba(255,100,0,0.1); }
+.btn.green    { border-color:#1a4a00; color:var(--green); background:linear-gradient(180deg,#0a1a00,#060e00); }
+.btn.green:hover:not(:disabled) { box-shadow:0 0 12px rgba(57,255,20,.2); }
+.btn.secondary:hover:not(:disabled) { border-color:#444; color:var(--chrome); }
+.status-bar {
+  width:100%;
+  background: linear-gradient(180deg,#141414,#0c0c0c);
+  border:1px solid #282828; border-top-color:#333;
+  border-radius:6px; padding:8px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.status-txt { font-size:11px; letter-spacing:.12em; color:var(--muted); }
+.status-txt.active { color:var(--green); }
+.status-txt.warn   { color:var(--amber); }
+.status-txt.error  { color:#cc3300; }
+.arm-indicator {
+  font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.2em;
+  padding:3px 10px; border-radius:3px;
+  background:linear-gradient(180deg,#111,#090909);
+  border:1px solid #282828; color:var(--muted); transition:all .3s;
+}
+.arm-indicator.armed   { border-color:#554400; color:var(--amber); background:#0e0a00; box-shadow:0 0 8px rgba(255,179,71,.15); animation:blink 1s infinite; }
+.arm-indicator.running { border-color:#1a4a00; color:var(--green); background:#050e00; box-shadow:0 0 8px rgba(57,255,20,.15); animation:none; }
+.arm-indicator.done    { border-color:#1a4a00; color:var(--green); background:#050e00; animation:none; }
+.history { width:100%; display:flex; flex-direction:column; gap:6px; }
+.hist-hdr { display:flex; align-items:center; justify-content:space-between; }
+.hist-title {
+  font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:.3em;
+  text-transform:uppercase;
+  background:linear-gradient(90deg,#777,#aaa,#777);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.hist-clear { background:none; border:none; font-family:'Share Tech Mono',monospace; font-size:10px; color:#2a2a2a; cursor:pointer; letter-spacing:.1em; transition:color .2s; }
+.hist-clear:hover { color:#cc3300; }
+.hist-list { display:flex; flex-direction:column; gap:5px; max-height:280px; overflow-y:auto; }
+.hist-list::-webkit-scrollbar { width:3px; }
+.hist-list::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:2px; }
+.hist-item {
+  background: linear-gradient(180deg,#141414,#0d0d0d);
+  border:1px solid #252525; border-top-color:#303030;
+  border-radius:6px; overflow:hidden; transition:border-color .2s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.hist-item.best { border-color:#3a2800; border-top-color:#554000; box-shadow:inset 0 1px 0 rgba(255,179,71,0.06); }
+.hist-top { display:flex; align-items:center; padding:10px 12px; gap:10px; cursor:pointer; }
+.hist-type { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.15em; color:#444; text-transform:uppercase; min-width:50px; }
+.hist-run { flex:1; display:flex; flex-direction:column; gap:2px; }
+.hist-run-lbl { font-size:11px; color:#666; letter-spacing:.08em; }
+.hist-run-date { font-size:9px; color:#333; }
+.hist-right { display:flex; align-items:center; gap:8px; }
+.hist-best-badge { font-size:9px; color:var(--amber); letter-spacing:.1em; font-family:'Orbitron',sans-serif; font-weight:700; }
+.hist-time { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900; color:var(--chrome); letter-spacing:.03em; min-width:70px; text-align:right; }
+.hist-item.best .hist-time { color:var(--amber); }
+.hist-del { background:none; border:none; color:#252525; font-size:14px; cursor:pointer; transition:color .2s; padding:0 2px; }
+.hist-del:hover { color:#cc3300; }
+.hist-chevron { color:#2a2a2a; font-size:12px; transition:transform .25s; }
+.hist-chevron.open { transform:rotate(180deg); }
+.hist-splits { display:none; padding:0 12px 10px; border-top:1px solid #1e1e1e; flex-direction:column; gap:4px; }
+.hist-splits.open { display:flex; }
+.split-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #141414; }
+.split-row:last-child { border-bottom:none; }
+.split-lbl { font-size:11px; color:#555; }
+.split-val { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); }
+.bvl-card {
+  width:100%;
+  background:linear-gradient(180deg,#141414,#0c0c0c);
+  border:1px solid #282828; border-top-color:#383838;
+  border-radius:8px; overflow:hidden; position:relative;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.6);
+}
+.bvl-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent); opacity:.5;
+}
+.bvl-title { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.25em; color:#505050; padding:10px 14px 0; text-transform:uppercase; }
+.bvl-body { display:flex; }
+.bvl-col { flex:1; display:flex; flex-direction:column; align-items:center; padding:10px 8px 12px; gap:3px; }
+.bvl-col:first-child { border-right:1px solid #1e1e1e; }
+.bvl-col-lbl { font-size:9px; letter-spacing:.2em; color:#505050; text-transform:uppercase; }
+.bvl-col-run  { font-size:10px; color:#383838; letter-spacing:.05em; margin-top:2px; }
+.bvl-col-time { font-family:'Orbitron',sans-serif; font-size:30px; font-weight:900; color:var(--chrome); letter-spacing:.02em; }
+.bvl-col-time.best-col { color:var(--amber); text-shadow:0 0 12px rgba(255,179,71,.25); }
+.bvl-col-time.last-col { color:#aaa; }
+.bvl-delta { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; text-align:center; padding:4px 0 10px; letter-spacing:.1em; }
+.bvl-delta.faster { color:var(--green); }
+.bvl-delta.slower { color:#cc3300; }
+.bvl-delta.same   { color:var(--muted); }
+.result-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.9);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1000; opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.result-overlay.show { opacity:1; pointer-events:all; }
+.result-card {
+  width:90%; max-width:360px;
+  background:linear-gradient(180deg,#181818,#0d0d0d);
+  border:1px solid #303030; border-top-color:#444;
+  border-radius:12px; overflow:hidden; transform:scale(.9);
+  transition:transform .3s; position:relative;
+  box-shadow: 0 0 40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.result-overlay.show .result-card { transform:scale(1); }
+.result-card-top {
+  background:linear-gradient(160deg,#1e0800,#100400,#0a0a0a);
+  padding:20px 20px 16px; text-align:center;
+  border-bottom:1px solid #282828;
+  position:relative; overflow:hidden;
+}
+.result-card-top::before {
+  content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%);
+  width:200px; height:60px; border-radius:50%;
+  background:radial-gradient(ellipse,rgba(200,60,0,0.3),transparent 70%);
+  pointer-events:none;
+}
+.result-card-top::after {
+  content:''; display:block; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,transparent,var(--green),transparent);
+}
+.rc-label { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.3em; color:#505050; margin-bottom:8px; }
+.rc-run   { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); letter-spacing:.1em; margin-bottom:12px; }
+.rc-time  { font-family:'Orbitron',sans-serif; font-size:64px; font-weight:900; color:var(--green); text-shadow:0 0 24px rgba(57,255,20,.6); letter-spacing:-.02em; line-height:1; }
+.rc-time-unit { font-size:16px; color:#505050; letter-spacing:.2em; margin-top:4px; }
+.rc-best-badge {
+  display:inline-block; margin-top:10px; padding:3px 14px;
+  border:1px solid #554400; border-radius:20px;
+  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700;
+  color:var(--amber); letter-spacing:.2em; box-shadow:0 0 10px rgba(255,179,71,.2);
+}
+.rc-splits { padding:14px 20px; display:flex; flex-direction:column; gap:6px; background:#0a0a0a; }
+.rc-split-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #161616; }
+.rc-split-row:last-child { border-bottom:none; }
+.rc-split-lbl { font-size:11px; color:#555; letter-spacing:.05em; }
+.rc-split-val { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); }
+.rc-actions { display:flex; gap:8px; padding:0 16px 16px; background:#0a0a0a; }
+.rc-btn { flex:1; padding:10px; border-radius:5px; font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:.2em; cursor:pointer; transition:all .2s; border:1px solid; }
+.rc-btn.dismiss { background:linear-gradient(180deg,#161616,#0e0e0e); border-color:#282828; color:#555; }
+.rc-btn.dismiss:hover { border-color:#444; color:var(--chrome); }
+.rc-btn.rearm   { background:linear-gradient(180deg,#200800,#120400); border-color:#551500; color:var(--glow); }
+.rc-btn.rearm:hover { box-shadow:0 0 12px rgba(255,60,0,.2); }
+.no-hist { font-size:10px; color:#222; letter-spacing:.2em; text-align:center; padding:12px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div style="width:calc(100% + 28px);margin-left:-14px;background:linear-gradient(180deg,#1e1e1e 0%,#0e0e0e 100%);border-bottom:2px solid #000;box-shadow:0 2px 0 #3a1800,0 6px 24px rgba(0,0,0,0.9);padding:12px 18px 10px;display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+    <div>
+      <div class="brand">
+        <span class="h">#</span><span style="background:linear-gradient(180deg,#f0f0f0 0%,#999 40%,#ddd 60%,#777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;">scooterarmy</span>
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.35em;color:#3a3a3a;margin-top:2px;">GPS PERFORMANCE METER</div>
+    </div>
+    <div class="gps-block">
+      <div class="gps-row">
+        <span id="statusTxt">SEARCHING</span>
+        <div class="sdot warn" id="sdot"></div>
+      </div>
+      <div class="gps-row" style="gap:6px">
+        <span class="acctxt" id="acctxt"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="gauge-wrap">
+    <canvas id="gauge" width="320" height="320"></canvas>
+    <div class="spd-overlay">
+      <div class="spd-num" id="spdNum">0</div>
+      <div class="spd-unit" id="spdUnit" onclick="toggleUnit()">MPH ⇄</div>
+    </div>
+  </div>
+
+  <div class="gps-info">
+    <div class="gps-info-col">
+      <div class="gi-lbl">Status</div>
+      <div class="gi-val" id="giStatus">—</div>
+    </div>
+    <div class="gps-info-col">
+      <div class="gi-lbl">Accuracy</div>
+      <div class="gi-val" id="giAcc">—</div>
+      <div class="gi-sub">metres</div>
+    </div>
+    <div class="gps-info-col">
+      <div class="gi-lbl">Fix Age</div>
+      <div class="gi-val" id="giAge">—</div>
+      <div class="gi-sub">seconds</div>
+    </div>
+    <div class="gps-info-col">
+      <div class="gi-lbl">Signal</div>
+      <div class="sbars" style="margin-top:4px">
+        <div class="sbar" id="sb1"></div><div class="sbar" id="sb2"></div>
+        <div class="sbar" id="sb3"></div><div class="sbar" id="sb4"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mtab active" id="tab-accel" onclick="setMode('accel')">ACCELERATION</button>
+    <button class="mtab"        id="tab-brake" onclick="setMode('brake')">BRAKING</button>
+  </div>
+
+  <div class="run-panel">
+    <div class="plabel" id="panelLabel">0 → TARGET</div>
+    <div class="tgt-row">
+      <span class="tgt-pre" id="tgtPre">0 →</span>
+      <input class="tgt-inp" id="tgtInp" type="number" value="60" min="1" max="999">
+      <span class="tgt-suf" id="tgtSuf">MPH</span>
+    </div>
+    <div id="splitsWrap">
+      <div class="splits-row">
+        <span class="splits-label">Splits (optional):</span>
+        <input class="splits-inp" id="splitsInp" type="text" placeholder="e.g. 30, 45" title="Comma-separated intermediate speeds">
+      </div>
+      <div class="splits-hint">Comma-separated intermediate speeds — recorded automatically during run</div>
+    </div>
+    <div class="timer-big" id="timerBig">0.000</div>
+    <div class="timer-sub" id="timerSub">Set target, then ARM</div>
+    <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+    <div class="btn-row">
+      <button class="btn primary"   id="armBtn"   onclick="armRun()">ARM</button>
+      <button class="btn secondary" id="resetBtn" onclick="resetRun()" disabled>RESET</button>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span class="status-txt" id="statusBar">Waiting for GPS…</span>
+    <span class="arm-indicator" id="armInd">IDLE</span>
+  </div>
+
+  <div class="bvl-card" id="bvlCard" style="display:none">
+    <div class="bvl-title">Best vs Last</div>
+    <div class="bvl-body">
+      <div class="bvl-col">
+        <div class="bvl-col-lbl">Best</div>
+        <div class="bvl-col-run"  id="bvlBestRun">—</div>
+        <div class="bvl-col-time best-col" id="bvlBestTime">—</div>
+      </div>
+      <div class="bvl-col">
+        <div class="bvl-col-lbl">Last</div>
+        <div class="bvl-col-run"  id="bvlLastRun">—</div>
+        <div class="bvl-col-time last-col" id="bvlLastTime">—</div>
+      </div>
+    </div>
+    <div class="bvl-delta" id="bvlDelta"></div>
+  </div>
+
+  <div class="history">
+    <div class="hist-hdr">
+      <div class="hist-title">Run History</div>
+      <button class="hist-clear" onclick="clearHistory()">CLEAR ALL</button>
+    </div>
+    <div class="hist-list" id="histList">
+      <div class="no-hist" id="noHist">— no runs recorded —</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-card">
+    <div class="result-card-top">
+      <div class="rc-label">RUN COMPLETE</div>
+      <div class="rc-run"  id="rcRun"></div>
+      <div class="rc-time" id="rcTime"></div>
+      <div class="rc-time-unit">SECONDS</div>
+      <div class="rc-best-badge" id="rcBest" style="display:none">★ NEW BEST</div>
+    </div>
+    <div class="rc-splits" id="rcSplits"></div>
+    <div class="rc-actions">
+      <button class="rc-btn dismiss" onclick="closeResult()">DISMISS</button>
+      <button class="rc-btn rearm"   onclick="rearm()">ARM AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+const S = { IDLE:0, ARMED:1, RUNNING:2, DONE:3 };
+let state        = S.IDLE;
+let mode         = 'accel';
+let useMetric    = false;
+let timerStart   = null;
+let currentSpd   = 0;
+let rawMps       = 0;
+let dispSpd      = 0;
+let watchId      = null;
+let rafId        = null;
+let splitTargets = [];
+let splitHits    = {};
+let history      = JSON.parse(localStorage.getItem('sa_v2_hist') || '[]');
+
+// ─────────────────────────────────────────────
+// CANVAS GAUGE
+// ─────────────────────────────────────────────
+const cv  = document.getElementById('gauge');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const cx = W/2, cy = H/2, R = W/2 - 18;
+const A0 = Math.PI * 0.75, ASWEEP = Math.PI * 1.5;
+
+function maxSpd()  { return useMetric ? 160 : 100; }
+function tgtVal()  { return Math.max(0, parseFloat(document.getElementById('tgtInp').value)||0); }
+function s2a(s)    { return A0 + Math.min(s/maxSpd(),1)*ASWEEP; }
+
+function drawGauge(spd) {
+  ctx.clearRect(0,0,W,H);
+  const max = maxSpd(), ratio = Math.min(spd/max,1);
+  const tgt = tgtVal(), tr = Math.min(tgt/max,1);
+
+  ctx.beginPath(); ctx.arc(cx,cy,R,A0,A0+ASWEEP);
+  ctx.strokeStyle='#181818'; ctx.lineWidth=13; ctx.lineCap='round'; ctx.stroke();
+
+  if (state !== S.IDLE && tgt > 0 && tgt <= max) {
+    const ta = A0 + tr*ASWEEP;
+    ctx.beginPath(); ctx.arc(cx,cy,R,ta-.026,ta+.026);
+    ctx.strokeStyle='#39ff14'; ctx.lineWidth=13; ctx.lineCap='round';
+    ctx.shadowColor='#39ff14'; ctx.shadowBlur=14; ctx.stroke(); ctx.shadowBlur=0;
+  }
+
+  if (ratio > 0) {
+    const col = ratio>.85?'#ff3c00':ratio>.6?'#ffb347':'#ff6a00';
+    ctx.beginPath(); ctx.arc(cx,cy,R,A0,A0+ratio*ASWEEP);
+    ctx.strokeStyle=col; ctx.lineWidth=13; ctx.lineCap='round';
+    ctx.shadowColor=col; ctx.shadowBlur=14; ctx.stroke(); ctx.shadowBlur=0;
+  }
+
+  const mn = useMetric?10:5, mj = useMetric?20:10;
+  for (let v=0; v<=max; v+=mn) {
+    const a=A0+(v/max)*ASWEEP, isMaj=v%mj===0;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*(isMaj?R-22:R-14), cy+Math.sin(a)*(isMaj?R-22:R-14));
+    ctx.lineTo(cx+Math.cos(a)*(R-8),              cy+Math.sin(a)*(R-8));
+    ctx.strokeStyle=isMaj?'#777':'#2e2e2e'; ctx.lineWidth=isMaj?2:1; ctx.lineCap='butt'; ctx.stroke();
+    if (isMaj) {
+      ctx.fillStyle='#555'; ctx.font='600 10px Orbitron,monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(v, cx+Math.cos(a)*(R-36), cy+Math.sin(a)*(R-36));
+    }
+  }
+
+  splitTargets.forEach(sv => {
+    if (sv <= max) {
+      const sa = s2a(sv);
+      ctx.beginPath(); ctx.arc(cx,cy,R,sa-.018,sa+.018);
+      ctx.strokeStyle='#00b4ff'; ctx.lineWidth=13; ctx.lineCap='round';
+      ctx.shadowColor='#00b4ff'; ctx.shadowBlur=8; ctx.stroke(); ctx.shadowBlur=0;
+    }
+  });
+
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(s2a(spd));
+  ctx.shadowColor='#ff3c00'; ctx.shadowBlur=10;
+  ctx.beginPath(); ctx.moveTo(R-28,0); ctx.lineTo(-18,5); ctx.lineTo(-18,-5); ctx.closePath();
+  ctx.fillStyle='#ff3c00'; ctx.fill(); ctx.shadowBlur=0; ctx.restore();
+
+  ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2);
+  ctx.fillStyle='#141414'; ctx.fill(); ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='#ff3c00'; ctx.shadowColor='#ff6a00'; ctx.shadowBlur=6; ctx.fill(); ctx.shadowBlur=0;
+}
+
+// ─────────────────────────────────────────────
+// MAIN LOOP
+// ─────────────────────────────────────────────
+function loop() {
+  dispSpd += (currentSpd - dispSpd) * 0.15;
+  if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
+
+  const ratio = dispSpd / maxSpd();
+  const ne = document.getElementById('spdNum');
+  ne.textContent = Math.round(dispSpd);
+  ne.className = 'spd-num' + (ratio>.85?' danger':ratio>.6?' warn':'');
+  drawGauge(dispSpd);
+
+  if (state === S.RUNNING) {
+    const el = performance.now() - timerStart;
+    document.getElementById('timerBig').textContent = fmt(el);
+
+    // Progress bar
+    let pct = 0;
+    if (mode === 'accel') {
+      pct = Math.min((currentSpd / tgtVal()) * 100, 100);
+    } else {
+      // Brake: started at brakeStartSpd, counting DOWN to 0
+      const startSpd = brakeStartSpd || tgtVal();
+      pct = Math.min(((startSpd - currentSpd) / startSpd) * 100, 100);
+    }
+    document.getElementById('progFill').style.width = pct + '%';
+
+    // Splits
+    splitTargets.forEach(sv => {
+      if (!splitHits[sv]) {
+        if (mode==='accel' && currentSpd >= sv) splitHits[sv] = (lastFixTime||performance.now()) - timerStart;
+        if (mode==='brake' && currentSpd <= sv) splitHits[sv] = (lastFixTime||performance.now()) - timerStart;
+      }
+    });
+
+    // FIX #1: Accel — finish when target speed reached
+    if (mode === 'accel' && currentSpd >= tgtVal()) finishRun();
+    // FIX #1: Brake — finish when speed reaches near zero (2 mph / 3.2 km/h)
+    const brakeFinishThreshold = useMetric ? 3.2 : 2;
+    if (mode === 'brake' && currentSpd <= brakeFinishThreshold) finishRun();
+  }
+
+  // FIX #3: Raised false-start threshold — 4 mph / 6 km/h minimum
+  const accelArmThreshold = useMetric ? 6 : 4;
+  if (state === S.ARMED) {
+    if (mode === 'accel' && currentSpd > accelArmThreshold) startRun();
+    // Brake: arm waits until rider hits target speed, THEN starts timing the stop
+    if (mode === 'brake' && currentSpd >= tgtVal()) startRun();
+  }
+
+  rafId = requestAnimationFrame(loop);
+}
+
+// Track starting speed for brake progress bar
+let brakeStartSpd = 0;
+
+// ─────────────────────────────────────────────
+// TIMER
+// ─────────────────────────────────────────────
+function armRun() {
+  const tgt = tgtVal();
+  if (!tgt) { setBar('Enter a valid target speed','warn'); return; }
+
+  parseSplits();
+  splitHits = {};
+  brakeStartSpd = 0;
+  state = S.ARMED;
+
+  document.getElementById('timerBig').className = 'timer-big';
+  document.getElementById('timerBig').textContent = '0.000';
+  document.getElementById('timerSub').textContent = mode==='accel'
+    ? 'Armed — will start when you move'
+    : `Armed — accelerate to ${tgt} ${useMetric?'km/h':'mph'} then brake hard`;
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progFill').className = 'prog-fill';
+  document.getElementById('armBtn').textContent = 'ARMED';
+  document.getElementById('armBtn').disabled = true;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('tgtInp').disabled = true;
+  document.getElementById('splitsInp').disabled = true;
+  setBar('Armed — waiting…','warn');
+  setArmInd('armed');
+  if (!watchId) startGPS();
+  if (!rafId) loop();
+}
+
+function startRun() {
+  state      = S.RUNNING;
+  timerStart = lastFixTime || performance.now();
+  // FIX #1: Capture the actual speed at run start for brake progress bar
+  if (mode === 'brake') brakeStartSpd = currentSpd;
+  document.getElementById('timerBig').className = 'timer-big running';
+  document.getElementById('timerSub').textContent = mode==='accel' ? 'Running…' : 'Braking — hold on!';
+  setBar('Timer running','active');
+  setArmInd('running');
+}
+
+function finishRun() {
+  const elapsed = (lastFixTime || performance.now()) - timerStart;
+  state = S.DONE;
+
+  document.getElementById('timerBig').textContent = fmt(elapsed);
+  document.getElementById('timerBig').className = 'timer-big done';
+  document.getElementById('progFill').className = 'prog-fill done';
+  document.getElementById('armBtn').textContent = 'ARM';
+  document.getElementById('armBtn').disabled = false;
+  document.getElementById('tgtInp').disabled = false;
+  document.getElementById('splitsInp').disabled = false;
+  setArmInd('done');
+
+  const u = useMetric ? 'km/h' : 'mph';
+  const runLbl = mode==='accel'
+    ? `0 → ${tgtVal()} ${u}`
+    : `${tgtVal()} → 0 ${u}`;
+  document.getElementById('timerSub').textContent = `${runLbl}  ·  ${fmt(elapsed)}s`;
+  setBar('Run complete 🏁','active');
+
+  const rec = saveRecord(elapsed, runLbl);
+  showResult(elapsed, runLbl, rec.isBest);
+  renderHistory();
+  renderBvL();
+}
+
+function resetRun() {
+  state = S.IDLE; timerStart = null; splitHits = {}; brakeStartSpd = 0;
+  document.getElementById('timerBig').textContent = '0.000';
+  document.getElementById('timerBig').className = 'timer-big';
+  document.getElementById('timerSub').textContent = 'Set target, then ARM';
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progFill').className = 'prog-fill';
+  document.getElementById('armBtn').textContent = 'ARM';
+  document.getElementById('armBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = true;
+  document.getElementById('tgtInp').disabled = false;
+  document.getElementById('splitsInp').disabled = false;
+  setArmInd('idle');
+  setBar(watchId?'GPS Locked':'Press ARM to enable GPS', watchId?'active':'');
+}
+
+function rearm() {
+  closeResult();
+  resetRun();
+  setTimeout(armRun, 150);
+}
+
+// ─────────────────────────────────────────────
+// RESULT POPUP
+// ─────────────────────────────────────────────
+function showResult(elapsed, runLbl, isBest) {
+  document.getElementById('rcRun').textContent  = runLbl;
+  document.getElementById('rcTime').textContent = fmt(elapsed);
+  document.getElementById('rcBest').style.display = isBest ? 'inline-block' : 'none';
+
+  const sc = document.getElementById('rcSplits');
+  const sKeys = Object.keys(splitHits).map(Number).sort((a,b)=>a-b);
+  if (sKeys.length) {
+    sc.innerHTML = '<div style="font-family:Orbitron,sans-serif;font-size:9px;letter-spacing:.2em;color:var(--muted);margin-bottom:6px">SPLITS</div>'
+      + sKeys.map(sv => `
+        <div class="rc-split-row">
+          <span class="rc-split-lbl">→ ${sv} ${useMetric?'km/h':'mph'}</span>
+          <span class="rc-split-val">${fmt(splitHits[sv])}s</span>
+        </div>`).join('');
+    sc.style.display = 'flex';
+  } else {
+    sc.innerHTML = ''; sc.style.display = 'none';
+  }
+
+  document.getElementById('resultOverlay').classList.add('show');
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('show');
+}
+
+// ─────────────────────────────────────────────
+// SPLITS
+// ─────────────────────────────────────────────
+function parseSplits() {
+  const raw = document.getElementById('splitsInp').value;
+  splitTargets = raw.split(',')
+    .map(s => parseFloat(s.trim()))
+    .filter(n => !isNaN(n) && n > 0 && n < tgtVal())
+    .sort((a,b) => a-b);
+}
+
+// ─────────────────────────────────────────────
+// HISTORY & RECORDS
+// ─────────────────────────────────────────────
+function saveRecord(elapsed, runLbl) {
+  const timeMs = elapsed;
+  const existing = history.filter(r => r.runLbl === runLbl);
+  const bestMs = existing.length ? Math.min(...existing.map(r=>r.timeMs)) : Infinity;
+  // FIX #4: isBest is true only if there's a prior run to beat
+  const isBest = existing.length > 0 && timeMs < bestMs;
+
+  const splits = {};
+  splitTargets.forEach(sv => { if (splitHits[sv]) splits[sv] = splitHits[sv]; });
+
+  const now = new Date();
+  history.unshift({
+    id: Date.now(), runLbl, timeMs, isBest: false,
+    time: fmt(timeMs), mode,
+    splits,
+    date: now.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+        + '  ' + now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})
+  });
+  if (history.length > 50) history.pop();
+
+  // Recompute bests across all history
+  const bestMap = {};
+  history.forEach(r => {
+    if (!bestMap[r.runLbl] || r.timeMs < bestMap[r.runLbl]) bestMap[r.runLbl] = r.timeMs;
+  });
+  history.forEach(r => {
+    r.isBest = r.timeMs === bestMap[r.runLbl] && history.filter(x=>x.runLbl===r.runLbl).length > 1;
+  });
+
+  localStorage.setItem('sa_v2_hist', JSON.stringify(history));
+  return { isBest };
+}
+
+function renderHistory() {
+  const list = document.getElementById('histList');
+  const noH  = document.getElementById('noHist');
+  if (!history.length) {
+    list.innerHTML = ''; list.appendChild(noH); noH.style.display='block'; return;
+  }
+  noH.style.display = 'none';
+  list.innerHTML = history.map((r,i) => `
+    <div class="hist-item${r.isBest?' best':''}">
+      <div class="hist-top" onclick="toggleSplit(${i})">
+        <div class="hist-type">${r.mode==='brake'?'BRAKE':'ACCEL'}</div>
+        <div class="hist-run">
+          <div class="hist-run-lbl">${r.runLbl}</div>
+          <div class="hist-run-date">${r.date}</div>
+        </div>
+        <div class="hist-right">
+          ${r.isBest?'<span class="hist-best-badge">BEST</span>':''}
+          <span class="hist-time">${r.time}s</span>
+          <button class="hist-del" onclick="event.stopPropagation();delRun(${i})">✕</button>
+          <span class="hist-chevron" id="chev-${i}">▾</span>
+        </div>
+      </div>
+      <div class="hist-splits" id="splits-${i}">
+        ${Object.keys(r.splits||{}).length
+          ? Object.entries(r.splits).sort((a,b)=>+a[0]-+b[0]).map(([sp,ms])=>`
+              <div class="split-row">
+                <span class="split-lbl">→ ${sp} ${r.runLbl.includes('km')?'km/h':'mph'}</span>
+                <span class="split-val">${fmt(ms)}s</span>
+              </div>`).join('')
+          : '<div style="font-size:10px;color:#2a2a2a;letter-spacing:.1em">No splits recorded</div>'
+        }
+      </div>
+    </div>`).join('');
+}
+
+function toggleSplit(i) {
+  const el   = document.getElementById(`splits-${i}`);
+  const chev = document.getElementById(`chev-${i}`);
+  const open = el.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+function delRun(i) {
+  history.splice(i,1);
+  localStorage.setItem('sa_v2_hist', JSON.stringify(history));
+  renderHistory(); renderBvL();
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.setItem('sa_v2_hist', JSON.stringify(history));
+  renderHistory(); renderBvL();
+}
+
+// ─────────────────────────────────────────────
+// BEST vs LAST
+// ─────────────────────────────────────────────
+function renderBvL() {
+  const card = document.getElementById('bvlCard');
+  if (history.length < 1) { card.style.display='none'; return; }
+  card.style.display = 'block';
+
+  const last = history[0];
+  const same = history.filter(r=>r.runLbl===last.runLbl);
+  const best = same.reduce((b,r)=>r.timeMs<b.timeMs?r:b, same[0]);
+
+  document.getElementById('bvlLastRun').textContent  = last.runLbl;
+  document.getElementById('bvlLastTime').textContent = last.time+'s';
+  document.getElementById('bvlBestRun').textContent  = best.runLbl;
+  document.getElementById('bvlBestTime').textContent = best.time+'s';
+
+  const delta  = document.getElementById('bvlDelta');
+  const diff   = last.timeMs - best.timeMs;
+  if (Math.abs(diff) < 10) {
+    delta.textContent = '= SAME'; delta.className='bvl-delta same';
+  } else if (diff < 0) {
+    delta.textContent = `▲ ${fmt(Math.abs(diff))}s FASTER`; delta.className='bvl-delta faster';
+  } else {
+    delta.textContent = `▼ ${fmt(diff)}s SLOWER`; delta.className='bvl-delta slower';
+  }
+}
+
+// ─────────────────────────────────────────────
+// GPS — FIX #2: Guard bad fixes BEFORE updating lastFixTime
+// ─────────────────────────────────────────────
+let lastFixTime    = null;
+let lastFixTs      = null;
+let fixAgeInterval = null;
+const ACC_REJECT   = 50;
+
+function startGPS() {
+  if (!navigator.geolocation) { setBar('GPS not supported','error'); return; }
+  setBar('Searching for GPS…','');
+  watchId = navigator.geolocation.watchPosition(onPos, onErr, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 5000
+  });
+  fixAgeInterval = setInterval(updateFixAge, 1000);
+}
+
+function onPos(pos) {
+  const acc = pos.coords.accuracy;
+  const now = performance.now();
+
+  // FIX #2: Reject bad fix BEFORE updating timing references
+  if (state === S.RUNNING && acc > ACC_REJECT) {
+    // Still update signal display so user can see GPS is degraded
+    updateSignalDisplay(acc);
+    return;
+  }
+
+  // Only update timing references if fix is accepted
+  lastFixTime = now;
+  lastFixTs   = pos.timestamp;
+
+  rawMps     = pos.coords.speed != null ? pos.coords.speed : 0;
+  currentSpd = useMetric ? rawMps * 3.6 : rawMps * 2.23694;
+
+  const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
+  document.querySelectorAll('.sbar').forEach((b,i) => b.classList.toggle('on', i < sig));
+  document.getElementById('acctxt').textContent = `±${Math.round(acc)}m`;
+
+  updateGpsPanel(acc, sig);
+  setSdot('active');
+  if (state !== S.ARMED && state !== S.RUNNING && state !== S.DONE)
+    setBar('GPS Locked','active');
+}
+
+function updateSignalDisplay(acc) {
+  const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
+  document.querySelectorAll('.sbar').forEach((b,i) => b.classList.toggle('on', i < sig));
+  document.getElementById('acctxt').textContent = `±${Math.round(acc)}m`;
+  updateGpsPanel(acc, sig);
+}
+
+function updateGpsPanel(acc, sig) {
+  const statusEl = document.getElementById('giStatus');
+  if (sig >= 3)      { statusEl.textContent='LOCKED'; statusEl.className='gi-val good'; }
+  else if (sig >= 1) { statusEl.textContent='WEAK';   statusEl.className='gi-val ok';   }
+  else               { statusEl.textContent='POOR';   statusEl.className='gi-val poor'; }
+
+  const accEl = document.getElementById('giAcc');
+  accEl.textContent = Math.round(acc);
+  accEl.className   = 'gi-val ' + (acc < 5 ? 'good' : acc < 20 ? 'ok' : 'poor');
+}
+
+function updateFixAge() {
+  const el = document.getElementById('giAge');
+  if (!lastFixTime) { el.textContent='—'; el.className='gi-val'; return; }
+  const age = (performance.now() - lastFixTime) / 1000;
+  el.textContent = age.toFixed(1);
+  el.className   = 'gi-val ' + (age < 1.5 ? 'good' : age < 3 ? 'ok' : 'poor');
+  if (age > 3 && state === S.RUNNING) setBar('⚠ GPS signal aging…','warn');
+}
+
+function onErr(e) {
+  const m = {1:'Location denied', 2:'Signal unavailable', 3:'GPS timed out'};
+  setBar(m[e.code]||'GPS error','error'); setSdot('error');
+  document.querySelectorAll('.sbar').forEach(b => b.classList.remove('on'));
+  document.getElementById('giStatus').textContent = 'ERROR';
+  document.getElementById('giStatus').className   = 'gi-val poor';
+  document.getElementById('giAcc').textContent    = '—';
+  document.getElementById('giAge').textContent    = '—';
+}
+
+function setSdot(cls) {
+  const d = document.getElementById('sdot');
+  d.className = 'sdot'+(cls?' '+cls:'');
+  document.getElementById('statusTxt').textContent = {active:'GPS LOCKED',warn:'SEARCHING',error:'NO SIGNAL'}[cls]||'SEARCHING';
+}
+
+// ─────────────────────────────────────────────
+// MODE
+// ─────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-accel').classList.toggle('active', m==='accel');
+  document.getElementById('tab-brake').classList.toggle('active', m==='brake');
+  const u = useMetric?'km/h':'mph';
+  if (m==='accel') {
+    document.getElementById('panelLabel').textContent = '0 → TARGET';
+    document.getElementById('tgtPre').textContent = '0 →';
+    document.getElementById('tgtSuf').textContent = useMetric?'KM/H':'MPH';
+    document.getElementById('splitsWrap').style.display = '';
+  } else {
+    document.getElementById('panelLabel').textContent = 'SPEED → 0';
+    document.getElementById('tgtPre').textContent = 'FROM';
+    document.getElementById('tgtSuf').textContent = useMetric?'KM/H':'MPH';
+    document.getElementById('splitsWrap').style.display = 'none';
+  }
+  resetRun();
+}
+
+// ─────────────────────────────────────────────
+// UNIT
+// ─────────────────────────────────────────────
+function toggleUnit() {
+  useMetric = !useMetric;
+  const u = useMetric?'KM/H':'MPH';
+  document.getElementById('spdUnit').textContent = u+' ⇄';
+  document.getElementById('tgtSuf').textContent  = u;
+  resetRun();
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function fmt(ms) { return ms<10000?(ms/1000).toFixed(3):(ms/1000).toFixed(2); }
+
+function setBar(msg, cls) {
+  const el = document.getElementById('statusBar');
+  el.textContent  = msg;
+  el.className    = 'status-txt'+(cls?' '+cls:'');
+}
+
+function setArmInd(s) {
+  const el = document.getElementById('armInd');
+  const labels = {idle:'IDLE',armed:'ARMED',running:'RUNNING',done:'DONE'};
+  el.textContent = labels[s]||'IDLE';
+  el.className   = 'arm-indicator'+(s!=='idle'?' '+s:'');
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+renderHistory();
+renderBvL();
+drawGauge(0);
+startGPS();
+rafId = requestAnimationFrame(loop);
+
+async function keepAwake() {
+  if ('wakeLock' in navigator) {
+    try {
+      // FIX #6: Store wake lock handle properly to avoid double-request leak
+      let wakeLock = null;
+      const requestWake = async () => {
+        try {
+          if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+          wakeLock = await navigator.wakeLock.request('screen');
+        } catch(e) {}
+      };
+      await requestWake();
+      document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible') await requestWake();
+      });
+    } catch(e) {}
+  }
+}
+keepAwake();
+
+// Fullscreen handled by Android manifest
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer arc ring -->
+    <path
+        android:strokeColor="#FF4400"
+        android:strokeWidth="5"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M 25,72 A 32,32 0 1,1 83,72"/>
+
+    <!-- Needle -->
+    <path
+        android:fillColor="#FF4400"
+        android:pathData="M 54,54 L 38,28 L 52,54 Z"/>
+
+    <!-- Center hub -->
+    <path
+        android:fillColor="#CC1A00"
+        android:pathData="M 54,54 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"/>
+
+    <!-- Hash symbol top-right -->
+    <path
+        android:fillColor="#FF4400"
+        android:strokeColor="#FF4400"
+        android:strokeWidth="1.5"
+        android:pathData="M72,18 L70,26 M76,18 L74,26 M69,21 L77,21 M68,24 L76,24"/>
+</vector>
