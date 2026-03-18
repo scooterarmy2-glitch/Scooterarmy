@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>#scooterarmy GPS — Download</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: #080808;
+  color: #d4d4d4;
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 16px 60px;
+  background-image:
+    radial-gradient(ellipse at 50% 100%, rgba(200,60,0,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.7) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16'%3E%3Cpath d='M14 0 L28 8 L28 8 L14 16 L0 8 Z' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='0.6'/%3E%3C/svg%3E");
+  background-size: auto, auto, 28px 16px;
+}
+
+body::after {
+  content: '';
+  position: fixed; bottom: 0; left: 0; right: 0; height: 120px;
+  background: linear-gradient(to top, rgba(180,40,0,0.15) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.wrap {
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 20px;
+}
+
+/* HEADER */
+.header {
+  width: calc(100% + 32px);
+  background: linear-gradient(180deg, #1e1e1e 0%, #0e0e0e 100%);
+  border-bottom: 2px solid #000;
+  box-shadow: 0 2px 0 #3a1800, 0 6px 24px rgba(0,0,0,0.9);
+  padding: 20px 24px 18px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.brand {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 32px; font-weight: 900;
+  letter-spacing: .06em;
+  line-height: 1;
+}
+.brand .hash {
+  background: linear-gradient(180deg, #ff6644 0%, #cc1a00 50%, #ff3300 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(255,68,0,0.7));
+}
+.brand .name {
+  background: linear-gradient(180deg, #fff 0%, #aaa 40%, #ddd 60%, #888 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tagline {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; letter-spacing: .3em;
+  color: #444; margin-top: 6px; text-transform: uppercase;
+}
+
+/* BETA BADGE */
+.beta-banner {
+  width: 100%;
+  background: linear-gradient(180deg, #1a0e00, #0e0800);
+  border: 1px solid #553300;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 0 20px rgba(255,100,0,0.1);
+}
+.beta-icon {
+  font-size: 20px; flex-shrink: 0;
+}
+.beta-text {
+  font-size: 11px; letter-spacing: .1em; color: #ffb347; line-height: 1.6;
+}
+.beta-text strong {
+  font-family: 'Orbitron', sans-serif; font-size: 10px;
+  font-weight: 700; letter-spacing: .2em;
+  color: #ff8800;
+}
+
+/* APP CARD */
+.app-card {
+  width: 100%;
+  background: linear-gradient(180deg, #141414 0%, #0c0c0c 100%);
+  border: 1px solid #2e2e2e; border-top-color: #3a3a3a;
+  border-radius: 12px; overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.7);
+  position: relative;
+}
+.app-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #cc1a00, #ff4400, #cc1a00, transparent);
+  opacity: .8;
+}
+
+.app-card-inner { padding: 24px; }
+
+/* ICON */
+.app-icon-wrap {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+}
+.app-icon {
+  width: 72px; height: 72px; border-radius: 16px;
+  background: linear-gradient(135deg, #141414, #080808);
+  border: 1px solid #2a2a2a;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(255,60,0,0.2);
+}
+.app-icon svg { width: 48px; height: 48px; }
+.app-info { flex: 1; }
+.app-name {
+  font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900;
+  background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; letter-spacing: .05em;
+}
+.app-name .h {
+  background: linear-gradient(180deg, #ff6644, #cc1a00);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.app-version {
+  font-size: 10px; color: #444; letter-spacing: .2em;
+  font-family: 'Orbitron', sans-serif; margin-top: 3px;
+}
+.app-platform {
+  font-size: 10px; color: #333; letter-spacing: .1em; margin-top: 2px;
+}
+
+/* FEATURES */
+.features { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.feature {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: #666; letter-spacing: .06em;
+}
+.feature-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #ff4400; box-shadow: 0 0 6px rgba(255,60,0,0.5);
+  flex-shrink: 0;
+}
+
+/* DOWNLOAD BUTTON */
+.dl-btn {
+  display: block; width: 100%;
+  background: linear-gradient(180deg, #2a0e00, #160700);
+  border: 1px solid #772200; border-top-color: #aa3300;
+  border-radius: 8px; padding: 16px;
+  text-align: center; text-decoration: none;
+  font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .25em; color: #ff4400;
+  transition: all .2s;
+  box-shadow: 0 0 20px rgba(255,60,0,0.1), inset 0 1px 0 rgba(255,100,0,0.1);
+  cursor: pointer;
+}
+.dl-btn:hover {
+  background: linear-gradient(180deg, #3a1200, #200a00);
+  box-shadow: 0 0 30px rgba(255,60,0,0.25);
+  border-color: #aa3300;
+}
+.dl-btn-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: #553300; letter-spacing: .15em;
+  margin-top: 4px;
+}
+
+/* INSTALL INSTRUCTIONS */
+.install-card {
+  width: 100%;
+  background: linear-gradient(180deg, #0e0e0e, #090909);
+  border: 1px solid #222; border-radius: 8px;
+  padding: 16px 18px;
+}
+.install-title {
+  font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: .3em; color: #444; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.install-step {
+  display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start;
+}
+.install-step:last-child { margin-bottom: 0; }
+.step-num {
+  font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900;
+  color: #ff4400; min-width: 20px; flex-shrink: 0;
+}
+.step-txt { font-size: 11px; color: #555; letter-spacing: .06em; line-height: 1.5; }
+.step-txt strong { color: #777; }
+
+/* FOOTER */
+.footer {
+  font-size: 10px; color: #222; letter-spacing: .1em;
+  text-align: center; line-height: 1.8;
+}
+.footer a { color: #333; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <span class="hash">#</span><span class="name">scooterarmy</span>
+    </div>
+    <div class="tagline">GPS Speedometer &amp; Performance Tracker</div>
+  </div>
+
+  <!-- BETA BANNER -->
+  <div class="beta-banner">
+    <div class="beta-icon">⚠️</div>
+    <div class="beta-text">
+      <strong>BETA — TRUSTED TESTERS ONLY</strong><br>
+      This is a pre-release build shared for testing. Not yet on Google Play.
+      Your feedback helps make it better — bugs, crashes, GPS accuracy, anything.
+    </div>
+  </div>
+
+  <!-- APP CARD -->
+  <div class="app-card">
+    <div class="app-card-inner">
+
+      <div class="app-icon-wrap">
+        <div class="app-icon">
+          <!-- Speedometer SVG icon -->
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" stroke="#1a1a1a" stroke-width="2"/>
+            <path d="M10 32 A16 16 0 1 1 38 32" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M10 32 A16 16 0 0 1 36 20" stroke="#ff4400" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <line x1="24" y1="24" x2="16" y2="12" stroke="#ff4400" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="24" cy="24" r="3" fill="#cc1a00"/>
+            <circle cx="24" cy="24" r="1.5" fill="#ff6600"/>
+          </svg>
+        </div>
+        <div class="app-info">
+          <div class="app-name"><span class="h">#</span>scooterarmy GPS</div>
+          <div class="app-version">VERSION 1.0 BETA</div>
+          <div class="app-platform">Android 8.0+  ·  APK  ·  ~3MB</div>
+        </div>
+      </div>
+
+      <div class="features">
+        <div class="feature"><div class="feature-dot"></div>Live GPS speedometer with analog gauge</div>
+        <div class="feature"><div class="feature-dot"></div>0 → speed acceleration timing</div>
+        <div class="feature"><div class="feature-dot"></div>Speed → 0 braking runs</div>
+        <div class="feature"><div class="feature-dot"></div>Intermediate split times</div>
+        <div class="feature"><div class="feature-dot"></div>Run history + personal bests</div>
+        <div class="feature"><div class="feature-dot"></div>Works offline — no internet needed</div>
+      </div>
+
+      <a class="dl-btn" href="scooterarmy-gps.apk" download="scooterarmy-gps.apk">
+        ⬇ DOWNLOAD APK
+        <div class="dl-btn-sub">scooterarmy-gps.apk  ·  Android only</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- INSTALL INSTRUCTIONS -->
+  <div class="install-card">
+    <div class="install-title">How to install</div>
+    <div class="install-step">
+      <div class="step-num">01</div>
+      <div class="step-txt">Tap <strong>Download APK</strong> above and save the file</div>
+    </div>
+    <div class="install-step">
+      <div class="step-num">02</div>
+      <div class="step-txt">Open your <strong>Downloads folder</strong> and tap the APK file</div>
+    </div>
+    <div class="install-step">
+      <div class="step-num">03</div>
+      <div class="step-txt">If prompted, go to <strong>Settings → Install unknown apps</strong> and allow your browser</div>
+    </div>
+    <div class="install-step">
+      <div class="step-num">04</div>
+      <div class="step-txt">Tap <strong>Install</strong> — the app will appear in your home screen</div>
+    </div>
+    <div class="install-step">
+      <div class="step-num">05</div>
+      <div class="step-txt">Open the app and <strong>allow location permission</strong> when prompted — GPS won't work without it</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    #scooterarmy GPS v1.0 BETA<br>
+    Built for Android · Requires GPS<br><br>
+    Report bugs or feedback to the developer
+  </div>
+
+</div>
+</body>
+</html>
