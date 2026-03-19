@@ -7,13 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
-  background-color: #080808;
-  color: #d4d4d4;
+  background-color: #080808; color: #d4d4d4;
   font-family: 'Share Tech Mono', monospace;
-  min-height: 100vh;
-  display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
   padding: 0 16px 60px;
   background-image:
     radial-gradient(ellipse at 50% 100%, rgba(200,60,0,0.18) 0%, transparent 55%),
@@ -21,221 +18,81 @@ body {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16'%3E%3Cpath d='M14 0 L28 8 L28 8 L14 16 L0 8 Z' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='0.6'/%3E%3C/svg%3E");
   background-size: auto, auto, 28px 16px;
 }
-
-body::after {
-  content: '';
-  position: fixed; bottom: 0; left: 0; right: 0; height: 120px;
-  background: linear-gradient(to top, rgba(180,40,0,0.15) 0%, transparent 100%);
-  pointer-events: none;
-}
-
-.wrap {
-  width: 100%; max-width: 480px;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 20px;
-}
-
-/* HEADER */
-.header {
-  width: calc(100% + 32px);
-  background: linear-gradient(180deg, #1e1e1e 0%, #0e0e0e 100%);
-  border-bottom: 2px solid #000;
-  box-shadow: 0 2px 0 #3a1800, 0 6px 24px rgba(0,0,0,0.9);
-  padding: 20px 24px 18px;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.brand {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 32px; font-weight: 900;
-  letter-spacing: .06em;
-  line-height: 1;
-}
-.brand .hash {
-  background: linear-gradient(180deg, #ff6644 0%, #cc1a00 50%, #ff3300 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 12px rgba(255,68,0,0.7));
-}
-.brand .name {
-  background: linear-gradient(180deg, #fff 0%, #aaa 40%, #ddd 60%, #888 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.tagline {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 11px; letter-spacing: .3em;
-  color: #444; margin-top: 6px; text-transform: uppercase;
-}
-
-/* BETA BADGE */
-.beta-banner {
-  width: 100%;
-  background: linear-gradient(180deg, #1a0e00, #0e0800);
-  border: 1px solid #553300;
-  border-radius: 8px;
-  padding: 12px 16px;
-  display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 0 20px rgba(255,100,0,0.1);
-}
-.beta-icon {
-  font-size: 20px; flex-shrink: 0;
-}
-.beta-text {
-  font-size: 11px; letter-spacing: .1em; color: #ffb347; line-height: 1.6;
-}
-.beta-text strong {
-  font-family: 'Orbitron', sans-serif; font-size: 10px;
-  font-weight: 700; letter-spacing: .2em;
-  color: #ff8800;
-}
-
-/* APP CARD */
-.app-card {
-  width: 100%;
-  background: linear-gradient(180deg, #141414 0%, #0c0c0c 100%);
-  border: 1px solid #2e2e2e; border-top-color: #3a3a3a;
-  border-radius: 12px; overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.7);
-  position: relative;
-}
-.app-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, #cc1a00, #ff4400, #cc1a00, transparent);
-  opacity: .8;
-}
-
+body::after { content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: linear-gradient(to top, rgba(180,40,0,0.15) 0%, transparent 100%); pointer-events: none; }
+.wrap { width: 100%; max-width: 480px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.header { width: calc(100% + 32px); background: linear-gradient(180deg, #1e1e1e 0%, #0e0e0e 100%); border-bottom: 2px solid #000; box-shadow: 0 2px 0 #3a1800, 0 6px 24px rgba(0,0,0,0.9); padding: 20px 24px 18px; text-align: center; margin-bottom: 10px; }
+.brand { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 900; letter-spacing: .06em; line-height: 1; }
+.brand .hash { background: linear-gradient(180deg, #ff6644 0%, #cc1a00 50%, #ff3300 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 12px rgba(255,68,0,0.7)); }
+.brand .name { background: linear-gradient(180deg, #fff 0%, #aaa 40%, #ddd 60%, #888 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.tagline { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: .3em; color: #444; margin-top: 6px; text-transform: uppercase; }
+.beta-banner { width: 100%; background: linear-gradient(180deg, #1a0e00, #0e0800); border: 1px solid #553300; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 0 20px rgba(255,100,0,0.1); }
+.beta-icon { font-size: 20px; flex-shrink: 0; }
+.beta-text { font-size: 11px; letter-spacing: .1em; color: #ffb347; line-height: 1.6; }
+.beta-text strong { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .2em; color: #ff8800; }
+.app-card { width: 100%; background: linear-gradient(180deg, #141414 0%, #0c0c0c 100%); border: 1px solid #2e2e2e; border-top-color: #3a3a3a; border-radius: 12px; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.7); position: relative; }
+.app-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #cc1a00, #ff4400, #cc1a00, transparent); opacity: .8; }
 .app-card-inner { padding: 24px; }
-
-/* ICON */
-.app-icon-wrap {
-  display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
-}
-.app-icon {
-  width: 72px; height: 72px; border-radius: 16px;
-  background: linear-gradient(135deg, #141414, #080808);
-  border: 1px solid #2a2a2a;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 0 20px rgba(255,60,0,0.2);
-}
+.app-icon-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.app-icon { width: 72px; height: 72px; border-radius: 16px; background: linear-gradient(135deg, #141414, #080808); border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 20px rgba(255,60,0,0.2); }
 .app-icon svg { width: 48px; height: 48px; }
 .app-info { flex: 1; }
-.app-name {
-  font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900;
-  background: linear-gradient(180deg, #fff 0%, #aaa 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text; letter-spacing: .05em;
-}
-.app-name .h {
-  background: linear-gradient(180deg, #ff6644, #cc1a00);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.app-version {
-  font-size: 10px; color: #444; letter-spacing: .2em;
-  font-family: 'Orbitron', sans-serif; margin-top: 3px;
-}
-.app-platform {
-  font-size: 10px; color: #333; letter-spacing: .1em; margin-top: 2px;
-}
-
-/* FEATURES */
+.app-name { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; background: linear-gradient(180deg, #fff 0%, #aaa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: .05em; }
+.app-name .h { background: linear-gradient(180deg, #ff6644, #cc1a00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.app-version { font-size: 10px; color: #444; letter-spacing: .2em; font-family: 'Orbitron', sans-serif; margin-top: 3px; }
+.app-platform { font-size: 10px; color: #333; letter-spacing: .1em; margin-top: 2px; }
 .features { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-.feature {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 12px; color: #666; letter-spacing: .06em;
-}
-.feature-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #ff4400; box-shadow: 0 0 6px rgba(255,60,0,0.5);
-  flex-shrink: 0;
-}
-
-/* DOWNLOAD BUTTON */
-.dl-btn {
-  display: block; width: 100%;
-  background: linear-gradient(180deg, #2a0e00, #160700);
-  border: 1px solid #772200; border-top-color: #aa3300;
-  border-radius: 8px; padding: 16px;
-  text-align: center; text-decoration: none;
-  font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
-  letter-spacing: .25em; color: #ff4400;
-  transition: all .2s;
-  box-shadow: 0 0 20px rgba(255,60,0,0.1), inset 0 1px 0 rgba(255,100,0,0.1);
-  cursor: pointer;
-}
-.dl-btn:hover {
-  background: linear-gradient(180deg, #3a1200, #200a00);
-  box-shadow: 0 0 30px rgba(255,60,0,0.25);
-  border-color: #aa3300;
-}
-.dl-btn-sub {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px; color: #553300; letter-spacing: .15em;
-  margin-top: 4px;
-}
-
-/* INSTALL INSTRUCTIONS */
-.install-card {
-  width: 100%;
-  background: linear-gradient(180deg, #0e0e0e, #090909);
-  border: 1px solid #222; border-radius: 8px;
-  padding: 16px 18px;
-}
-.install-title {
-  font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700;
-  letter-spacing: .3em; color: #444; text-transform: uppercase;
-  margin-bottom: 12px;
-}
-.install-step {
-  display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start;
-}
+.feature { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #666; letter-spacing: .06em; }
+.feature-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff4400; box-shadow: 0 0 6px rgba(255,60,0,0.5); flex-shrink: 0; }
+.dl-btn { display: block; width: 100%; background: linear-gradient(180deg, #2a0e00, #160700); border: 1px solid #772200; border-top-color: #aa3300; border-radius: 8px; padding: 16px; text-align: center; text-decoration: none; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .25em; color: #ff4400; transition: all .2s; box-shadow: 0 0 20px rgba(255,60,0,0.1), inset 0 1px 0 rgba(255,100,0,0.1); cursor: pointer; }
+.dl-btn:hover { background: linear-gradient(180deg, #3a1200, #200a00); box-shadow: 0 0 30px rgba(255,60,0,0.25); }
+.dl-btn-sub { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #553300; letter-spacing: .15em; margin-top: 4px; }
+.install-card { width: 100%; background: linear-gradient(180deg, #0e0e0e, #090909); border: 1px solid #222; border-radius: 8px; padding: 16px 18px; }
+.install-title { font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .3em; color: #444; text-transform: uppercase; margin-bottom: 12px; }
+.install-step { display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start; }
 .install-step:last-child { margin-bottom: 0; }
-.step-num {
-  font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900;
-  color: #ff4400; min-width: 20px; flex-shrink: 0;
-}
+.step-num { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900; color: #ff4400; min-width: 20px; flex-shrink: 0; }
 .step-txt { font-size: 11px; color: #555; letter-spacing: .06em; line-height: 1.5; }
 .step-txt strong { color: #777; }
-
-/* FOOTER */
-.footer {
-  font-size: 10px; color: #222; letter-spacing: .1em;
-  text-align: center; line-height: 1.8;
-}
-.footer a { color: #333; text-decoration: none; }
+.guide-section { width: 100%; }
+.guide-title-bar { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, #141414, #0c0c0c); border: 1px solid #2a2a2a; border-radius: 8px 8px 0 0; padding: 12px 16px; cursor: pointer; user-select: none; }
+.guide-title { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .3em; color: #505050; text-transform: uppercase; }
+.guide-chevron { color: #333; font-size: 14px; transition: transform .3s; }
+.guide-chevron.open { transform: rotate(180deg); }
+.guide-scroll { display: none; background: #090909; border: 1px solid #1e1e1e; border-top: none; border-radius: 0 0 8px 8px; max-height: 420px; overflow-y: auto; padding: 4px 0; }
+.guide-scroll.open { display: block; }
+.guide-scroll::-webkit-scrollbar { width: 3px; }
+.guide-scroll::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+.guide-group { padding: 14px 16px 10px; border-bottom: 1px solid #141414; }
+.guide-group:last-child { border-bottom: none; }
+.guide-group-title { font-family: 'Orbitron', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: .3em; color: #ff4400; text-transform: uppercase; margin-bottom: 10px; }
+.guide-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+.guide-item:last-child { margin-bottom: 0; }
+.guide-item-label { font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #666; min-width: 90px; flex-shrink: 0; padding-top: 1px; }
+.guide-item-desc { font-size: 11px; color: #444; letter-spacing: .05em; line-height: 1.5; }
+.footer { font-size: 10px; color: #222; letter-spacing: .1em; text-align: center; line-height: 1.8; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- HEADER -->
   <div class="header">
-    <div class="brand">
-      <span class="hash">#</span><span class="name">scooterarmy</span>
-    </div>
+    <div class="brand"><span class="hash">#</span><span class="name">scooterarmy</span></div>
     <div class="tagline">GPS Speedometer &amp; Performance Tracker</div>
   </div>
 
-  <!-- BETA BANNER -->
   <div class="beta-banner">
     <div class="beta-icon">⚠️</div>
     <div class="beta-text">
       <strong>BETA — TRUSTED TESTERS ONLY</strong><br>
-      This is a pre-release build shared for testing. Not yet on Google Play.
-      Your feedback helps make it better — bugs, crashes, GPS accuracy, anything.
+      Pre-release build shared for testing. Not yet on Google Play.
+      Report bugs, crashes, GPS accuracy issues — all feedback welcome.
     </div>
   </div>
 
-  <!-- APP CARD -->
   <div class="app-card">
     <div class="app-card-inner">
-
       <div class="app-icon-wrap">
         <div class="app-icon">
-          <!-- Speedometer SVG icon -->
           <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="24" cy="24" r="20" stroke="#1a1a1a" stroke-width="2"/>
             <path d="M10 32 A16 16 0 1 1 38 32" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round" fill="none"/>
@@ -251,7 +108,6 @@ body::after {
           <div class="app-platform">Android 8.0+  ·  APK  ·  ~3MB</div>
         </div>
       </div>
-
       <div class="features">
         <div class="feature"><div class="feature-dot"></div>Live GPS speedometer with analog gauge</div>
         <div class="feature"><div class="feature-dot"></div>0 → speed acceleration timing</div>
@@ -260,37 +116,71 @@ body::after {
         <div class="feature"><div class="feature-dot"></div>Run history + personal bests</div>
         <div class="feature"><div class="feature-dot"></div>Works offline — no internet needed</div>
       </div>
-
       <a class="dl-btn" href="scooterarmy-gps.apk" download="scooterarmy-gps.apk">
         ⬇ DOWNLOAD APK
         <div class="dl-btn-sub">scooterarmy-gps.apk  ·  Android only</div>
       </a>
-
     </div>
   </div>
 
-  <!-- INSTALL INSTRUCTIONS -->
   <div class="install-card">
     <div class="install-title">How to install</div>
-    <div class="install-step">
-      <div class="step-num">01</div>
-      <div class="step-txt">Tap <strong>Download APK</strong> above and save the file</div>
+    <div class="install-step"><div class="step-num">01</div><div class="step-txt">Tap <strong>Download APK</strong> above and save the file</div></div>
+    <div class="install-step"><div class="step-num">02</div><div class="step-txt">Open your <strong>Downloads folder</strong> and tap the APK file</div></div>
+    <div class="install-step"><div class="step-num">03</div><div class="step-txt">If prompted, go to <strong>Settings → Install unknown apps</strong> and allow your browser</div></div>
+    <div class="install-step"><div class="step-num">04</div><div class="step-txt">Tap <strong>Install</strong> — the app will appear on your home screen</div></div>
+    <div class="install-step"><div class="step-num">05</div><div class="step-txt">Open the app and <strong>allow location permission</strong> when prompted</div></div>
+  </div>
+
+  <div class="guide-section">
+    <div class="guide-title-bar" onclick="toggleGuide()">
+      <div class="guide-title">App Guide &amp; Features Explained</div>
+      <div class="guide-chevron" id="guideChev">▾</div>
     </div>
-    <div class="install-step">
-      <div class="step-num">02</div>
-      <div class="step-txt">Open your <strong>Downloads folder</strong> and tap the APK file</div>
-    </div>
-    <div class="install-step">
-      <div class="step-num">03</div>
-      <div class="step-txt">If prompted, go to <strong>Settings → Install unknown apps</strong> and allow your browser</div>
-    </div>
-    <div class="install-step">
-      <div class="step-num">04</div>
-      <div class="step-txt">Tap <strong>Install</strong> — the app will appear in your home screen</div>
-    </div>
-    <div class="install-step">
-      <div class="step-num">05</div>
-      <div class="step-txt">Open the app and <strong>allow location permission</strong> when prompted — GPS won't work without it</div>
+    <div class="guide-scroll" id="guideScroll">
+
+      <div class="guide-group">
+        <div class="guide-group-title">GPS Status Bar</div>
+        <div class="guide-item"><div class="guide-item-label">STATUS</div><div class="guide-item-desc">LOCKED = good signal. WEAK = marginal. POOR = don't start a run yet.</div></div>
+        <div class="guide-item"><div class="guide-item-label">ACCURACY</div><div class="guide-item-desc">How far off the GPS could be in metres. Under 10m is ideal for timing runs.</div></div>
+        <div class="guide-item"><div class="guide-item-label">FIX AGE</div><div class="guide-item-desc">Seconds since the last GPS update. Under 1.5s is green. Over 3s means signal is struggling.</div></div>
+        <div class="guide-item"><div class="guide-item-label">SIGNAL BARS</div><div class="guide-item-desc">Visual GPS strength. Four green bars = best possible lock.</div></div>
+      </div>
+
+      <div class="guide-group">
+        <div class="guide-group-title">Speedometer</div>
+        <div class="guide-item"><div class="guide-item-label">GAUGE</div><div class="guide-item-desc">Analog needle driven by GPS speed. Tap MPH ⇄ to toggle between mph and km/h.</div></div>
+        <div class="guide-item"><div class="guide-item-label">GREEN MARKER</div><div class="guide-item-desc">Your target speed marked on the arc — see exactly how far you have to go.</div></div>
+        <div class="guide-item"><div class="guide-item-label">BLUE MARKERS</div><div class="guide-item-desc">Your split speed checkpoints marked on the gauge arc.</div></div>
+      </div>
+
+      <div class="guide-group">
+        <div class="guide-group-title">Acceleration Mode</div>
+        <div class="guide-item"><div class="guide-item-label">HOW IT WORKS</div><div class="guide-item-desc">Set a target speed, tap ARM, then go. Timer starts automatically when you move and stops when you hit the target.</div></div>
+        <div class="guide-item"><div class="guide-item-label">TARGET SPEED</div><div class="guide-item-desc">The speed you want to time to. Classic run is 0–60 mph.</div></div>
+        <div class="guide-item"><div class="guide-item-label">SPLITS</div><div class="guide-item-desc">Optional intermediate speeds e.g. 30, 45. Split times are recorded automatically as you pass each one.</div></div>
+      </div>
+
+      <div class="guide-group">
+        <div class="guide-group-title">Braking Mode</div>
+        <div class="guide-item"><div class="guide-item-label">HOW IT WORKS</div><div class="guide-item-desc">Set your entry speed, ARM, accelerate to that speed, then brake hard. Timer runs until you stop.</div></div>
+        <div class="guide-item"><div class="guide-item-label">FROM SPEED</div><div class="guide-item-desc">The speed you'll be doing when you start braking. Timer kicks in the moment you hit it.</div></div>
+      </div>
+
+      <div class="guide-group">
+        <div class="guide-group-title">Run Controls</div>
+        <div class="guide-item"><div class="guide-item-label">ARM</div><div class="guide-item-desc">Puts the app on standby. Nothing is recorded until the run actually starts.</div></div>
+        <div class="guide-item"><div class="guide-item-label">RESET</div><div class="guide-item-desc">Cancels the current run and returns to idle.</div></div>
+        <div class="guide-item"><div class="guide-item-label">ARM AGAIN</div><div class="guide-item-desc">On the result screen — instantly re-arms for another back-to-back run.</div></div>
+      </div>
+
+      <div class="guide-group">
+        <div class="guide-group-title">Results &amp; History</div>
+        <div class="guide-item"><div class="guide-item-label">BEST VS LAST</div><div class="guide-item-desc">Compares your most recent run against your personal best for the same run type.</div></div>
+        <div class="guide-item"><div class="guide-item-label">RUN HISTORY</div><div class="guide-item-desc">Every run saved automatically. Tap any run to expand split details. Gold highlight = personal best.</div></div>
+        <div class="guide-item"><div class="guide-item-label">NEW BEST</div><div class="guide-item-desc">Badge shown on the result popup and in history when you beat your previous best time.</div></div>
+      </div>
+
     </div>
   </div>
 
@@ -301,5 +191,13 @@ body::after {
   </div>
 
 </div>
+<script>
+function toggleGuide() {
+  const scroll = document.getElementById('guideScroll');
+  const chev   = document.getElementById('guideChev');
+  const open   = scroll.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+</script>
 </body>
 </html>
