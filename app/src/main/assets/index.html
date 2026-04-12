@@ -986,19 +986,22 @@ function onPos(pos) {
   document.querySelectorAll('.sbar').forEach((b,i) => b.classList.toggle('on', i < sig));
   document.getElementById('acctxt').textContent = `±${Math.round(acc)}m`;
   updateGpsPanel(acc, sig);
-  // Always track last position for derived speed calculation
-  const newPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-
-  // Session tracking
-  if (sessionActive) {
+  // Session tracking — only when GPS is reliable
+  if (sessionActive && gpsReady) {
+    // Track top speed
     if (currentSpd > sessionTopSpd) sessionTopSpd = currentSpd;
+    // Track distance
     if (pos.coords.latitude && sessionLastPos) {
       sessionDist += haversine(sessionLastPos.lat, sessionLastPos.lon,
                                pos.coords.latitude, pos.coords.longitude);
     }
+    // Reset idle timer on movement
     if (rawMps > 0.5) resetIdleTimer();
   }
-  sessionLastPos = newPos;  // always update for derived speed
+  // Always update position reference
+  if (pos.coords.latitude) {
+    sessionLastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+  }
 
   setSdot('active');
   if (state !== S.ARMED && state !== S.RUNNING && state !== S.DONE) {
@@ -1089,86 +1092,114 @@ function setArmInd(s) {
 // ─────────────────────────────────────────────
 // SESSION
 // ─────────────────────────────────────────────
+let sessionLiveInterval = null;
+
 function toggleSession() {
   if (!sessionActive) startSession();
-  else                stopSession(true);
+  else                stopSession();
 }
 
 function startSession() {
-  sessionActive   = true;
-  sessionStart    = new Date();
-  sessionTopSpd   = 0;
-  sessionDist     = 0;
-  sessionLastPos  = null;
+  // Reset all session tracking
+  sessionActive  = true;
+  sessionStart   = new Date();
+  sessionTopSpd  = 0;
+  sessionDist    = 0;
+  sessionLastPos = null;
 
-  document.getElementById('sessBtn').textContent = 'STOP SESSION';
-  document.getElementById('sessBtn').className   = 'btn session-stop';
+  // Update button
+  const btn = document.getElementById('sessBtn');
+  btn.textContent = 'STOP SESSION';
+  btn.className   = 'btn session-stop';
+
+  // Show live strip
   document.getElementById('sessLive').classList.add('active');
 
-  // Live strip updater
+  // Start live updater
+  if (sessionLiveInterval) clearInterval(sessionLiveInterval);
   sessionLiveInterval = setInterval(updateSessionLive, 1000);
 
+  // Idle auto-stop
   resetIdleTimer();
   setBar('Session started','active');
 }
 
-function stopSession(manual) {
+function stopSession() {
   if (!sessionActive) return;
+
+  // Snapshot everything BEFORE clearing state
+  const endTime    = new Date();
+  const durSec     = Math.round((endTime - sessionStart) / 1000);
+  const topSpdSnap = sessionTopSpd;
+  const distSnap   = sessionDist;
+  const startSnap  = new Date(sessionStart);
+
+  // Clear active state
   sessionActive = false;
   clearInterval(sessionLiveInterval);
+  sessionLiveInterval = null;
   clearTimeout(sessionIdleTimer);
 
-  document.getElementById('sessBtn').textContent = 'START SESSION';
-  document.getElementById('sessBtn').className   = 'btn session-start';
+  // Reset button
+  const btn = document.getElementById('sessBtn');
+  btn.textContent = 'START SESSION';
+  btn.className   = 'btn session-start';
+
+  // Hide live strip
   document.getElementById('sessLive').classList.remove('active');
 
-  // Save session
-  const dur = sessionStart ? Math.round((Date.now() - sessionStart.getTime()) / 1000) : 0;
-  if (dur < 5) return; // ignore accidental taps
+  // Ignore accidental taps (under 5 seconds)
+  if (durSec < 5) { setBar('Session too short — not saved','warn'); return; }
 
+  // Build record
   const u    = useMetric ? 'km/h' : 'mph';
   const dist = useMetric
-    ? (sessionDist / 1000).toFixed(2) + ' km'
-    : (sessionDist / 1609.34).toFixed(2) + ' mi';
+    ? (distSnap / 1000).toFixed(2) + ' km'
+    : (distSnap / 1609.34).toFixed(2) + ' mi';
 
-  const now = sessionStart;
-  sessions.unshift({
-    id:      Date.now(),
-    name:    now.toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'})
-           + ' ' + now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-    topSpd:  Math.round(sessionTopSpd) + ' ' + u,
-    topSpdNum: sessionTopSpd,
-    dist,
-    dur:     fmtDur(dur),
-    ts:      now.toISOString()
-  });
+  const record = {
+    id:        Date.now(),
+    name:      startSnap.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})
+             + ' ' + startSnap.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+    topSpd:    Math.round(topSpdSnap) + ' ' + u,
+    topSpdNum: topSpdSnap,
+    dist:      dist,
+    dur:       fmtDur(durSec),
+    ts:        startSnap.toISOString()
+  };
+
+  // Prepend to list
+  sessions.unshift(record);
   if (sessions.length > 100) sessions.pop();
   localStorage.setItem('sa_sessions', JSON.stringify(sessions));
   renderSessions();
-  setBar(manual ? 'Session saved' : 'Session auto-saved (idle)', 'active');
+  setBar('Session saved ✓','active');
 }
 
-let sessionLiveInterval = null;
-
 function updateSessionLive() {
-  if (!sessionActive) return;
-  const dur = Math.round((Date.now() - sessionStart.getTime()) / 1000);
-  const u   = useMetric ? 'km/h' : 'mph';
+  if (!sessionActive || !sessionStart) return;
+  const durSec = Math.round((Date.now() - sessionStart.getTime()) / 1000);
+  const u = useMetric ? 'km/h' : 'mph';
   const dist = useMetric
-    ? (sessionDist / 1000).toFixed(2)
-    : (sessionDist / 1609.34).toFixed(2);
+    ? (sessionDist / 1000).toFixed(2) + ' km'
+    : (sessionDist / 1609.34).toFixed(2) + ' mi';
   document.getElementById('liveTopSpd').textContent = Math.round(sessionTopSpd) + ' ' + u;
-  document.getElementById('liveDist').textContent   = dist + (useMetric ? ' km' : ' mi');
-  document.getElementById('liveDur').textContent    = fmtDur(dur);
+  document.getElementById('liveDist').textContent   = dist;
+  document.getElementById('liveDur').textContent    = fmtDur(durSec);
 }
 
 function resetIdleTimer() {
   clearTimeout(sessionIdleTimer);
-  sessionIdleTimer = setTimeout(() => stopSession(false), 5 * 60 * 1000);
+  sessionIdleTimer = setTimeout(() => {
+    if (sessionActive) stopSession();
+  }, 5 * 60 * 1000);
 }
 
 function fmtDur(s) {
-  const m = Math.floor(s / 60), sec = s % 60;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
   return m + ':' + String(sec).padStart(2,'0');
 }
 
@@ -1176,20 +1207,22 @@ function renderSessions() {
   const list = document.getElementById('sessList');
   const noS  = document.getElementById('noSess');
   if (!sessions.length) {
-    list.innerHTML = ''; list.appendChild(noS); noS.style.display='block'; return;
+    list.innerHTML = '';
+    list.appendChild(noS);
+    noS.style.display = 'block';
+    return;
   }
   noS.style.display = 'none';
-  list.innerHTML = sessions.map((s,i) => `
-    <div class="sess-item${sessionActive && i===0 ? ' active' : ''}">
+  list.innerHTML = sessions.map((s, i) => `
+    <div class="sess-item">
       <div class="sess-row">
         <div class="sess-name-wrap">
-          <input class="sess-name" id="sname-${i}" value="${s.name}"
+          <input class="sess-name" value="${s.name.replace(/"/g,'&quot;')}"
             onblur="renameSess(${i}, this.value)"
             onkeydown="if(event.key==='Enter')this.blur()">
           <div class="sess-meta">
             <span>${s.dur}</span>
             <span>${s.dist}</span>
-            <span>${s.ts ? new Date(s.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''}</span>
           </div>
         </div>
         <div class="sess-stats">
@@ -1202,13 +1235,14 @@ function renderSessions() {
 }
 
 function renameSess(i, val) {
-  sessions[i].name = val || sessions[i].name;
+  if (!val.trim()) return;
+  sessions[i].name = val.trim();
   localStorage.setItem('sa_sessions', JSON.stringify(sessions));
   renderSessions();
 }
 
 function delSess(i) {
-  sessions.splice(i,1);
+  sessions.splice(i, 1);
   localStorage.setItem('sa_sessions', JSON.stringify(sessions));
   renderSessions();
 }
