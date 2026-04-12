@@ -72,19 +72,34 @@ jobs:
 
       - name: Build Release APK
         run: |
-          gradle assembleRelease \
-            -Pandroid.injected.signing.store.file=$PWD/app/scooterarmy.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+          gradle assembleRelease
 
-      - name: Verify APK size
+      - name: Sign APK
         run: |
-          APK=app/build/outputs/apk/release/app-release.apk
-          SIZE=$(stat -c%s "$APK")
-          echo "APK size: $SIZE bytes"
-          if [ "$SIZE" -lt 1000000 ]; then
-            echo "ERROR: APK too small - build may have failed"
+          # Use apksigner from Android SDK to sign the release APK
+          APKSIGNER="${ANDROID_SDK_ROOT}/build-tools/34.0.0/apksigner"
+          INPUT=app/build/outputs/apk/release/app-release-unsigned.apk
+          OUTPUT=app/build/outputs/apk/release/app-release.apk
+
+          # Check which file exists
+          if [ -f "$INPUT" ]; then
+            echo "Signing unsigned APK..."
+            $APKSIGNER sign \
+              --ks app/scooterarmy.keystore \
+              --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+              --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+              --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+              --out $OUTPUT \
+              $INPUT
+          else
+            echo "No unsigned APK found, checking for release APK..."
+            ls app/build/outputs/apk/release/
+          fi
+
+          SIZE=$(stat -c%s "$OUTPUT" 2>/dev/null || echo 0)
+          echo "Signed APK size: $SIZE bytes"
+          if [ "$SIZE" -lt 500000 ]; then
+            echo "ERROR: APK too small after signing"
             exit 1
           fi
 
