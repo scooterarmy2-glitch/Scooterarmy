@@ -510,7 +510,7 @@ canvas#gauge { display:block; }
       <button class="btn session-start" id="sessBtn" onclick="toggleSession()">START SESSION</button>
     </div>
     <div class="btn-row">
-      <button class="btn primary"   id="armBtn"   onclick="armRun()">ARM</button>
+      <button class="btn primary"   id="armBtn"   onclick="armRun()">ARM TIMER</button>
       <button class="btn secondary" id="resetBtn" onclick="resetRun()" disabled>RESET</button>
     </div>
   </div>
@@ -802,7 +802,7 @@ function finishRun() {
   document.getElementById('timerBig').textContent = fmt(elapsed);
   document.getElementById('timerBig').className   = 'timer-big done';
   document.getElementById('progFill').className   = 'prog-fill done';
-  document.getElementById('armBtn').textContent   = 'ARM';
+  document.getElementById('armBtn').textContent   = 'ARM TIMER';
   document.getElementById('armBtn').disabled      = false;
   document.getElementById('tgtInp').disabled      = false;
   document.getElementById('splitsInp').disabled   = false;
@@ -826,7 +826,7 @@ function resetRun() {
   document.getElementById('timerSub').textContent = 'Set target, then ARM';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progFill').className   = 'prog-fill';
-  document.getElementById('armBtn').textContent   = 'ARM';
+  document.getElementById('armBtn').textContent   = 'ARM TIMER';
   document.getElementById('armBtn').disabled      = false;
   document.getElementById('resetBtn').disabled    = true;
   document.getElementById('tgtInp').disabled      = false;
