@@ -6,31 +6,44 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="#scooterarmy">
 <meta name="theme-color" content="#080808">
 <title>#scooterarmy</title>
 
-<!-- manifest handled by Android -->
+<script>
+const mJson = JSON.stringify({
+  name: "#scooterarmy GPS Speedo",
+  short_name: "#scooterarmy",
+  description: "GPS performance meter for scooters",
+  start_url: ".",
+  scope: ".",
+  display: "fullscreen",
+  orientation: "portrait-primary",
+  background_color: "#080808",
+  theme_color: "#080808",
+  icons:[{src:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAA1BMVEUICAj8gRplAAAAI0lEQVR42mNkYGBgJIACAAAFAAEAQQABgYGBgZGBgYEBAAAIAAEBQ6xJdAAAAABJRU5ErkJggg==",sizes:"192x192",type:"image/png",purpose:"any maskable"}]
+});
+const b64 = btoa(unescape(encodeURIComponent(mJson)));
+const el  = document.createElement('link');
+el.rel    = 'manifest';
+el.href   = 'data:application/manifest+json;base64,' + b64;
+document.head.appendChild(el);
+</script>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:     #080808;
-  --card:   #0f0f0f;
-  --border: #2a2a2a;
-  --chrome: #c8c8c8;
-  --steel:  #888;
-  --red:    #cc1a00;
-  --glow:   #ff4400;
-  --amber:  #ffb347;
-  --green:  #39ff14;
-  --blue:   #00b4ff;
-  --text:   #d4d4d4;
-  --muted:  #505050;
-  --dred:   #8b1a0a;
-  --panel-bg: #0c0c0c;
-  --panel-border: #303030;
-  --hex-color: rgba(255,255,255,0.018);
+  --bg:    #080808;
+  --red:   #cc1a00;
+  --glow:  #ff4400;
+  --amber: #ffb347;
+  --green: #39ff14;
+  --blue:  #00b4ff;
+  --text:  #f5f5f5;
+  --muted: #bbbbbb;
+  --chrome:#f0f0f0;
+  --dred:  #8b1a0a;
 }
 html,body { min-height:100%; }
 body {
@@ -47,62 +60,62 @@ body {
   background-size: auto, auto, auto, 28px 16px;
 }
 body::after {
-  content:'';
-  position:fixed; bottom:0; left:0; right:0; height:120px;
+  content:''; position:fixed; bottom:0; left:0; right:0; height:120px;
   background: linear-gradient(to top, rgba(180,40,0,0.18) 0%, rgba(255,80,0,0.08) 40%, transparent 100%);
   pointer-events:none; z-index:0;
 }
 .wrap {
   width:100%; max-width:430px;
   display:flex; flex-direction:column; align-items:center; gap:10px;
-  padding: 0 14px 0;
-  position: relative; z-index:1;
+  padding: 0 14px; position: relative; z-index:1;
 }
+
+/* HEADER */
 .brand {
-  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900;
-  letter-spacing:.06em;
-  background: linear-gradient(180deg, #fff 0%, #aaa 40%, #ddd 60%, #888 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; letter-spacing:.06em;
+  background: linear-gradient(180deg, #fff 0%, #ccc 40%, #eee 60%, #aaa 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.9));
-  position:relative;
 }
 .brand .h {
   background: linear-gradient(180deg, #ff6644 0%, #cc1a00 50%, #ff3300 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
   filter: drop-shadow(0 0 8px rgba(255,68,0,0.7));
 }
 .gps-block { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
-.gps-row { display:flex; align-items:center; gap:6px; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.18em; color:var(--muted); }
-.sdot { width:8px; height:8px; border-radius:50%; background:#222; flex-shrink:0; transition:all .3s; }
+.gps-row   { display:flex; align-items:center; gap:6px; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.18em; color:#ddd; }
+.sdot { width:8px; height:8px; border-radius:50%; background:#444; flex-shrink:0; transition:all .3s; }
 .sdot.active { background:var(--green); box-shadow:0 0 8px var(--green); animation:breathe 2.5s infinite; }
 .sdot.warn   { background:var(--amber); box-shadow:0 0 6px var(--amber); animation:blink 1s infinite; }
 .sdot.error  { background:var(--dred);  box-shadow:0 0 6px var(--dred);  animation:blink .4s infinite; }
 @keyframes blink   { 0%,100%{opacity:1}50%{opacity:.1} }
 @keyframes breathe { 0%,100%{opacity:1}50%{opacity:.5} }
 .sbars { display:flex; gap:2px; align-items:flex-end; height:12px; }
-.sbar { width:4px; border-radius:1px; background:#222; transition:background .5s; }
+.sbar  { width:4px; border-radius:1px; background:#333; transition:background .5s; }
 .sbar:nth-child(1){height:3px;} .sbar:nth-child(2){height:6px;}
 .sbar:nth-child(3){height:9px;} .sbar:nth-child(4){height:12px;}
 .sbar.on { background:var(--green); }
-.acctxt { font-size:9px; color:#444; }
+.acctxt { font-size:9px; color:#ccc; }
+
+/* GPS INFO PANEL */
 .gps-info {
   width:100%;
-  background: linear-gradient(180deg, #161616 0%, #0e0e0e 100%);
-  border: 1px solid #2a2a2a; border-top: 1px solid #3a3a3a;
+  background: linear-gradient(180deg,#161616,#0e0e0e);
+  border:1px solid #2a2a2a; border-top:1px solid #3a3a3a;
   border-radius:6px; padding:8px 12px;
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.5);
 }
 .gps-info-col { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
-.gps-info-col:not(:last-child) { border-right:1px solid #222; }
-.gi-lbl { font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700; letter-spacing:.2em; color:#444; text-transform:uppercase; }
+.gps-info-col:not(:last-child) { border-right:1px solid #2a2a2a; }
+.gi-lbl { font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700; letter-spacing:.2em; color:#ccc; text-transform:uppercase; }
 .gi-val { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:900; color:var(--chrome); letter-spacing:.05em; line-height:1.2; }
 .gi-val.good { color:var(--green); }
 .gi-val.ok   { color:var(--amber); }
-.gi-val.poor { color:#cc3300; }
-.gi-sub { font-size:8px; color:#333; letter-spacing:.08em; }
+.gi-val.poor { color:#ff5533; }
+.gi-sub { font-size:8px; color:#aaa; letter-spacing:.08em; }
+
+/* GAUGE */
 .gauge-wrap { position:relative; width:320px; height:320px; flex-shrink:0; }
 canvas#gauge { display:block; }
 .spd-overlay {
@@ -110,40 +123,26 @@ canvas#gauge { display:block; }
   text-align:center; pointer-events:none; white-space:nowrap;
 }
 .spd-num {
-  font-family:'Orbitron', 'Arial Black', Arial, sans-serif; font-size:72px; font-weight:900;
+  font-family:'Orbitron','Arial Black',Arial,sans-serif; font-size:72px; font-weight:900;
   line-height:1; color:#fff; letter-spacing:-2px;
   text-shadow:0 0 24px var(--glow),0 0 60px rgba(255,100,0,.25);
   transition:color .25s,text-shadow .25s;
 }
 .spd-num.warn   { color:var(--amber); text-shadow:0 0 20px var(--amber),0 0 50px rgba(255,179,71,.35); }
-.spd-num.danger { color:var(--red);   text-shadow:0 0 20px var(--glow), 0 0 50px rgba(255,60,0,.5); }
+.spd-num.danger { color:#ff5522; text-shadow:0 0 20px var(--glow),0 0 50px rgba(255,60,0,.5); }
 .spd-unit {
   font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:.3em;
-  color:var(--muted); margin-top:3px; cursor:pointer; user-select:none; pointer-events:all;
+  color:#ccc; margin-top:3px; cursor:pointer; user-select:none; pointer-events:all;
 }
-.spd-unit:hover { color:var(--text); }
-.mode-tabs {
-  width:100%; display:flex; gap:0;
-  border:1px solid #2a2a2a; border-radius:6px; overflow:hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
-}
-.mtab {
-  flex:1; padding:9px 6px; text-align:center;
-  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:.15em;
-  background: linear-gradient(180deg,#161616,#0e0e0e);
-  color:var(--muted); border:none; cursor:pointer; transition:all .2s;
-}
-.mtab.active {
-  background: linear-gradient(180deg,#200800,#120400);
-  color:var(--glow);
-  box-shadow:inset 0 -2px 0 var(--red), inset 0 1px 0 rgba(255,100,0,0.1);
-}
-.mtab:hover:not(.active) { color:var(--chrome); }
+.spd-unit:hover { color:#fff; }
+
+/* RUN PANEL */
 .run-panel {
   width:100%;
-  background: linear-gradient(180deg, #141414 0%, #0c0c0c 100%);
-  border: 1px solid #2e2e2e; border-top: 1px solid #3a3a3a;
-  border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:11px;
+  background: linear-gradient(180deg,#141414,#0c0c0c);
+  border:1px solid #2e2e2e; border-top:1px solid #3a3a3a;
+  border-radius:8px; padding:14px;
+  display:flex; flex-direction:column; gap:11px;
   position:relative; overflow:hidden;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 16px rgba(0,0,0,0.7);
 }
@@ -152,32 +151,33 @@ canvas#gauge { display:block; }
   background:linear-gradient(90deg,transparent,var(--red),var(--glow),var(--red),transparent);
   opacity:.7;
 }
-.plabel { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.25em; color:#505050; text-transform:uppercase; }
+.plabel { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.25em; color:#ccc; text-transform:uppercase; }
 .tgt-row { display:flex; align-items:center; gap:8px; }
-.tgt-pre { font-size:12px; color:var(--muted); white-space:nowrap; }
+.tgt-pre { font-size:12px; color:#ddd; white-space:nowrap; }
 .tgt-inp {
-  flex:1; background:#0d0d0d; border:1px solid #2a2a2a; border-radius:4px;
+  flex:1; background:#0d0d0d; border:1px solid #3a3a3a; border-radius:4px;
   color:var(--text); font-family:'Orbitron',sans-serif; font-size:22px; font-weight:700;
   text-align:center; padding:6px 10px; outline:none; width:0;
   transition:border-color .2s,box-shadow .2s; -moz-appearance:textfield;
 }
 .tgt-inp::-webkit-inner-spin-button,.tgt-inp::-webkit-outer-spin-button{-webkit-appearance:none;}
-.tgt-inp:focus { border-color:var(--red); box-shadow:0 0 8px rgba(255,60,0,.25); }
-.tgt-inp:disabled { opacity:.4; }
-.tgt-suf { font-size:12px; color:var(--muted); white-space:nowrap; min-width:36px; }
-.splits-row { display:flex; align-items:center; gap:8px; }
-.splits-label { font-size:11px; color:var(--muted); white-space:nowrap; }
+.tgt-inp:focus    { border-color:var(--red); box-shadow:0 0 8px rgba(255,60,0,.25); }
+.tgt-inp:disabled { opacity:.5; }
+.tgt-suf { font-size:12px; color:#ddd; white-space:nowrap; min-width:36px; }
+.splits-row   { display:flex; align-items:center; gap:8px; }
+.splits-label { font-size:11px; color:#ddd; white-space:nowrap; }
 .splits-inp {
-  flex:1; background:#0d0d0d; border:1px solid #2a2a2a; border-radius:4px;
+  flex:1; background:#0d0d0d; border:1px solid #3a3a3a; border-radius:4px;
   color:var(--text); font-family:'Share Tech Mono',monospace; font-size:12px;
-  text-align:left; padding:6px 10px; outline:none;
-  transition:border-color .2s;
+  text-align:left; padding:6px 10px; outline:none; transition:border-color .2s;
 }
-.splits-inp:focus { border-color:var(--red); }
-.splits-inp:disabled { opacity:.4; }
-.splits-hint { font-size:9px; color:#333; letter-spacing:.05em; }
+.splits-inp:focus    { border-color:var(--red); }
+.splits-inp:disabled { opacity:.5; }
+.splits-hint { font-size:9px; color:#aaa; letter-spacing:.05em; }
+
+/* TIMER */
 .timer-big {
-  text-align:center; font-family:'Orbitron', 'Arial Black', Arial, sans-serif;
+  text-align:center; font-family:'Orbitron','Arial Black',Arial,sans-serif;
   font-size:52px; font-weight:900; letter-spacing:.05em;
   color:#fff; text-shadow:0 0 15px rgba(255,100,0,.15);
   line-height:1; transition:color .3s,text-shadow .3s;
@@ -186,96 +186,63 @@ canvas#gauge { display:block; }
 .timer-big.done    { color:var(--green); text-shadow:0 0 20px rgba(57,255,20,.5); }
 .timer-sub {
   text-align:center; font-size:10px; letter-spacing:.18em;
-  color:var(--muted); text-transform:uppercase; min-height:14px; margin-top:-2px;
+  color:#ccc; text-transform:uppercase; min-height:14px; margin-top:-2px;
 }
-.prog-wrap { width:100%; height:4px; background:#1a1a1a; border-radius:2px; overflow:hidden; }
+
+/* PROGRESS */
+.prog-wrap { width:100%; height:4px; background:#2a2a2a; border-radius:2px; overflow:hidden; }
 .prog-fill {
   height:100%; width:0%; border-radius:2px;
   background:linear-gradient(90deg,var(--red),var(--amber));
   box-shadow:0 0 8px var(--glow); transition:width .12s linear;
 }
 .prog-fill.done { background:var(--green); box-shadow:0 0 8px rgba(57,255,20,.6); width:100% !important; }
+
+/* BUTTONS */
 .btn-row { display:flex; gap:8px; }
 .btn {
   flex:1;
   background: linear-gradient(180deg,#1a1a1a,#101010);
-  border:1px solid #303030; border-top-color:#3a3a3a;
-  color:var(--muted);
+  border:1px solid #484848; border-top-color:#585858;
+  color:#ddd;
   font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700;
   letter-spacing:.2em; padding:10px; border-radius:4px; cursor:pointer;
   text-transform:uppercase; transition:all .2s;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.5);
 }
-.btn:disabled { opacity:.2; cursor:not-allowed; }
-.btn.primary  { border-color:#551500; border-top-color:#883300; color:var(--glow); background:linear-gradient(180deg,#200a00,#120400); }
+.btn:disabled { opacity:.3; cursor:not-allowed; }
+.btn.primary  { border-color:#661a00; border-top-color:#993300; color:var(--glow); background:linear-gradient(180deg,#200a00,#120400); }
 .btn.primary:hover:not(:disabled) { background:linear-gradient(180deg,#2e0e00,#1a0600); box-shadow:0 0 14px rgba(255,60,0,.25), inset 0 1px 0 rgba(255,100,0,0.1); }
-.btn.green    { border-color:#1a4a00; color:var(--green); background:linear-gradient(180deg,#0a1a00,#060e00); }
-.btn.green:hover:not(:disabled) { box-shadow:0 0 12px rgba(57,255,20,.2); }
-.btn.secondary:hover:not(:disabled) { border-color:#444; color:var(--chrome); }
+.btn.secondary:hover:not(:disabled) { border-color:#777; color:#fff; }
+
+/* STATUS BAR */
 .status-bar {
   width:100%;
   background: linear-gradient(180deg,#141414,#0c0c0c);
-  border:1px solid #282828; border-top-color:#333;
+  border:1px solid #404040; border-top-color:#505050;
   border-radius:6px; padding:8px 14px;
   display:flex; align-items:center; justify-content:space-between;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.status-txt { font-size:11px; letter-spacing:.12em; color:var(--muted); }
+.status-txt        { font-size:11px; letter-spacing:.12em; color:#ccc; }
 .status-txt.active { color:var(--green); }
 .status-txt.warn   { color:var(--amber); }
-.status-txt.error  { color:#cc3300; }
+.status-txt.error  { color:#ff5533; }
 .arm-indicator {
   font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.2em;
   padding:3px 10px; border-radius:3px;
   background:linear-gradient(180deg,#111,#090909);
-  border:1px solid #282828; color:var(--muted); transition:all .3s;
+  border:1px solid #484848; color:#ddd; transition:all .3s;
 }
-.arm-indicator.armed   { border-color:#554400; color:var(--amber); background:#0e0a00; box-shadow:0 0 8px rgba(255,179,71,.15); animation:blink 1s infinite; }
-.arm-indicator.running { border-color:#1a4a00; color:var(--green); background:#050e00; box-shadow:0 0 8px rgba(57,255,20,.15); animation:none; }
-.arm-indicator.done    { border-color:#1a4a00; color:var(--green); background:#050e00; animation:none; }
-.history { width:100%; display:flex; flex-direction:column; gap:6px; }
-.hist-hdr { display:flex; align-items:center; justify-content:space-between; }
-.hist-title {
-  font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:.3em;
-  text-transform:uppercase;
-  background:linear-gradient(90deg,#777,#aaa,#777);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-}
-.hist-clear { background:none; border:none; font-family:'Share Tech Mono',monospace; font-size:10px; color:#2a2a2a; cursor:pointer; letter-spacing:.1em; transition:color .2s; }
-.hist-clear:hover { color:#cc3300; }
-.hist-list { display:flex; flex-direction:column; gap:5px; max-height:280px; overflow-y:auto; }
-.hist-list::-webkit-scrollbar { width:3px; }
-.hist-list::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:2px; }
-.hist-item {
-  background: linear-gradient(180deg,#141414,#0d0d0d);
-  border:1px solid #252525; border-top-color:#303030;
-  border-radius:6px; overflow:hidden; transition:border-color .2s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-}
-.hist-item.best { border-color:#3a2800; border-top-color:#554000; box-shadow:inset 0 1px 0 rgba(255,179,71,0.06); }
-.hist-top { display:flex; align-items:center; padding:10px 12px; gap:10px; cursor:pointer; }
-.hist-type { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.15em; color:#444; text-transform:uppercase; min-width:50px; }
-.hist-run { flex:1; display:flex; flex-direction:column; gap:2px; }
-.hist-run-lbl { font-size:11px; color:#666; letter-spacing:.08em; }
-.hist-run-date { font-size:9px; color:#333; }
-.hist-right { display:flex; align-items:center; gap:8px; }
-.hist-best-badge { font-size:9px; color:var(--amber); letter-spacing:.1em; font-family:'Orbitron',sans-serif; font-weight:700; }
-.hist-time { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900; color:var(--chrome); letter-spacing:.03em; min-width:70px; text-align:right; }
-.hist-item.best .hist-time { color:var(--amber); }
-.hist-del { background:none; border:none; color:#252525; font-size:14px; cursor:pointer; transition:color .2s; padding:0 2px; }
-.hist-del:hover { color:#cc3300; }
-.hist-chevron { color:#2a2a2a; font-size:12px; transition:transform .25s; }
-.hist-chevron.open { transform:rotate(180deg); }
-.hist-splits { display:none; padding:0 12px 10px; border-top:1px solid #1e1e1e; flex-direction:column; gap:4px; }
-.hist-splits.open { display:flex; }
-.split-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #141414; }
-.split-row:last-child { border-bottom:none; }
-.split-lbl { font-size:11px; color:#555; }
-.split-val { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); }
+.arm-indicator.armed   { border-color:#665500; color:var(--amber); background:#0e0a00; box-shadow:0 0 8px rgba(255,179,71,.15); animation:blink 1s infinite; }
+.arm-indicator.running { border-color:#224a00; color:var(--green); background:#050e00; box-shadow:0 0 8px rgba(57,255,20,.15); }
+.arm-indicator.done    { border-color:#224a00; color:var(--green); background:#050e00; }
+
+/* BEST VS LAST */
 .bvl-card {
   width:100%;
   background:linear-gradient(180deg,#141414,#0c0c0c);
-  border:1px solid #282828; border-top-color:#383838;
+  border:1px solid #404040; border-top-color:#505050;
   border-radius:8px; overflow:hidden; position:relative;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.6);
 }
@@ -283,83 +250,194 @@ canvas#gauge { display:block; }
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
   background:linear-gradient(90deg,transparent,var(--amber),transparent); opacity:.5;
 }
-.bvl-title { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.25em; color:#505050; padding:10px 14px 0; text-transform:uppercase; }
-.bvl-body { display:flex; }
-.bvl-col { flex:1; display:flex; flex-direction:column; align-items:center; padding:10px 8px 12px; gap:3px; }
-.bvl-col:first-child { border-right:1px solid #1e1e1e; }
-.bvl-col-lbl { font-size:9px; letter-spacing:.2em; color:#505050; text-transform:uppercase; }
-.bvl-col-run  { font-size:10px; color:#383838; letter-spacing:.05em; margin-top:2px; }
+.bvl-title { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.25em; color:#ccc; padding:10px 14px 0; text-transform:uppercase; }
+.bvl-body  { display:flex; }
+.bvl-col   { flex:1; display:flex; flex-direction:column; align-items:center; padding:10px 8px 12px; gap:3px; }
+.bvl-col:first-child { border-right:1px solid #252525; }
+.bvl-col-lbl  { font-size:9px; letter-spacing:.2em; color:#ccc; text-transform:uppercase; }
+.bvl-col-run  { font-size:10px; color:#aaa; letter-spacing:.05em; margin-top:2px; }
 .bvl-col-time { font-family:'Orbitron',sans-serif; font-size:30px; font-weight:900; color:var(--chrome); letter-spacing:.02em; }
 .bvl-col-time.best-col { color:var(--amber); text-shadow:0 0 12px rgba(255,179,71,.25); }
-.bvl-col-time.last-col { color:#aaa; }
-.bvl-delta { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; text-align:center; padding:4px 0 10px; letter-spacing:.1em; }
-.bvl-delta.faster { color:var(--green); }
-.bvl-delta.slower { color:#cc3300; }
-.bvl-delta.same   { color:var(--muted); }
-.result-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.9);
-  display:flex; align-items:center; justify-content:center;
-  z-index:1000; opacity:0; pointer-events:none; transition:opacity .3s;
+.bvl-col-time.last-col { color:#ddd; }
+.bvl-delta           { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; text-align:center; padding:4px 0 10px; letter-spacing:.1em; }
+.bvl-delta.faster    { color:var(--green); }
+.bvl-delta.slower    { color:#ff5533; }
+.bvl-delta.same      { color:#ccc; }
+
+/* HISTORY */
+.history { width:100%; display:flex; flex-direction:column; gap:6px; }
+.hist-hdr { display:flex; align-items:center; justify-content:space-between; }
+.hist-title {
+  font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:.3em; text-transform:uppercase;
+  background:linear-gradient(90deg,#bbb,#fff,#bbb);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
 }
-.result-overlay.show { opacity:1; pointer-events:all; }
-.result-card {
-  width:90%; max-width:360px;
-  background:linear-gradient(180deg,#181818,#0d0d0d);
-  border:1px solid #303030; border-top-color:#444;
-  border-radius:12px; overflow:hidden; transform:scale(.9);
-  transition:transform .3s; position:relative;
-  box-shadow: 0 0 40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,0.06);
+.hist-clear { background:none; border:none; font-family:'Share Tech Mono',monospace; font-size:10px; color:#888; cursor:pointer; letter-spacing:.1em; transition:color .2s; }
+.hist-clear:hover { color:#ff5533; }
+.hist-list { display:flex; flex-direction:column; gap:5px; max-height:280px; overflow-y:auto; }
+.hist-list::-webkit-scrollbar { width:3px; }
+.hist-list::-webkit-scrollbar-thumb { background:#3a3a3a; border-radius:2px; }
+.hist-item {
+  background: linear-gradient(180deg,#141414,#0d0d0d);
+  border:1px solid #333; border-top-color:#3a3a3a;
+  border-radius:6px; overflow:hidden; transition:border-color .2s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
-.result-overlay.show .result-card { transform:scale(1); }
-.result-card-top {
-  background:linear-gradient(160deg,#1e0800,#100400,#0a0a0a);
-  padding:20px 20px 16px; text-align:center;
-  border-bottom:1px solid #282828;
-  position:relative; overflow:hidden;
+.hist-item.best { border-color:#4a3200; border-top-color:#664500; box-shadow:inset 0 1px 0 rgba(255,179,71,0.08); }
+.hist-top  { display:flex; align-items:center; padding:10px 12px; gap:10px; cursor:pointer; }
+.hist-type { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.15em; color:#ccc; text-transform:uppercase; min-width:50px; }
+.hist-run  { flex:1; display:flex; flex-direction:column; gap:2px; }
+.hist-run-lbl  { font-size:11px; color:#ddd; letter-spacing:.08em; }
+.hist-run-date { font-size:9px; color:#aaa; }
+.hist-right    { display:flex; align-items:center; gap:8px; }
+.hist-best-badge { font-size:9px; color:var(--amber); letter-spacing:.1em; font-family:'Orbitron',sans-serif; font-weight:700; }
+.hist-time { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900; color:var(--chrome); letter-spacing:.03em; min-width:70px; text-align:right; }
+.hist-item.best .hist-time { color:var(--amber); }
+.hist-del      { background:none; border:none; color:#666; font-size:14px; cursor:pointer; transition:color .2s; padding:0 2px; }
+.hist-del:hover { color:#ff5533; }
+.hist-chevron  { color:#888; font-size:12px; transition:transform .25s; }
+.hist-chevron.open { transform:rotate(180deg); }
+.hist-splits { display:none; padding:0 12px 10px; border-top:1px solid #222; flex-direction:column; gap:4px; }
+.hist-splits.open { display:flex; }
+.split-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #1a1a1a; }
+.split-row:last-child { border-bottom:none; }
+.split-lbl { font-size:11px; color:#bbb; }
+.split-val { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); }
+.no-hist { font-size:10px; color:#888; letter-spacing:.2em; text-align:center; padding:12px 0; }
+
+/* FULLSCREEN SPEEDO OVERLAY */
+.fs-overlay {
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:#080808;
+  background-image:
+    radial-gradient(ellipse at 50% 100%, rgba(200,60,0,0.18) 0%, transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16'%3E%3Cpath d='M14 0 L28 8 L28 8 L14 16 L0 8 Z' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='0.6'/%3E%3C/svg%3E");
+  background-size: auto, 28px 16px;
+  flex-direction:column; align-items:center; justify-content:center;
+  user-select:none;
 }
-.result-card-top::before {
-  content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%);
-  width:200px; height:60px; border-radius:50%;
-  background:radial-gradient(ellipse,rgba(200,60,0,0.3),transparent 70%);
-  pointer-events:none;
+.fs-overlay.open { display:flex; }
+
+.fs-gauge-wrap { position:relative; flex-shrink:0; }
+.fs-gauge-wrap canvas { display:block; }
+
+.fs-spd-overlay {
+  position:absolute; bottom:14%; left:50%; transform:translateX(-50%);
+  text-align:center; white-space:nowrap; pointer-events:none;
 }
-.result-card-top::after {
-  content:''; display:block; position:absolute; top:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,transparent,var(--green),transparent);
+.fs-spd-num {
+  font-family:'Orbitron','Arial Black',Arial,sans-serif;
+  font-weight:900; line-height:1; color:#fff; letter-spacing:-2px;
+  text-shadow:0 0 30px var(--glow),0 0 80px rgba(255,100,0,.2);
+  transition:color .25s,text-shadow .25s;
 }
-.rc-label { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:.3em; color:#505050; margin-bottom:8px; }
-.rc-run   { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); letter-spacing:.1em; margin-bottom:12px; }
-.rc-time  { font-family:'Orbitron',sans-serif; font-size:64px; font-weight:900; color:var(--green); text-shadow:0 0 24px rgba(57,255,20,.6); letter-spacing:-.02em; line-height:1; }
-.rc-time-unit { font-size:16px; color:#505050; letter-spacing:.2em; margin-top:4px; }
-.rc-best-badge {
-  display:inline-block; margin-top:10px; padding:3px 14px;
-  border:1px solid #554400; border-radius:20px;
-  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700;
-  color:var(--amber); letter-spacing:.2em; box-shadow:0 0 10px rgba(255,179,71,.2);
+.fs-spd-num.warn   { color:var(--amber); text-shadow:0 0 24px var(--amber); }
+.fs-spd-num.danger { color:#ff5522;      text-shadow:0 0 24px var(--glow); }
+.fs-spd-unit {
+  font-family:'Orbitron',sans-serif; letter-spacing:.3em;
+  color:#888; margin-top:4px;
 }
-.rc-splits { padding:14px 20px; display:flex; flex-direction:column; gap:6px; background:#0a0a0a; }
-.rc-split-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #161616; }
-.rc-split-row:last-child { border-bottom:none; }
-.rc-split-lbl { font-size:11px; color:#555; letter-spacing:.05em; }
-.rc-split-val { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); }
-.rc-actions { display:flex; gap:8px; padding:0 16px 16px; background:#0a0a0a; }
-.rc-btn { flex:1; padding:10px; border-radius:5px; font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:.2em; cursor:pointer; transition:all .2s; border:1px solid; }
-.rc-btn.dismiss { background:linear-gradient(180deg,#161616,#0e0e0e); border-color:#282828; color:#555; }
-.rc-btn.dismiss:hover { border-color:#444; color:var(--chrome); }
-.rc-btn.rearm   { background:linear-gradient(180deg,#200800,#120400); border-color:#551500; color:var(--glow); }
-.rc-btn.rearm:hover { box-shadow:0 0 12px rgba(255,60,0,.2); }
-.no-hist { font-size:10px; color:#222; letter-spacing:.2em; text-align:center; padding:12px 0; }
+
+.fs-info-row {
+  display:flex; gap:0; width:100%;
+  border-top:1px solid #1a1a1a;
+  margin-top:auto;
+}
+.fs-info-col {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  padding:10px 8px;
+  gap:3px;
+}
+.fs-info-col:not(:last-child) { border-right:1px solid #1a1a1a; }
+.fs-info-lbl {
+  font-family:'Orbitron',sans-serif; font-weight:700;
+  letter-spacing:.2em; color:#444; text-transform:uppercase;
+}
+.fs-info-val {
+  font-family:'Orbitron',sans-serif; font-weight:900;
+  color:var(--chrome); letter-spacing:.04em;
+}
+.fs-info-val.good { color:var(--green); }
+.fs-info-val.ok   { color:var(--amber); }
+.fs-info-val.poor { color:#ff5533; }
+
+.fs-hint {
+  position:absolute; top:14px; left:50%; transform:translateX(-50%);
+  font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:.25em; color:#222; text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* SESSION BUTTON */
+.btn.session-start { border-color:#004422; border-top-color:#006633; color:var(--green); background:linear-gradient(180deg,#001a0e,#000e07); }
+.btn.session-start:hover:not(:disabled) { box-shadow:0 0 14px rgba(57,255,20,.2); }
+.btn.session-stop  { border-color:#661a00; border-top-color:#993300; color:var(--amber); background:linear-gradient(180deg,#1a0800,#0e0400); animation:sessionPulse 2s infinite; }
+@keyframes sessionPulse { 0%,100%{box-shadow:0 0 6px rgba(255,179,71,.15)}50%{box-shadow:0 0 14px rgba(255,179,71,.35)} }
+
+/* SESSION LOG */
+.session-log { width:100%; display:flex; flex-direction:column; gap:6px; }
+.sess-hdr { display:flex; align-items:center; justify-content:space-between; }
+.sess-title {
+  font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:.3em; text-transform:uppercase;
+  background:linear-gradient(90deg,#bbb,#fff,#bbb);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.sess-clear { background:none; border:none; font-family:'Share Tech Mono',monospace; font-size:10px; color:#888; cursor:pointer; letter-spacing:.1em; transition:color .2s; }
+.sess-clear:hover { color:#ff5533; }
+.sess-list { display:flex; flex-direction:column; gap:5px; max-height:320px; overflow-y:auto; }
+.sess-list::-webkit-scrollbar { width:3px; }
+.sess-list::-webkit-scrollbar-thumb { background:#3a3a3a; border-radius:2px; }
+
+.sess-item {
+  background: linear-gradient(180deg,#141414,#0d0d0d);
+  border:1px solid #333; border-top-color:#3a3a3a;
+  border-radius:6px; overflow:hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.sess-item.active { border-color:#004422; border-top-color:#006633; box-shadow: inset 0 1px 0 rgba(57,255,20,0.06); }
+.sess-row { display:flex; align-items:center; padding:10px 12px; gap:10px; }
+.sess-name-wrap { flex:1; display:flex; flex-direction:column; gap:3px; }
+.sess-name {
+  font-size:12px; color:#ddd; letter-spacing:.06em;
+  background:none; border:none; outline:none;
+  font-family:'Share Tech Mono',monospace;
+  padding:0; cursor:text; width:100%;
+}
+.sess-name:focus { color:#fff; border-bottom:1px solid #ff4400; }
+.sess-meta { display:flex; gap:10px; font-size:9px; color:#888; letter-spacing:.08em; }
+.sess-stats { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.sess-topspd { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; color:var(--amber); letter-spacing:.02em; }
+.sess-topspd-lbl { font-size:8px; color:#666; letter-spacing:.15em; text-align:right; }
+.sess-del { background:none; border:none; color:#666; font-size:14px; cursor:pointer; transition:color .2s; padding:0 2px; margin-left:4px; }
+.sess-del:hover { color:#ff5533; }
+.no-sess { font-size:10px; color:#888; letter-spacing:.2em; text-align:center; padding:12px 0; }
+
+/* ACTIVE SESSION LIVE STRIP */
+.sess-live {
+  width:100%;
+  background:linear-gradient(180deg,#001a0e,#000e07);
+  border:1px solid #004422; border-top-color:#006633;
+  border-radius:6px; padding:10px 14px;
+  display:none; align-items:center; justify-content:space-between;
+  box-shadow: 0 0 12px rgba(57,255,20,0.08);
+}
+.sess-live.active { display:flex; }
+.sess-live-col { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
+.sess-live-col:not(:last-child) { border-right:1px solid #003318; }
+.sess-live-lbl { font-family:'Orbitron',sans-serif; font-size:7px; font-weight:700; letter-spacing:.2em; color:#006633; text-transform:uppercase; }
+.sess-live-val { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:900; color:var(--green); letter-spacing:.03em; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <!-- HEADER -->
   <div style="width:calc(100% + 28px);margin-left:-14px;background:linear-gradient(180deg,#1e1e1e 0%,#0e0e0e 100%);border-bottom:2px solid #000;box-shadow:0 2px 0 #3a1800,0 6px 24px rgba(0,0,0,0.9);padding:12px 18px 10px;display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
     <div>
       <div class="brand">
-        <span class="h">#</span><span style="background:linear-gradient(180deg,#f0f0f0 0%,#999 40%,#ddd 60%,#777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;">scooterarmy</span>
+        <span class="h">#</span><span style="background:linear-gradient(180deg,#f0f0f0 0%,#bbb 40%,#eee 60%,#999 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;">scooterarmy</span>
       </div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.35em;color:#3a3a3a;margin-top:2px;">GPS PERFORMANCE METER</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.35em;color:#aaa;margin-top:2px;">GPS PERFORMANCE METER</div>
     </div>
     <div class="gps-block">
       <div class="gps-row">
@@ -372,14 +450,20 @@ canvas#gauge { display:block; }
     </div>
   </div>
 
+  <!-- GAUGE -->
   <div class="gauge-wrap">
     <canvas id="gauge" width="320" height="320"></canvas>
     <div class="spd-overlay">
       <div class="spd-num" id="spdNum">0</div>
       <div class="spd-unit" id="spdUnit" onclick="toggleUnit()">MPH ⇄</div>
     </div>
+    <div id="gpsWait" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2em;color:#ff8800;text-shadow:0 0 10px rgba(255,136,0,.5)">ACQUIRING</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#666;letter-spacing:.15em;margin-top:4px">WAITING FOR GOOD FIX</div>
+    </div>
   </div>
 
+  <!-- GPS INFO BAR -->
   <div class="gps-info">
     <div class="gps-info-col">
       <div class="gi-lbl">Status</div>
@@ -404,39 +488,56 @@ canvas#gauge { display:block; }
     </div>
   </div>
 
-  <div class="mode-tabs">
-    <button class="mtab active" id="tab-accel" onclick="setMode('accel')">ACCELERATION</button>
-    <button class="mtab"        id="tab-brake" onclick="setMode('brake')">BRAKING</button>
-  </div>
-
+  <!-- RUN PANEL -->
   <div class="run-panel">
-    <div class="plabel" id="panelLabel">0 → TARGET</div>
+    <div class="plabel">0 → TARGET — ACCELERATION</div>
     <div class="tgt-row">
-      <span class="tgt-pre" id="tgtPre">0 →</span>
+      <span class="tgt-pre">0 →</span>
       <input class="tgt-inp" id="tgtInp" type="number" value="60" min="1" max="999">
       <span class="tgt-suf" id="tgtSuf">MPH</span>
     </div>
     <div id="splitsWrap">
       <div class="splits-row">
         <span class="splits-label">Splits (optional):</span>
-        <input class="splits-inp" id="splitsInp" type="text" placeholder="e.g. 30, 45" title="Comma-separated intermediate speeds">
+        <input class="splits-inp" id="splitsInp" type="text" placeholder="e.g. 30, 45">
       </div>
-      <div class="splits-hint">Comma-separated intermediate speeds — recorded automatically during run</div>
+      <div class="splits-hint">Comma-separated intermediate speeds — recorded automatically</div>
     </div>
     <div class="timer-big" id="timerBig">0.000</div>
     <div class="timer-sub" id="timerSub">Set target, then ARM</div>
     <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+    <div class="btn-row" style="margin-bottom:4px">
+      <button class="btn session-start" id="sessBtn" onclick="toggleSession()">START SESSION</button>
+    </div>
     <div class="btn-row">
       <button class="btn primary"   id="armBtn"   onclick="armRun()">ARM</button>
       <button class="btn secondary" id="resetBtn" onclick="resetRun()" disabled>RESET</button>
     </div>
   </div>
 
+  <!-- STATUS BAR -->
   <div class="status-bar">
     <span class="status-txt" id="statusBar">Waiting for GPS…</span>
     <span class="arm-indicator" id="armInd">IDLE</span>
   </div>
 
+  <!-- SESSION LIVE STRIP -->
+  <div class="sess-live" id="sessLive">
+    <div class="sess-live-col">
+      <div class="sess-live-lbl">Top Speed</div>
+      <div class="sess-live-val" id="liveTopSpd">0</div>
+    </div>
+    <div class="sess-live-col">
+      <div class="sess-live-lbl">Distance</div>
+      <div class="sess-live-val" id="liveDist">0.0</div>
+    </div>
+    <div class="sess-live-col">
+      <div class="sess-live-lbl">Duration</div>
+      <div class="sess-live-val" id="liveDur">0:00</div>
+    </div>
+  </div>
+
+  <!-- BEST VS LAST -->
   <div class="bvl-card" id="bvlCard" style="display:none">
     <div class="bvl-title">Best vs Last</div>
     <div class="bvl-body">
@@ -454,6 +555,7 @@ canvas#gauge { display:block; }
     <div class="bvl-delta" id="bvlDelta"></div>
   </div>
 
+  <!-- HISTORY -->
   <div class="history">
     <div class="hist-hdr">
       <div class="hist-title">Run History</div>
@@ -464,21 +566,41 @@ canvas#gauge { display:block; }
     </div>
   </div>
 
+  <!-- SESSION LOG -->
+  <div class="session-log">
+    <div class="sess-hdr">
+      <div class="sess-title">Session Log</div>
+      <button class="sess-clear" onclick="clearSessions()">CLEAR ALL</button>
+    </div>
+    <div class="sess-list" id="sessList">
+      <div class="no-sess" id="noSess">— no sessions recorded —</div>
+    </div>
+  </div>
+
 </div>
 
-<div class="result-overlay" id="resultOverlay">
-  <div class="result-card">
-    <div class="result-card-top">
-      <div class="rc-label">RUN COMPLETE</div>
-      <div class="rc-run"  id="rcRun"></div>
-      <div class="rc-time" id="rcTime"></div>
-      <div class="rc-time-unit">SECONDS</div>
-      <div class="rc-best-badge" id="rcBest" style="display:none">★ NEW BEST</div>
+<!-- FULLSCREEN SPEEDO OVERLAY -->
+<div class="fs-overlay" id="fsOverlay">
+  <div class="fs-hint">DOUBLE TAP TO EXIT</div>
+  <div class="fs-gauge-wrap" id="fsGaugeWrap">
+    <canvas id="fsGauge"></canvas>
+    <div class="fs-spd-overlay">
+      <div class="fs-spd-num" id="fsSpdNum">0</div>
+      <div class="fs-spd-unit" id="fsSpdUnit">MPH</div>
     </div>
-    <div class="rc-splits" id="rcSplits"></div>
-    <div class="rc-actions">
-      <button class="rc-btn dismiss" onclick="closeResult()">DISMISS</button>
-      <button class="rc-btn rearm"   onclick="rearm()">ARM AGAIN</button>
+  </div>
+  <div class="fs-info-row">
+    <div class="fs-info-col">
+      <div class="fs-info-lbl" id="fsGpsLbl" style="font-size:8px">GPS</div>
+      <div class="fs-info-val" id="fsGpsVal">—</div>
+    </div>
+    <div class="fs-info-col">
+      <div class="fs-info-lbl" id="fsTopLbl" style="font-size:8px">TOP SPEED</div>
+      <div class="fs-info-val" id="fsTopVal">—</div>
+    </div>
+    <div class="fs-info-col">
+      <div class="fs-info-lbl" id="fsAccLbl" style="font-size:8px">ACCURACY</div>
+      <div class="fs-info-val" id="fsAccVal">—</div>
     </div>
   </div>
 </div>
@@ -488,21 +610,48 @@ canvas#gauge { display:block; }
 // STATE
 // ─────────────────────────────────────────────
 const S = { IDLE:0, ARMED:1, RUNNING:2, DONE:3 };
-let state        = S.IDLE;
-let mode         = 'accel';
-let useMetric    = false;
-let timerStart   = null;
-let currentSpd   = 0;
-let rawMps       = 0;
-let dispSpd      = 0;
-let watchId      = null;
-let rafId        = null;
-let splitTargets = [];
-let splitHits    = {};
-let history      = JSON.parse(localStorage.getItem('sa_v2_hist') || '[]');
+let state          = S.IDLE;
+let useMetric      = false;
+let timerStart     = null;
+let currentSpd     = 0;
+let rawMps         = 0;
+let dispSpd        = 0;
+let watchId        = null;
+let rafId          = null;
+let splitTargets   = [];
+let splitHits      = {};
+let history        = JSON.parse(localStorage.getItem('sa_v2_hist') || '[]');
+let lastFixTime    = null;
+let lastFixTs      = null;
+let fixAgeInterval = null;
+const ACC_REJECT       = 15;    // reject fixes worse than this during active run (metres)
+const ACC_GOOD         = 20;    // must beat this before speedo unlocks
+const SIG_GOOD         = 2;     // minimum signal bars before speedo activates
+const MAX_ACCEL_MPS2   = 15;    // max realistic acceleration m/s² (scooter ~0-60 in ~6s = ~4.5 m/s²; generous headroom)
+const MAX_SPEED_MPS    = 80;    // ~180mph hard cap — reject anything above this
+let   gpsReady         = false;
+let   lastValidMps     = 0;     // last accepted speed in m/s
+let   lastFixPerfTime  = 0;     // performance.now() of last accepted fix
+
+// ── Kalman filter state
+let kQ  = 0.008;   // process noise — how much we expect speed to change each step
+let kR  = 1.2;     // measurement noise — how noisy the GPS speed is (tune if needed)
+let kX  = 0;       // Kalman state estimate (speed in m/s)
+let kP  = 1;       // Kalman error covariance
 
 // ─────────────────────────────────────────────
-// CANVAS GAUGE
+// SESSION STATE
+// ─────────────────────────────────────────────
+let sessionActive    = false;
+let sessionStart     = null;     // Date object
+let sessionTopSpd    = 0;        // in display units
+let sessionDist      = 0;        // metres
+let sessionLastPos   = null;     // {lat,lon} for haversine
+let sessionIdleTimer = null;     // 5-min inactivity timeout
+let sessions         = JSON.parse(localStorage.getItem('sa_sessions') || '[]');
+
+// ─────────────────────────────────────────────
+// GAUGE
 // ─────────────────────────────────────────────
 const cv  = document.getElementById('gauge');
 const ctx = cv.getContext('2d');
@@ -510,9 +659,9 @@ const W = cv.width, H = cv.height;
 const cx = W/2, cy = H/2, R = W/2 - 18;
 const A0 = Math.PI * 0.75, ASWEEP = Math.PI * 1.5;
 
-function maxSpd()  { return useMetric ? 160 : 100; }
-function tgtVal()  { return Math.max(0, parseFloat(document.getElementById('tgtInp').value)||0); }
-function s2a(s)    { return A0 + Math.min(s/maxSpd(),1)*ASWEEP; }
+function maxSpd() { return useMetric ? 160 : 100; }
+function tgtVal() { return Math.max(0, parseFloat(document.getElementById('tgtInp').value)||0); }
+function s2a(s)   { return A0 + Math.min(s/maxSpd(),1)*ASWEEP; }
 
 function drawGauge(spd) {
   ctx.clearRect(0,0,W,H);
@@ -542,9 +691,9 @@ function drawGauge(spd) {
     ctx.beginPath();
     ctx.moveTo(cx+Math.cos(a)*(isMaj?R-22:R-14), cy+Math.sin(a)*(isMaj?R-22:R-14));
     ctx.lineTo(cx+Math.cos(a)*(R-8),              cy+Math.sin(a)*(R-8));
-    ctx.strokeStyle=isMaj?'#777':'#2e2e2e'; ctx.lineWidth=isMaj?2:1; ctx.lineCap='butt'; ctx.stroke();
+    ctx.strokeStyle=isMaj?'#999':'#2e2e2e'; ctx.lineWidth=isMaj?2:1; ctx.lineCap='butt'; ctx.stroke();
     if (isMaj) {
-      ctx.fillStyle='#555'; ctx.font='600 10px Orbitron,monospace';
+      ctx.fillStyle='#ccc'; ctx.font='600 10px Orbitron,monospace';
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(v, cx+Math.cos(a)*(R-36), cy+Math.sin(a)*(R-36));
     }
@@ -565,7 +714,7 @@ function drawGauge(spd) {
   ctx.fillStyle='#ff3c00'; ctx.fill(); ctx.shadowBlur=0; ctx.restore();
 
   ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2);
-  ctx.fillStyle='#141414'; ctx.fill(); ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#141414'; ctx.fill(); ctx.strokeStyle='#3a3a3a'; ctx.lineWidth=2; ctx.stroke();
   ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
   ctx.fillStyle='#ff3c00'; ctx.shadowColor='#ff6a00'; ctx.shadowBlur=6; ctx.fill(); ctx.shadowBlur=0;
 }
@@ -574,61 +723,44 @@ function drawGauge(spd) {
 // MAIN LOOP
 // ─────────────────────────────────────────────
 function loop() {
-  dispSpd += (currentSpd - dispSpd) * 0.15;
-  if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
+  // Fast response when accelerating/braking hard, gentle when nearly stable
+  const spdDiff = currentSpd - dispSpd;
+  const lerpRate = Math.abs(spdDiff) > 5 ? 0.4 : 0.22;
+  dispSpd += spdDiff * lerpRate;
+  if (Math.abs(spdDiff) < 0.08) dispSpd = currentSpd;
 
   const ratio = dispSpd / maxSpd();
   const ne = document.getElementById('spdNum');
   ne.textContent = Math.round(dispSpd);
   ne.className = 'spd-num' + (ratio>.85?' danger':ratio>.6?' warn':'');
+  // Show/hide GPS wait overlay
+  const waitEl = document.getElementById('gpsWait');
+  if (waitEl) waitEl.style.display = gpsReady ? 'none' : 'block';
   drawGauge(dispSpd);
+  updateFs();
 
   if (state === S.RUNNING) {
     const el = performance.now() - timerStart;
     document.getElementById('timerBig').textContent = fmt(el);
+    document.getElementById('progFill').style.width = Math.min((currentSpd/tgtVal())*100,100)+'%';
 
-    // Progress bar
-    let pct = 0;
-    if (mode === 'accel') {
-      pct = Math.min((currentSpd / tgtVal()) * 100, 100);
-    } else {
-      // Brake: started at brakeStartSpd, counting DOWN to 0
-      const startSpd = brakeStartSpd || tgtVal();
-      pct = Math.min(((startSpd - currentSpd) / startSpd) * 100, 100);
-    }
-    document.getElementById('progFill').style.width = pct + '%';
-
-    // Splits
     splitTargets.forEach(sv => {
-      if (!splitHits[sv]) {
-        if (mode==='accel' && currentSpd >= sv) splitHits[sv] = (lastFixTime||performance.now()) - timerStart;
-        if (mode==='brake' && currentSpd <= sv) splitHits[sv] = (lastFixTime||performance.now()) - timerStart;
-      }
+      if (!splitHits[sv] && currentSpd >= sv)
+        splitHits[sv] = (lastFixTime||performance.now()) - timerStart;
     });
 
-    // FIX #1: Accel — finish when target speed reached
-    if (mode === 'accel' && currentSpd >= tgtVal()) finishRun();
-    // FIX #1: Brake — finish when speed reaches near zero (2 mph / 3.2 km/h)
-    const brakeFinishThreshold = useMetric ? 3.2 : 2;
-    if (mode === 'brake' && currentSpd <= brakeFinishThreshold) finishRun();
+    if (currentSpd >= tgtVal()) finishRun();
   }
 
-  // FIX #3: Raised false-start threshold — 4 mph / 6 km/h minimum
-  const accelArmThreshold = useMetric ? 6 : 4;
-  if (state === S.ARMED) {
-    if (mode === 'accel' && currentSpd > accelArmThreshold) startRun();
-    // Brake: arm waits until rider hits target speed, THEN starts timing the stop
-    if (mode === 'brake' && currentSpd >= tgtVal()) startRun();
-  }
+  // Auto-start when moving (raised threshold avoids false triggers at standstill)
+  const armThreshold = useMetric ? 6 : 4;
+  if (state === S.ARMED && currentSpd > armThreshold) startRun();
 
   rafId = requestAnimationFrame(loop);
 }
 
-// Track starting speed for brake progress bar
-let brakeStartSpd = 0;
-
 // ─────────────────────────────────────────────
-// TIMER
+// RUN CONTROL
 // ─────────────────────────────────────────────
 function armRun() {
   const tgt = tgtVal();
@@ -636,34 +768,29 @@ function armRun() {
 
   parseSplits();
   splitHits = {};
-  brakeStartSpd = 0;
   state = S.ARMED;
 
-  document.getElementById('timerBig').className = 'timer-big';
+  document.getElementById('timerBig').className   = 'timer-big';
   document.getElementById('timerBig').textContent = '0.000';
-  document.getElementById('timerSub').textContent = mode==='accel'
-    ? 'Armed — will start when you move'
-    : `Armed — accelerate to ${tgt} ${useMetric?'km/h':'mph'} then brake hard`;
+  document.getElementById('timerSub').textContent = 'Armed — will start when you move';
   document.getElementById('progFill').style.width = '0%';
-  document.getElementById('progFill').className = 'prog-fill';
-  document.getElementById('armBtn').textContent = 'ARMED';
-  document.getElementById('armBtn').disabled = true;
-  document.getElementById('resetBtn').disabled = false;
-  document.getElementById('tgtInp').disabled = true;
-  document.getElementById('splitsInp').disabled = true;
+  document.getElementById('progFill').className   = 'prog-fill';
+  document.getElementById('armBtn').textContent   = 'ARMED';
+  document.getElementById('armBtn').disabled      = true;
+  document.getElementById('resetBtn').disabled    = false;
+  document.getElementById('tgtInp').disabled      = true;
+  document.getElementById('splitsInp').disabled   = true;
   setBar('Armed — waiting…','warn');
   setArmInd('armed');
   if (!watchId) startGPS();
-  if (!rafId) loop();
+  if (!rafId)   rafId = requestAnimationFrame(loop);
 }
 
 function startRun() {
   state      = S.RUNNING;
   timerStart = lastFixTime || performance.now();
-  // FIX #1: Capture the actual speed at run start for brake progress bar
-  if (mode === 'brake') brakeStartSpd = currentSpd;
-  document.getElementById('timerBig').className = 'timer-big running';
-  document.getElementById('timerSub').textContent = mode==='accel' ? 'Running…' : 'Braking — hold on!';
+  document.getElementById('timerBig').className   = 'timer-big running';
+  document.getElementById('timerSub').textContent = 'Running…';
   setBar('Timer running','active');
   setArmInd('running');
 }
@@ -673,76 +800,39 @@ function finishRun() {
   state = S.DONE;
 
   document.getElementById('timerBig').textContent = fmt(elapsed);
-  document.getElementById('timerBig').className = 'timer-big done';
-  document.getElementById('progFill').className = 'prog-fill done';
-  document.getElementById('armBtn').textContent = 'ARM';
-  document.getElementById('armBtn').disabled = false;
-  document.getElementById('tgtInp').disabled = false;
-  document.getElementById('splitsInp').disabled = false;
+  document.getElementById('timerBig').className   = 'timer-big done';
+  document.getElementById('progFill').className   = 'prog-fill done';
+  document.getElementById('armBtn').textContent   = 'ARM';
+  document.getElementById('armBtn').disabled      = false;
+  document.getElementById('tgtInp').disabled      = false;
+  document.getElementById('splitsInp').disabled   = false;
   setArmInd('done');
 
-  const u = useMetric ? 'km/h' : 'mph';
-  const runLbl = mode==='accel'
-    ? `0 → ${tgtVal()} ${u}`
-    : `${tgtVal()} → 0 ${u}`;
+  const u      = useMetric ? 'km/h' : 'mph';
+  const runLbl = `0 → ${tgtVal()} ${u}`;
   document.getElementById('timerSub').textContent = `${runLbl}  ·  ${fmt(elapsed)}s`;
-  setBar('Run complete 🏁','active');
+  setBar('Run complete 🏁 — ARM for next run','active');
 
-  const rec = saveRecord(elapsed, runLbl);
-  showResult(elapsed, runLbl, rec.isBest);
+  saveRecord(elapsed, runLbl);
   renderHistory();
   renderBvL();
+  // Speedo stays live — no popup
 }
 
 function resetRun() {
-  state = S.IDLE; timerStart = null; splitHits = {}; brakeStartSpd = 0;
+  state = S.IDLE; timerStart = null; splitHits = {};
   document.getElementById('timerBig').textContent = '0.000';
-  document.getElementById('timerBig').className = 'timer-big';
+  document.getElementById('timerBig').className   = 'timer-big';
   document.getElementById('timerSub').textContent = 'Set target, then ARM';
   document.getElementById('progFill').style.width = '0%';
-  document.getElementById('progFill').className = 'prog-fill';
-  document.getElementById('armBtn').textContent = 'ARM';
-  document.getElementById('armBtn').disabled = false;
-  document.getElementById('resetBtn').disabled = true;
-  document.getElementById('tgtInp').disabled = false;
-  document.getElementById('splitsInp').disabled = false;
+  document.getElementById('progFill').className   = 'prog-fill';
+  document.getElementById('armBtn').textContent   = 'ARM';
+  document.getElementById('armBtn').disabled      = false;
+  document.getElementById('resetBtn').disabled    = true;
+  document.getElementById('tgtInp').disabled      = false;
+  document.getElementById('splitsInp').disabled   = false;
   setArmInd('idle');
-  setBar(watchId?'GPS Locked':'Press ARM to enable GPS', watchId?'active':'');
-}
-
-function rearm() {
-  closeResult();
-  resetRun();
-  setTimeout(armRun, 150);
-}
-
-// ─────────────────────────────────────────────
-// RESULT POPUP
-// ─────────────────────────────────────────────
-function showResult(elapsed, runLbl, isBest) {
-  document.getElementById('rcRun').textContent  = runLbl;
-  document.getElementById('rcTime').textContent = fmt(elapsed);
-  document.getElementById('rcBest').style.display = isBest ? 'inline-block' : 'none';
-
-  const sc = document.getElementById('rcSplits');
-  const sKeys = Object.keys(splitHits).map(Number).sort((a,b)=>a-b);
-  if (sKeys.length) {
-    sc.innerHTML = '<div style="font-family:Orbitron,sans-serif;font-size:9px;letter-spacing:.2em;color:var(--muted);margin-bottom:6px">SPLITS</div>'
-      + sKeys.map(sv => `
-        <div class="rc-split-row">
-          <span class="rc-split-lbl">→ ${sv} ${useMetric?'km/h':'mph'}</span>
-          <span class="rc-split-val">${fmt(splitHits[sv])}s</span>
-        </div>`).join('');
-    sc.style.display = 'flex';
-  } else {
-    sc.innerHTML = ''; sc.style.display = 'none';
-  }
-
-  document.getElementById('resultOverlay').classList.add('show');
-}
-
-function closeResult() {
-  document.getElementById('resultOverlay').classList.remove('show');
+  setBar(watchId ? 'GPS Locked' : 'Press ARM to enable GPS', watchId ? 'active' : '');
 }
 
 // ─────────────────────────────────────────────
@@ -760,11 +850,10 @@ function parseSplits() {
 // HISTORY & RECORDS
 // ─────────────────────────────────────────────
 function saveRecord(elapsed, runLbl) {
-  const timeMs = elapsed;
+  const timeMs   = elapsed;
   const existing = history.filter(r => r.runLbl === runLbl);
-  const bestMs = existing.length ? Math.min(...existing.map(r=>r.timeMs)) : Infinity;
-  // FIX #4: isBest is true only if there's a prior run to beat
-  const isBest = existing.length > 0 && timeMs < bestMs;
+  const bestMs   = existing.length ? Math.min(...existing.map(r=>r.timeMs)) : Infinity;
+  const isBest   = existing.length > 0 && timeMs < bestMs;
 
   const splits = {};
   splitTargets.forEach(sv => { if (splitHits[sv]) splits[sv] = splitHits[sv]; });
@@ -772,14 +861,12 @@ function saveRecord(elapsed, runLbl) {
   const now = new Date();
   history.unshift({
     id: Date.now(), runLbl, timeMs, isBest: false,
-    time: fmt(timeMs), mode,
-    splits,
+    time: fmt(timeMs), mode: 'accel', splits,
     date: now.toLocaleDateString('en-US',{month:'short',day:'numeric'})
         + '  ' + now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})
   });
   if (history.length > 50) history.pop();
 
-  // Recompute bests across all history
   const bestMap = {};
   history.forEach(r => {
     if (!bestMap[r.runLbl] || r.timeMs < bestMap[r.runLbl]) bestMap[r.runLbl] = r.timeMs;
@@ -802,7 +889,7 @@ function renderHistory() {
   list.innerHTML = history.map((r,i) => `
     <div class="hist-item${r.isBest?' best':''}">
       <div class="hist-top" onclick="toggleSplit(${i})">
-        <div class="hist-type">${r.mode==='brake'?'BRAKE':'ACCEL'}</div>
+        <div class="hist-type">ACCEL</div>
         <div class="hist-run">
           <div class="hist-run-lbl">${r.runLbl}</div>
           <div class="hist-run-date">${r.date}</div>
@@ -821,17 +908,15 @@ function renderHistory() {
                 <span class="split-lbl">→ ${sp} ${r.runLbl.includes('km')?'km/h':'mph'}</span>
                 <span class="split-val">${fmt(ms)}s</span>
               </div>`).join('')
-          : '<div style="font-size:10px;color:#2a2a2a;letter-spacing:.1em">No splits recorded</div>'
+          : '<div style="font-size:10px;color:#888;letter-spacing:.1em;padding:4px 0">No splits recorded</div>'
         }
       </div>
     </div>`).join('');
 }
 
 function toggleSplit(i) {
-  const el   = document.getElementById(`splits-${i}`);
-  const chev = document.getElementById(`chev-${i}`);
-  const open = el.classList.toggle('open');
-  chev.classList.toggle('open', open);
+  document.getElementById(`splits-${i}`).classList.toggle('open');
+  document.getElementById(`chev-${i}`).classList.toggle('open');
 }
 
 function delRun(i) {
@@ -847,11 +932,11 @@ function clearHistory() {
 }
 
 // ─────────────────────────────────────────────
-// BEST vs LAST
+// BEST VS LAST
 // ─────────────────────────────────────────────
 function renderBvL() {
   const card = document.getElementById('bvlCard');
-  if (history.length < 1) { card.style.display='none'; return; }
+  if (!history.length) { card.style.display='none'; return; }
   card.style.display = 'block';
 
   const last = history[0];
@@ -863,8 +948,8 @@ function renderBvL() {
   document.getElementById('bvlBestRun').textContent  = best.runLbl;
   document.getElementById('bvlBestTime').textContent = best.time+'s';
 
-  const delta  = document.getElementById('bvlDelta');
-  const diff   = last.timeMs - best.timeMs;
+  const delta = document.getElementById('bvlDelta');
+  const diff  = last.timeMs - best.timeMs;
   if (Math.abs(diff) < 10) {
     delta.textContent = '= SAME'; delta.className='bvl-delta same';
   } else if (diff < 0) {
@@ -875,20 +960,15 @@ function renderBvL() {
 }
 
 // ─────────────────────────────────────────────
-// GPS — FIX #2: Guard bad fixes BEFORE updating lastFixTime
+// GPS
 // ─────────────────────────────────────────────
-let lastFixTime    = null;
-let lastFixTs      = null;
-let fixAgeInterval = null;
-const ACC_REJECT   = 50;
-
 function startGPS() {
   if (!navigator.geolocation) { setBar('GPS not supported','error'); return; }
   setBar('Searching for GPS…','');
   watchId = navigator.geolocation.watchPosition(onPos, onErr, {
     enableHighAccuracy: true,
-    maximumAge: 0,
-    timeout: 5000
+    maximumAge:         0,       // always fresh — never use cached position
+    timeout:            3000     // retry quickly
   });
   fixAgeInterval = setInterval(updateFixAge, 1000);
 }
@@ -896,29 +976,98 @@ function startGPS() {
 function onPos(pos) {
   const acc = pos.coords.accuracy;
   const now = performance.now();
+  if (state === S.RUNNING && acc > ACC_REJECT) { updateSignalDisplay(acc); return; }
 
-  // FIX #2: Reject bad fix BEFORE updating timing references
-  if (state === S.RUNNING && acc > ACC_REJECT) {
-    // Still update signal display so user can see GPS is degraded
-    updateSignalDisplay(acc);
-    return;
-  }
-
-  // Only update timing references if fix is accepted
   lastFixTime = now;
   lastFixTs   = pos.timestamp;
 
-  rawMps     = pos.coords.speed != null ? pos.coords.speed : 0;
-  currentSpd = useMetric ? rawMps * 3.6 : rawMps * 2.23694;
-
   const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
+  fsLastAcc = acc; fsLastSig = sig;
+
+  // ── Dual speed source: prefer coords.speed, fallback to position-derived
+  let chipMps = (pos.coords.speed != null && pos.coords.speed >= 0)
+    ? pos.coords.speed : -1;
+
+  // Position-derived speed (haversine delta / time delta)
+  let derivedMps = -1;
+  if (sessionLastPos && lastFixPerfTime > 0) {
+    const dtSec = (now - lastFixPerfTime) / 1000;
+    if (dtSec > 0.05 && dtSec < 5) {
+      const d = haversine(sessionLastPos.lat, sessionLastPos.lon,
+                          pos.coords.latitude, pos.coords.longitude);
+      derivedMps = d / dtSec;
+    }
+  }
+
+  // ── Pick best speed source
+  let candidateMps;
+  if (chipMps >= 0 && derivedMps >= 0) {
+    // Both available — if they agree within 30%, trust chip (it's Kalman-filtered by the OS)
+    const agree = Math.abs(chipMps - derivedMps) / Math.max(chipMps, derivedMps, 0.1) < 0.30;
+    candidateMps = agree ? chipMps : (chipMps + derivedMps) / 2;
+  } else if (chipMps >= 0) {
+    candidateMps = chipMps;
+  } else if (derivedMps >= 0) {
+    candidateMps = derivedMps;
+  } else {
+    candidateMps = 0;
+  }
+
+  // ── Physics outlier rejection
+  const dtSinceLastFix = lastFixPerfTime > 0 ? (now - lastFixPerfTime) / 1000 : 1;
+  const maxDelta = MAX_ACCEL_MPS2 * Math.max(dtSinceLastFix, 0.5);
+  const speedJump = Math.abs(candidateMps - lastValidMps);
+  const isOutlier = candidateMps > MAX_SPEED_MPS || speedJump > maxDelta;
+
+  if (!isOutlier) {
+    // ── Kalman filter update
+    kP  = kP + kQ;                              // prediction step
+    const K = kP / (kP + kR);                  // Kalman gain
+    kX  = kX + K * (candidateMps - kX);        // update
+    kP  = (1 - K) * kP;                        // update covariance
+
+    rawMps         = kX;
+    lastValidMps   = candidateMps;
+    lastFixPerfTime = now;
+  }
+  // If outlier: keep rawMps from previous valid reading
+
+  // ── Gate display on fix quality
+  if (acc <= ACC_GOOD && sig >= SIG_GOOD) {
+    gpsReady   = true;
+    currentSpd = useMetric ? rawMps * 3.6 : rawMps * 2.23694;
+  } else if (!gpsReady) {
+    currentSpd = 0;
+  }
   document.querySelectorAll('.sbar').forEach((b,i) => b.classList.toggle('on', i < sig));
   document.getElementById('acctxt').textContent = `±${Math.round(acc)}m`;
-
   updateGpsPanel(acc, sig);
+  // Always track last position for derived speed calculation
+  const newPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+
+  // Session tracking
+  if (sessionActive) {
+    if (currentSpd > sessionTopSpd) sessionTopSpd = currentSpd;
+    if (pos.coords.latitude && sessionLastPos) {
+      sessionDist += haversine(sessionLastPos.lat, sessionLastPos.lon,
+                               pos.coords.latitude, pos.coords.longitude);
+    }
+    if (rawMps > 0.5) resetIdleTimer();
+  }
+  sessionLastPos = newPos;  // always update for derived speed
+
   setSdot('active');
-  if (state !== S.ARMED && state !== S.RUNNING && state !== S.DONE)
-    setBar('GPS Locked','active');
+  if (state !== S.ARMED && state !== S.RUNNING && state !== S.DONE) {
+    if (gpsReady) setBar('GPS Locked','active');
+    else setBar(`Improving fix… ±${Math.round(acc)}m — wait for green`,'warn');
+  }
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000, r = Math.PI/180;
+  const dLat = (lat2-lat1)*r, dLon = (lon2-lon1)*r;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 function updateSignalDisplay(acc) {
@@ -930,13 +1079,12 @@ function updateSignalDisplay(acc) {
 
 function updateGpsPanel(acc, sig) {
   const statusEl = document.getElementById('giStatus');
-  if (sig >= 3)      { statusEl.textContent='LOCKED'; statusEl.className='gi-val good'; }
+  if      (sig >= 3) { statusEl.textContent='LOCKED'; statusEl.className='gi-val good'; }
   else if (sig >= 1) { statusEl.textContent='WEAK';   statusEl.className='gi-val ok';   }
   else               { statusEl.textContent='POOR';   statusEl.className='gi-val poor'; }
-
   const accEl = document.getElementById('giAcc');
-  accEl.textContent = Math.round(acc);
-  accEl.className   = 'gi-val ' + (acc < 5 ? 'good' : acc < 20 ? 'ok' : 'poor');
+  accEl.textContent = acc < 10 ? acc.toFixed(1) : Math.round(acc);
+  accEl.className   = 'gi-val ' + (acc < 8 ? 'good' : acc < 20 ? 'ok' : 'poor');
 }
 
 function updateFixAge() {
@@ -949,6 +1097,9 @@ function updateFixAge() {
 }
 
 function onErr(e) {
+  gpsReady = false;
+  // Reset Kalman filter — stale state is worse than starting fresh
+  kX = 0; kP = 1; lastValidMps = 0; lastFixPerfTime = 0;
   const m = {1:'Location denied', 2:'Signal unavailable', 3:'GPS timed out'};
   setBar(m[e.code]||'GPS error','error'); setSdot('error');
   document.querySelectorAll('.sbar').forEach(b => b.classList.remove('on'));
@@ -959,40 +1110,18 @@ function onErr(e) {
 }
 
 function setSdot(cls) {
-  const d = document.getElementById('sdot');
-  d.className = 'sdot'+(cls?' '+cls:'');
-  document.getElementById('statusTxt').textContent = {active:'GPS LOCKED',warn:'SEARCHING',error:'NO SIGNAL'}[cls]||'SEARCHING';
+  document.getElementById('sdot').className = 'sdot' + (cls ? ' '+cls : '');
+  document.getElementById('statusTxt').textContent =
+    {active:'GPS LOCKED', warn:'SEARCHING', error:'NO SIGNAL'}[cls] || 'SEARCHING';
 }
 
 // ─────────────────────────────────────────────
-// MODE
-// ─────────────────────────────────────────────
-function setMode(m) {
-  mode = m;
-  document.getElementById('tab-accel').classList.toggle('active', m==='accel');
-  document.getElementById('tab-brake').classList.toggle('active', m==='brake');
-  const u = useMetric?'km/h':'mph';
-  if (m==='accel') {
-    document.getElementById('panelLabel').textContent = '0 → TARGET';
-    document.getElementById('tgtPre').textContent = '0 →';
-    document.getElementById('tgtSuf').textContent = useMetric?'KM/H':'MPH';
-    document.getElementById('splitsWrap').style.display = '';
-  } else {
-    document.getElementById('panelLabel').textContent = 'SPEED → 0';
-    document.getElementById('tgtPre').textContent = 'FROM';
-    document.getElementById('tgtSuf').textContent = useMetric?'KM/H':'MPH';
-    document.getElementById('splitsWrap').style.display = 'none';
-  }
-  resetRun();
-}
-
-// ─────────────────────────────────────────────
-// UNIT
+// UNIT TOGGLE
 // ─────────────────────────────────────────────
 function toggleUnit() {
   useMetric = !useMetric;
-  const u = useMetric?'KM/H':'MPH';
-  document.getElementById('spdUnit').textContent = u+' ⇄';
+  const u = useMetric ? 'KM/H' : 'MPH';
+  document.getElementById('spdUnit').textContent = u + ' ⇄';
   document.getElementById('tgtSuf').textContent  = u;
   resetRun();
 }
@@ -1000,51 +1129,362 @@ function toggleUnit() {
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
-function fmt(ms) { return ms<10000?(ms/1000).toFixed(3):(ms/1000).toFixed(2); }
+function fmt(ms) { return ms < 10000 ? (ms/1000).toFixed(3) : (ms/1000).toFixed(2); }
 
 function setBar(msg, cls) {
   const el = document.getElementById('statusBar');
-  el.textContent  = msg;
-  el.className    = 'status-txt'+(cls?' '+cls:'');
+  el.textContent = msg;
+  el.className   = 'status-txt' + (cls ? ' '+cls : '');
 }
 
 function setArmInd(s) {
   const el = document.getElementById('armInd');
-  const labels = {idle:'IDLE',armed:'ARMED',running:'RUNNING',done:'DONE'};
-  el.textContent = labels[s]||'IDLE';
-  el.className   = 'arm-indicator'+(s!=='idle'?' '+s:'');
+  el.textContent = {idle:'IDLE',armed:'ARMED',running:'RUNNING',done:'DONE'}[s] || 'IDLE';
+  el.className   = 'arm-indicator' + (s !== 'idle' ? ' '+s : '');
 }
+
+// ─────────────────────────────────────────────
+// SESSION
+// ─────────────────────────────────────────────
+function toggleSession() {
+  if (!sessionActive) startSession();
+  else                stopSession(true);
+}
+
+function startSession() {
+  sessionActive   = true;
+  sessionStart    = new Date();
+  sessionTopSpd   = 0;
+  sessionDist     = 0;
+  sessionLastPos  = null;
+
+  document.getElementById('sessBtn').textContent = 'STOP SESSION';
+  document.getElementById('sessBtn').className   = 'btn session-stop';
+  document.getElementById('sessLive').classList.add('active');
+
+  // Live strip updater
+  sessionLiveInterval = setInterval(updateSessionLive, 1000);
+
+  resetIdleTimer();
+  setBar('Session started','active');
+}
+
+function stopSession(manual) {
+  if (!sessionActive) return;
+  sessionActive = false;
+  clearInterval(sessionLiveInterval);
+  clearTimeout(sessionIdleTimer);
+
+  document.getElementById('sessBtn').textContent = 'START SESSION';
+  document.getElementById('sessBtn').className   = 'btn session-start';
+  document.getElementById('sessLive').classList.remove('active');
+
+  // Save session
+  const dur = sessionStart ? Math.round((Date.now() - sessionStart.getTime()) / 1000) : 0;
+  if (dur < 5) return; // ignore accidental taps
+
+  const u    = useMetric ? 'km/h' : 'mph';
+  const dist = useMetric
+    ? (sessionDist / 1000).toFixed(2) + ' km'
+    : (sessionDist / 1609.34).toFixed(2) + ' mi';
+
+  const now = sessionStart;
+  sessions.unshift({
+    id:      Date.now(),
+    name:    now.toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'})
+           + ' ' + now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+    topSpd:  Math.round(sessionTopSpd) + ' ' + u,
+    topSpdNum: sessionTopSpd,
+    dist,
+    dur:     fmtDur(dur),
+    ts:      now.toISOString()
+  });
+  if (sessions.length > 100) sessions.pop();
+  localStorage.setItem('sa_sessions', JSON.stringify(sessions));
+  renderSessions();
+  setBar(manual ? 'Session saved' : 'Session auto-saved (idle)', 'active');
+}
+
+let sessionLiveInterval = null;
+
+function updateSessionLive() {
+  if (!sessionActive) return;
+  const dur = Math.round((Date.now() - sessionStart.getTime()) / 1000);
+  const u   = useMetric ? 'km/h' : 'mph';
+  const dist = useMetric
+    ? (sessionDist / 1000).toFixed(2)
+    : (sessionDist / 1609.34).toFixed(2);
+  document.getElementById('liveTopSpd').textContent = Math.round(sessionTopSpd) + ' ' + u;
+  document.getElementById('liveDist').textContent   = dist + (useMetric ? ' km' : ' mi');
+  document.getElementById('liveDur').textContent    = fmtDur(dur);
+}
+
+function resetIdleTimer() {
+  clearTimeout(sessionIdleTimer);
+  sessionIdleTimer = setTimeout(() => stopSession(false), 5 * 60 * 1000);
+}
+
+function fmtDur(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return m + ':' + String(sec).padStart(2,'0');
+}
+
+function renderSessions() {
+  const list = document.getElementById('sessList');
+  const noS  = document.getElementById('noSess');
+  if (!sessions.length) {
+    list.innerHTML = ''; list.appendChild(noS); noS.style.display='block'; return;
+  }
+  noS.style.display = 'none';
+  list.innerHTML = sessions.map((s,i) => `
+    <div class="sess-item${sessionActive && i===0 ? ' active' : ''}">
+      <div class="sess-row">
+        <div class="sess-name-wrap">
+          <input class="sess-name" id="sname-${i}" value="${s.name}"
+            onblur="renameSess(${i}, this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()">
+          <div class="sess-meta">
+            <span>${s.dur}</span>
+            <span>${s.dist}</span>
+            <span>${s.ts ? new Date(s.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''}</span>
+          </div>
+        </div>
+        <div class="sess-stats">
+          <div class="sess-topspd">${s.topSpd}</div>
+          <div class="sess-topspd-lbl">TOP SPEED</div>
+        </div>
+        <button class="sess-del" onclick="delSess(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function renameSess(i, val) {
+  sessions[i].name = val || sessions[i].name;
+  localStorage.setItem('sa_sessions', JSON.stringify(sessions));
+  renderSessions();
+}
+
+function delSess(i) {
+  sessions.splice(i,1);
+  localStorage.setItem('sa_sessions', JSON.stringify(sessions));
+  renderSessions();
+}
+
+function clearSessions() {
+  sessions = [];
+  localStorage.setItem('sa_sessions', JSON.stringify(sessions));
+  renderSessions();
+}
+
+// ─────────────────────────────────────────────
+// FULLSCREEN SPEEDO
+// ─────────────────────────────────────────────
+let fsOpen         = false;
+let fsTopSpd       = 0;
+let fsCanvas       = null;
+let fsCtx          = null;
+let fsTapTimer     = null;
+let fsLastAcc      = 0;
+let fsLastSig      = 0;
+
+function initFsCanvas() {
+  fsCanvas = document.getElementById('fsGauge');
+  fsCtx    = fsCanvas.getContext('2d');
+  sizeFsCanvas();
+}
+
+function sizeFsCanvas() {
+  const isLandscape = window.innerWidth > window.innerHeight;
+  // In landscape the gauge gets the full height; in portrait use 80% of width
+  const size = isLandscape
+    ? Math.min(window.innerHeight * 0.82, window.innerWidth * 0.55)
+    : Math.min(window.innerWidth  * 0.92, window.innerHeight * 0.62);
+  const s = Math.round(size);
+  fsCanvas.width  = s;
+  fsCanvas.height = s;
+  // Font size scales with canvas
+  const numSize = Math.round(s * 0.30);
+  const unitSize = Math.round(s * 0.048);
+  document.getElementById('fsSpdNum').style.fontSize  = numSize  + 'px';
+  document.getElementById('fsSpdUnit').style.fontSize = unitSize + 'px';
+  document.getElementById('fsGaugeWrap').style.width  = s + 'px';
+  document.getElementById('fsGaugeWrap').style.height = s + 'px';
+
+  // Info row font scaling
+  document.querySelectorAll('.fs-info-lbl').forEach(el => el.style.fontSize = Math.round(s*0.028)+'px');
+  document.querySelectorAll('.fs-info-val').forEach(el => el.style.fontSize = Math.round(s*0.062)+'px');
+}
+
+function drawFsGauge(spd) {
+  if (!fsCanvas || !fsCtx) return;
+  const W = fsCanvas.width, H = fsCanvas.height;
+  const cx = W/2, cy = H/2, R = W/2 - W*0.06;
+  const A0 = Math.PI*0.75, ASWEEP = Math.PI*1.5;
+  const max = maxSpd(), ratio = Math.min(spd/max,1);
+
+  fsCtx.clearRect(0,0,W,H);
+
+  // Track
+  fsCtx.beginPath(); fsCtx.arc(cx,cy,R,A0,A0+ASWEEP);
+  fsCtx.strokeStyle='#181818'; fsCtx.lineWidth=W*0.042; fsCtx.lineCap='round'; fsCtx.stroke();
+
+  // Speed arc
+  if (ratio > 0) {
+    const col = ratio>.85?'#ff3c00':ratio>.6?'#ffb347':'#ff6a00';
+    fsCtx.beginPath(); fsCtx.arc(cx,cy,R,A0,A0+ratio*ASWEEP);
+    fsCtx.strokeStyle=col; fsCtx.lineWidth=W*0.042; fsCtx.lineCap='round';
+    fsCtx.shadowColor=col; fsCtx.shadowBlur=W*0.04; fsCtx.stroke(); fsCtx.shadowBlur=0;
+  }
+
+  // Ticks
+  const mn = useMetric?10:5, mj = useMetric?20:10;
+  for (let v=0; v<=max; v+=mn) {
+    const a=A0+(v/max)*ASWEEP, isMaj=v%mj===0;
+    fsCtx.beginPath();
+    fsCtx.moveTo(cx+Math.cos(a)*(isMaj?R-W*0.075:R-W*0.05), cy+Math.sin(a)*(isMaj?R-W*0.075:R-W*0.05));
+    fsCtx.lineTo(cx+Math.cos(a)*(R-W*0.025), cy+Math.sin(a)*(R-W*0.025));
+    fsCtx.strokeStyle=isMaj?'#888':'#2e2e2e'; fsCtx.lineWidth=isMaj?2:1; fsCtx.lineCap='butt'; fsCtx.stroke();
+    if (isMaj) {
+      fsCtx.fillStyle='#aaa'; fsCtx.font=`600 ${Math.round(W*0.036)}px Orbitron,monospace`;
+      fsCtx.textAlign='center'; fsCtx.textBaseline='middle';
+      fsCtx.fillText(v, cx+Math.cos(a)*(R-W*0.13), cy+Math.sin(a)*(R-W*0.13));
+    }
+  }
+
+  // Needle
+  fsCtx.save(); fsCtx.translate(cx,cy); fsCtx.rotate(A0+ratio*ASWEEP);
+  fsCtx.shadowColor='#ff3c00'; fsCtx.shadowBlur=W*0.035;
+  fsCtx.beginPath(); fsCtx.moveTo(R-W*0.1,0); fsCtx.lineTo(-W*0.065,W*0.018); fsCtx.lineTo(-W*0.065,-W*0.018); fsCtx.closePath();
+  fsCtx.fillStyle='#ff3c00'; fsCtx.fill(); fsCtx.shadowBlur=0; fsCtx.restore();
+
+  // Hub
+  fsCtx.beginPath(); fsCtx.arc(cx,cy,W*0.042,0,Math.PI*2);
+  fsCtx.fillStyle='#141414'; fsCtx.fill(); fsCtx.strokeStyle='#3a3a3a'; fsCtx.lineWidth=2; fsCtx.stroke();
+  fsCtx.beginPath(); fsCtx.arc(cx,cy,W*0.018,0,Math.PI*2);
+  fsCtx.fillStyle='#ff3c00'; fsCtx.shadowColor='#ff6a00'; fsCtx.shadowBlur=W*0.02; fsCtx.fill(); fsCtx.shadowBlur=0;
+}
+
+function openFs() {
+  fsOpen   = true;
+  fsTopSpd = 0;
+  initFsCanvas();
+
+  document.getElementById('fsOverlay').classList.add('open');
+
+  // Unlock orientation for landscape
+  if (screen.orientation && screen.orientation.unlock) {
+    try { screen.orientation.unlock(); } catch(e){}
+  }
+
+  // Double-tap to close
+  document.getElementById('fsOverlay').addEventListener('touchend', fsTapHandler);
+  document.getElementById('fsOverlay').addEventListener('click',    fsTapHandler);
+}
+
+function closeFs() {
+  fsOpen = false;
+  document.getElementById('fsOverlay').classList.remove('open');
+  document.getElementById('fsOverlay').removeEventListener('touchend', fsTapHandler);
+  document.getElementById('fsOverlay').removeEventListener('click',    fsTapHandler);
+
+  // Re-lock to portrait
+  if (screen.orientation && screen.orientation.lock) {
+    try { screen.orientation.lock('portrait'); } catch(e){}
+  }
+}
+
+function fsTapHandler() {
+  if (fsTapTimer) {
+    clearTimeout(fsTapTimer);
+    fsTapTimer = null;
+    closeFs();
+  } else {
+    fsTapTimer = setTimeout(() => { fsTapTimer = null; }, 300);
+  }
+}
+
+// Update fullscreen display from main loop
+function updateFs() {
+  if (!fsOpen) return;
+  if (currentSpd > fsTopSpd) fsTopSpd = currentSpd;
+
+  const ratio = dispSpd / maxSpd();
+  const u = useMetric ? 'KM/H' : 'MPH';
+  const ne = document.getElementById('fsSpdNum');
+  ne.textContent = Math.round(dispSpd);
+  ne.className   = 'fs-spd-num' + (ratio>.85?' danger':ratio>.6?' warn':'');
+  document.getElementById('fsSpdUnit').textContent = u;
+
+  // Top speed
+  const topU = Math.round(fsTopSpd);
+  document.getElementById('fsTopVal').textContent = topU + ' ' + u;
+
+  // GPS status
+  const gpsEl = document.getElementById('fsGpsVal');
+  if      (fsLastSig >= 3) { gpsEl.textContent='LOCKED'; gpsEl.className='fs-info-val good'; }
+  else if (fsLastSig >= 1) { gpsEl.textContent='WEAK';   gpsEl.className='fs-info-val ok'; }
+  else                     { gpsEl.textContent='POOR';   gpsEl.className='fs-info-val poor'; }
+
+  // Accuracy
+  const accEl = document.getElementById('fsAccVal');
+  accEl.textContent = fsLastAcc > 0 ? '±'+Math.round(fsLastAcc)+'m' : '—';
+  accEl.className   = 'fs-info-val ' + (fsLastAcc<5?'good':fsLastAcc<20?'ok':'poor');
+
+  drawFsGauge(dispSpd);
+}
+
+// Double-tap on gauge to open fullscreen
+let gaugeLastTap = 0;
+document.getElementById('gauge').addEventListener('touchend', () => {
+  const now = Date.now();
+  if (now - gaugeLastTap < 300) openFs();
+  gaugeLastTap = now;
+});
+document.getElementById('gauge').addEventListener('dblclick', openFs);
+
+// Resize handler for orientation change in fullscreen
+window.addEventListener('resize', () => {
+  if (fsOpen) { sizeFsCanvas(); drawFsGauge(dispSpd); }
+});
 
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 renderHistory();
 renderBvL();
+renderSessions();
 drawGauge(0);
 startGPS();
 rafId = requestAnimationFrame(loop);
 
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && sessionActive) stopSession(false);
+});
+
 async function keepAwake() {
   if ('wakeLock' in navigator) {
-    try {
-      // FIX #6: Store wake lock handle properly to avoid double-request leak
-      let wakeLock = null;
-      const requestWake = async () => {
-        try {
-          if (wakeLock) { await wakeLock.release(); wakeLock = null; }
-          wakeLock = await navigator.wakeLock.request('screen');
-        } catch(e) {}
-      };
-      await requestWake();
-      document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState === 'visible') await requestWake();
-      });
-    } catch(e) {}
+    let wakeLock = null;
+    const requestWake = async () => {
+      try {
+        if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+        wakeLock = await navigator.wakeLock.request('screen');
+      } catch(e) {}
+    };
+    await requestWake();
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible') await requestWake();
+    });
   }
 }
 keepAwake();
 
-// Fullscreen handled by Android manifest
+function tryFullscreen() {
+  const el = document.documentElement;
+  if (!document.fullscreenElement)
+    (el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen||(()=>{})).call(el);
+}
+document.addEventListener('touchstart', tryFullscreen, {once:true});
+document.addEventListener('click',      tryFullscreen, {once:true});
 </script>
 </body>
 </html>
