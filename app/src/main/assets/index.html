@@ -624,20 +624,11 @@ let history        = JSON.parse(localStorage.getItem('sa_v2_hist') || '[]');
 let lastFixTime    = null;
 let lastFixTs      = null;
 let fixAgeInterval = null;
-const ACC_REJECT       = 15;    // reject fixes worse than this during active run (metres)
-const ACC_GOOD         = 20;    // must beat this before speedo unlocks
-const SIG_GOOD         = 2;     // minimum signal bars before speedo activates
-const MAX_ACCEL_MPS2   = 15;    // max realistic acceleration m/s² (scooter ~0-60 in ~6s = ~4.5 m/s²; generous headroom)
-const MAX_SPEED_MPS    = 80;    // ~180mph hard cap — reject anything above this
-let   gpsReady         = false;
-let   lastValidMps     = 0;     // last accepted speed in m/s
-let   lastFixPerfTime  = 0;     // performance.now() of last accepted fix
-
-// ── Kalman filter state
-let kQ  = 0.008;   // process noise — how much we expect speed to change each step
-let kR  = 1.2;     // measurement noise — how noisy the GPS speed is (tune if needed)
-let kX  = 0;       // Kalman state estimate (speed in m/s)
-let kP  = 1;       // Kalman error covariance
+const ACC_REJECT   = 50;    // reject fixes worse than this during active run (metres)
+const ACC_GOOD     = 20;    // must beat this before speedo unlocks
+const SIG_GOOD     = 2;     // minimum signal bars before speedo activates
+let   gpsReady     = false;
+let   lastFixPerfTime = 0;
 
 // ─────────────────────────────────────────────
 // SESSION STATE
@@ -723,11 +714,8 @@ function drawGauge(spd) {
 // MAIN LOOP
 // ─────────────────────────────────────────────
 function loop() {
-  // Fast response when accelerating/braking hard, gentle when nearly stable
-  const spdDiff = currentSpd - dispSpd;
-  const lerpRate = Math.abs(spdDiff) > 5 ? 0.4 : 0.22;
-  dispSpd += spdDiff * lerpRate;
-  if (Math.abs(spdDiff) < 0.08) dispSpd = currentSpd;
+  dispSpd += (currentSpd - dispSpd) * 0.18;
+  if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
 
   const ratio = dispSpd / maxSpd();
   const ne = document.getElementById('spdNum');
@@ -980,59 +968,15 @@ function onPos(pos) {
 
   lastFixTime = now;
   lastFixTs   = pos.timestamp;
+  lastFixPerfTime = now;
 
   const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
   fsLastAcc = acc; fsLastSig = sig;
 
-  // ── Dual speed source: prefer coords.speed, fallback to position-derived
-  let chipMps = (pos.coords.speed != null && pos.coords.speed >= 0)
-    ? pos.coords.speed : -1;
+  // Simple direct GPS speed — trust the chip
+  rawMps = pos.coords.speed != null && pos.coords.speed >= 0 ? pos.coords.speed : 0;
 
-  // Position-derived speed (haversine delta / time delta)
-  let derivedMps = -1;
-  if (sessionLastPos && lastFixPerfTime > 0) {
-    const dtSec = (now - lastFixPerfTime) / 1000;
-    if (dtSec > 0.05 && dtSec < 5) {
-      const d = haversine(sessionLastPos.lat, sessionLastPos.lon,
-                          pos.coords.latitude, pos.coords.longitude);
-      derivedMps = d / dtSec;
-    }
-  }
-
-  // ── Pick best speed source
-  let candidateMps;
-  if (chipMps >= 0 && derivedMps >= 0) {
-    // Both available — if they agree within 30%, trust chip (it's Kalman-filtered by the OS)
-    const agree = Math.abs(chipMps - derivedMps) / Math.max(chipMps, derivedMps, 0.1) < 0.30;
-    candidateMps = agree ? chipMps : (chipMps + derivedMps) / 2;
-  } else if (chipMps >= 0) {
-    candidateMps = chipMps;
-  } else if (derivedMps >= 0) {
-    candidateMps = derivedMps;
-  } else {
-    candidateMps = 0;
-  }
-
-  // ── Physics outlier rejection
-  const dtSinceLastFix = lastFixPerfTime > 0 ? (now - lastFixPerfTime) / 1000 : 1;
-  const maxDelta = MAX_ACCEL_MPS2 * Math.max(dtSinceLastFix, 0.5);
-  const speedJump = Math.abs(candidateMps - lastValidMps);
-  const isOutlier = candidateMps > MAX_SPEED_MPS || speedJump > maxDelta;
-
-  if (!isOutlier) {
-    // ── Kalman filter update
-    kP  = kP + kQ;                              // prediction step
-    const K = kP / (kP + kR);                  // Kalman gain
-    kX  = kX + K * (candidateMps - kX);        // update
-    kP  = (1 - K) * kP;                        // update covariance
-
-    rawMps         = kX;
-    lastValidMps   = candidateMps;
-    lastFixPerfTime = now;
-  }
-  // If outlier: keep rawMps from previous valid reading
-
-  // ── Gate display on fix quality
+  // Gate display on fix quality
   if (acc <= ACC_GOOD && sig >= SIG_GOOD) {
     gpsReady   = true;
     currentSpd = useMetric ? rawMps * 3.6 : rawMps * 2.23694;
@@ -1083,8 +1027,8 @@ function updateGpsPanel(acc, sig) {
   else if (sig >= 1) { statusEl.textContent='WEAK';   statusEl.className='gi-val ok';   }
   else               { statusEl.textContent='POOR';   statusEl.className='gi-val poor'; }
   const accEl = document.getElementById('giAcc');
-  accEl.textContent = acc < 10 ? acc.toFixed(1) : Math.round(acc);
-  accEl.className   = 'gi-val ' + (acc < 8 ? 'good' : acc < 20 ? 'ok' : 'poor');
+  accEl.textContent = Math.round(acc);
+  accEl.className   = 'gi-val ' + (acc < 5 ? 'good' : acc < 20 ? 'ok' : 'poor');
 }
 
 function updateFixAge() {
@@ -1098,8 +1042,7 @@ function updateFixAge() {
 
 function onErr(e) {
   gpsReady = false;
-  // Reset Kalman filter — stale state is worse than starting fresh
-  kX = 0; kP = 1; lastValidMps = 0; lastFixPerfTime = 0;
+  lastFixPerfTime = 0;
   const m = {1:'Location denied', 2:'Signal unavailable', 3:'GPS timed out'};
   setBar(m[e.code]||'GPS error','error'); setSdot('error');
   document.querySelectorAll('.sbar').forEach(b => b.classList.remove('on'));
