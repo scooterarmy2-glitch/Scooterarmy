@@ -1172,7 +1172,14 @@ function stopSession() {
   sessions.unshift(record);
   if (sessions.length > 100) sessions.pop();
   localStorage.setItem('sa_sessions', JSON.stringify(sessions));
+  // Re-read from storage to guarantee fresh data
+  sessions = JSON.parse(localStorage.getItem('sa_sessions') || '[]');
   renderSessions();
+  // Scroll session log into view
+  setTimeout(() => {
+    const list = document.getElementById('sessList');
+    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
   setBar('Session saved ✓','active');
 }
 
