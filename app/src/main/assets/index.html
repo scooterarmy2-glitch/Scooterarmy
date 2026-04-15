@@ -305,6 +305,30 @@ canvas#gauge { display:block; }
 .split-val { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--chrome); }
 .no-hist { font-size:10px; color:#888; letter-spacing:.2em; text-align:center; padding:12px 0; }
 
+/* TOP SPEED BOX */
+.top-spd-box {
+  position:absolute; top:18px; right:12px;
+  background:linear-gradient(180deg,#1a0800,#0e0400);
+  border:1px solid #552200; border-top-color:#883300;
+  border-radius:6px; padding:5px 10px;
+  text-align:center; pointer-events:none;
+  box-shadow: 0 0 10px rgba(255,60,0,0.1);
+  min-width:64px;
+}
+.top-spd-lbl {
+  font-family:'Orbitron',sans-serif; font-size:7px; font-weight:700;
+  letter-spacing:.2em; color:#663300; text-transform:uppercase;
+}
+.top-spd-val {
+  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900;
+  color:var(--amber); letter-spacing:.02em; line-height:1.2;
+  text-shadow:0 0 8px rgba(255,179,71,.3);
+}
+.top-spd-unit {
+  font-family:'Orbitron',sans-serif; font-size:7px;
+  color:#664400; letter-spacing:.15em;
+}
+
 /* FULLSCREEN SPEEDO OVERLAY */
 .fs-overlay {
   display:none; position:fixed; inset:0; z-index:9000;
@@ -457,6 +481,11 @@ canvas#gauge { display:block; }
       <div class="spd-num" id="spdNum">0</div>
       <div class="spd-unit" id="spdUnit" onclick="toggleUnit()">MPH ⇄</div>
     </div>
+    <div class="top-spd-box">
+      <div class="top-spd-lbl">Top Speed</div>
+      <div class="top-spd-val" id="topSpdVal">0</div>
+      <div class="top-spd-unit" id="topSpdUnit">MPH</div>
+    </div>
     <div id="gpsWait" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
       <div style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2em;color:#ff8800;text-shadow:0 0 10px rgba(255,136,0,.5)">ACQUIRING</div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#666;letter-spacing:.15em;margin-top:4px">WAITING FOR GOOD FIX</div>
@@ -493,7 +522,7 @@ canvas#gauge { display:block; }
     <div class="plabel">0 → TARGET — ACCELERATION</div>
     <div class="tgt-row">
       <span class="tgt-pre">0 →</span>
-      <input class="tgt-inp" id="tgtInp" type="number" value="60" min="1" max="999">
+      <input class="tgt-inp" id="tgtInp" type="number" value="45" min="1" max="999">
       <span class="tgt-suf" id="tgtSuf">MPH</span>
     </div>
     <div id="splitsWrap">
@@ -628,6 +657,7 @@ const ACC_REJECT   = 50;    // reject fixes worse than this during active run (m
 const ACC_GOOD     = 20;    // must beat this before speedo unlocks
 const SIG_GOOD     = 2;     // minimum signal bars before speedo activates
 let   gpsReady     = false;
+let   allTimeTopSpd = 0;   // highest speed ever seen this session
 let   lastFixPerfTime = 0;
 
 // ─────────────────────────────────────────────
@@ -721,6 +751,13 @@ function loop() {
   const ne = document.getElementById('spdNum');
   ne.textContent = Math.round(dispSpd);
   ne.className = 'spd-num' + (ratio>.85?' danger':ratio>.6?' warn':'');
+
+  // Update top speed box
+  if (gpsReady && currentSpd > allTimeTopSpd) {
+    allTimeTopSpd = currentSpd;
+    document.getElementById('topSpdVal').textContent  = Math.round(allTimeTopSpd);
+    document.getElementById('topSpdUnit').textContent = useMetric ? 'KM/H' : 'MPH';
+  }
   // Show/hide GPS wait overlay
   const waitEl = document.getElementById('gpsWait');
   if (waitEl) waitEl.style.display = gpsReady ? 'none' : 'block';
@@ -1069,6 +1106,9 @@ function toggleUnit() {
   const u = useMetric ? 'KM/H' : 'MPH';
   document.getElementById('spdUnit').textContent = u + ' ⇄';
   document.getElementById('tgtSuf').textContent  = u;
+  allTimeTopSpd = 0;
+  document.getElementById('topSpdVal').textContent  = '0';
+  document.getElementById('topSpdUnit').textContent = u;
   resetRun();
 }
 
