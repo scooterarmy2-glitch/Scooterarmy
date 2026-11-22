@@ -1410,9 +1410,7 @@ function renderSessions() {
     <div class="sess-item">
       <div class="sess-row" onclick="openRideModal(${i})">
         <div class="sess-name-wrap">
-          <input class="sess-name" value="${s.name.replace(/"/g,'&quot;')}" onclick="event.stopPropagation()"
-            onblur="renameSess(${i}, this.value)"
-            onkeydown="if(event.key==='Enter')this.blur()">
+          <div class="sess-name">${s.name}</div>
           <div class="sess-meta">
             <span>${s.dur}</span>
             <span>${s.dist}</span>
