@@ -1098,7 +1098,6 @@ function openRideModalById(id) {
 function openRideModal(i) {
   const s = sessions[i]; if (!s) return;
   const rows = [['Date', s.name], ['Duration', s.dur], ['Distance', s.dist], ['Top Speed', s.topSpd]];
-  if (s.route && s.route.length > 1) rows.push(['Route', s.route.length + ' points — tap VIEW ROUTE below']);
   // Average speed, when duration and distance both parse
   const dm = s.dist.match(/([\d.]+)\s*(mi|km)/);
   const tm = s.dur.match(/(?:(\d+):)?(\d+)/);
