@@ -482,7 +482,12 @@ canvas#gauge { display:block; }
 .alert-row .tgt-inp { font-size:16px; padding:4px 8px; }
 .export-btn { background:none; border:1px solid #444; border-radius:4px; font-family:'Share Tech Mono',monospace; font-size:10px; color:#aaa; cursor:pointer; letter-spacing:.1em; padding:3px 8px; }
 .export-btn:hover { color:#fff; border-color:#888; }
+
+/* ROUTE MAP */
+.route-map { width:100%; height:300px; background:#0a0a0a; border:1px solid #333; border-radius:8px; z-index:1; }
 </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
   <div class="alert-banner" id="alertBanner">⚠ OVER SPEED LIMIT</div>
@@ -735,6 +740,8 @@ function estimateStart(p, mps, t) {
 // ─────────────────────────────────────────────
 let sessionActive    = false;
 let alertMph         = parseFloat(localStorage.getItem('sa_alert') || '') || 0;
+let sessionRoute     = [];   // recorded lat/lon points for the current ride
+let routeMap         = null;
 let alertOn          = false;
 let audioCtx         = null;
 let sessionStart     = null;     // Date object
@@ -1039,6 +1046,26 @@ function exportRuns(fmt) {
   downloadFile('samo-timed-runs-' + date + '.csv', rows.join('\n'), 'text/csv');
 }
 
+
+function openRouteModal(i) {
+  const s = sessions[i]; if (!s || !s.route || s.route.length < 2) return;
+  closeLogModal();
+  document.getElementById('routeTitle').textContent = 'ROUTE — ' + s.name;
+  document.getElementById('routeSub').textContent = s.route.length + ' points · ' + s.dist;
+  document.getElementById('routeModal').classList.add('open');
+  setTimeout(() => {
+    if (routeMap) { routeMap.remove(); routeMap = null; }
+    const pts = s.route.map(p => [p.lat, p.lon]);
+    routeMap = L.map('routeMap', { zoomControl: true, attributionControl: false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(routeMap);
+    L.polyline(pts, { color: '#ff6600', weight: 4 }).addTo(routeMap);
+    L.circleMarker(pts[0], { radius: 7, color: '#39ff14', fillColor: '#39ff14', fillOpacity: 1 }).addTo(routeMap).bindPopup('Start');
+    L.circleMarker(pts[pts.length-1], { radius: 7, color: '#ff2200', fillColor: '#ff2200', fillOpacity: 1 }).addTo(routeMap).bindPopup('End');
+    routeMap.fitBounds(pts, { padding: [20, 20] });
+  }, 50);
+}
+function closeRouteModal() { document.getElementById('routeModal').classList.remove('open'); }
+
 // ─────────────────────────────────────────────
 // LOG DETAIL POPUP — tap any log entry for a big, readable view
 // ─────────────────────────────────────────────
@@ -1059,6 +1086,7 @@ function openRunModal(i) {
 function openRideModal(i) {
   const s = sessions[i]; if (!s) return;
   const rows = [['Date', s.name], ['Duration', s.dur], ['Distance', s.dist], ['Top Speed', s.topSpd]];
+  if (s.route && s.route.length > 1) rows.push(['Route', s.route.length + ' points — tap VIEW ROUTE below']);
   // Average speed, when duration and distance both parse
   const dm = s.dist.match(/([\d.]+)\s*(mi|km)/);
   const tm = s.dur.match(/(?:(\d+):)?(\d+)/);
@@ -1070,6 +1098,16 @@ function openRideModal(i) {
     }
   }
   openLogModal('RIDE LOG', s.topSpd, 'TOP SPEED', rows);
+  const card = document.querySelector('#logModal .log-card');
+  let rb = document.getElementById('viewRouteBtn');
+  if (rb) rb.remove();
+  if (s.route && s.route.length > 1) {
+    rb = document.createElement('button');
+    rb.id = 'viewRouteBtn'; rb.className = 'log-close'; rb.textContent = 'VIEW ROUTE';
+    rb.style.marginTop = '10px';
+    rb.onclick = () => openRouteModal(i);
+    card.insertBefore(rb, card.querySelector('.log-close'));
+  }
 }
 
 function renderHistory() {
@@ -1267,6 +1305,13 @@ function handleFix(f) {
 
   // Session tracking — only when GPS is reliable
   if (sessionActive && gpsReady) {
+    if (f.lat) {
+      const lastPt = sessionRoute[sessionRoute.length-1];
+      if (!lastPt || (f.t - lastPt.t > 3000) || haversine(lastPt.lat, lastPt.lon, f.lat, f.lon) > 10) {
+        sessionRoute.push({ lat:f.lat, lon:f.lon, spd:Math.round(mps*10)/10, t:f.t });
+        if (sessionRoute.length > 2000) sessionRoute.shift();
+      }
+    }
     if (currentSpd > sessionTopSpd) sessionTopSpd = currentSpd;
     if (f.lat && sessionLastPos) {
       sessionDist += haversine(sessionLastPos.lat, sessionLastPos.lon, f.lat, f.lon);
@@ -1383,6 +1428,7 @@ function startSession() {
   sessionTopSpd  = 0;
   sessionDist    = 0;
   sessionLastPos = null;
+  sessionRoute   = [];
 
   // Update button
   const btn = document.getElementById('sessBtn');
@@ -1442,7 +1488,8 @@ function stopSession() {
     topSpdNum: topSpdSnap,
     dist:      dist,
     dur:       fmtDur(durSec),
-    ts:        startSnap.toISOString()
+    ts:        startSnap.toISOString(),
+    route:      sessionRoute.slice()
   };
 
   // Prepend to list
@@ -1746,6 +1793,15 @@ document.addEventListener('touchstart', tryFullscreen, {once:true});
 document.addEventListener('click',      tryFullscreen, {once:true});
 </script>
 
+  <!-- ROUTE MAP POPUP -->
+  <div class="log-modal" id="routeModal" onclick="if(event.target===this)closeRouteModal()">
+    <div class="log-card">
+      <div class="log-card-title" id="routeTitle">ROUTE</div>
+      <div class="route-map" id="routeMap"></div>
+      <div class="log-card-big-lbl" id="routeSub" style="margin-top:12px"></div>
+      <button class="log-close" onclick="closeRouteModal()">CLOSE</button>
+    </div>
+  </div>
   <!-- LOG DETAIL POPUP -->
   <div class="log-modal" id="logModal" onclick="if(event.target===this)closeLogModal()">
     <div class="log-card">
