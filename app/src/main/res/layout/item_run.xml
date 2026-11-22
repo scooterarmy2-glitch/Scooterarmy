@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="5dp"
+    android:background="@drawable/log_item_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="10dp">
+
+    <TextView
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/orbitron_700"
+        android:text="ACCEL"
+        android:textColor="#cccccc"
+        android:textSize="9sp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/runLbl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/share_tech_mono"
+            android:textColor="#dddddd"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/runDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/share_tech_mono"
+            android:textColor="#aaaaaa"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/runBestBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="8dp"
+        android:fontFamily="@font/orbitron_700"
+        android:text="BEST"
+        android:textColor="@color/amber"
+        android:textSize="9sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/runTime"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/orbitron_900"
+        android:gravity="end"
+        android:textColor="@color/chrome"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/runDel"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:padding="2dp"
+        android:text="✕"
+        android:textColor="#666666"
+        android:textSize="14sp" />
+</LinearLayout>

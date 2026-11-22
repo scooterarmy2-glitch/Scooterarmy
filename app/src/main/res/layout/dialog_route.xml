@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_bg"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/routeTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/orbitron_700"
+        android:text="ROUTE"
+        android:textColor="#cccccc"
+        android:textSize="13sp" />
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/routeMap"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="12dp" />
+
+    <TextView
+        android:id="@+id/routeSub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/orbitron_700"
+        android:textColor="@color/amber"
+        android:textSize="11sp" />
+
+    <Button
+        android:id="@+id/routeClose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:background="#1e1e1e"
+        android:fontFamily="@font/orbitron_700"
+        android:text="CLOSE"
+        android:textColor="#ffffff"
+        android:textSize="13sp" />
+</LinearLayout>
