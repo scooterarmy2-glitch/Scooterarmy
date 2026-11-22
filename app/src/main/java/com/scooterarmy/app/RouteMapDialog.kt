@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.view.LayoutInflater
+import android.view.View
 import com.scooterarmy.app.databinding.DialogRouteBinding
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -46,6 +47,7 @@ object RouteMapDialog {
         val map: MapView = binding.routeMap
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
+        map.setUseDataConnection(true)
         map.controller.setZoom(15.0)
 
         val points = ride.route.map { GeoPoint(it.lat, it.lon) }
@@ -57,9 +59,25 @@ object RouteMapDialog {
         map.overlays.add(line)
         map.overlays.add(marker(map, points.first(), Color.parseColor("#39ff14"), "Start"))
         map.overlays.add(marker(map, points.last(), Color.parseColor("#ff2200"), "End"))
-        // Fit bounds after layout, when the map knows its size.
-        map.post { map.zoomToBoundingBox(BoundingBox.fromGeoPoints(points), false, 40) }
-        map.onResume()
+
+        // Fit the route only once the map actually has a size. A dialog's
+        // view is 0x0 until it is shown and laid out — fitting earlier
+        // (map.post before show) feeds 0 into osmdroid's zoom math, which
+        // computes a NaN zoom, so no tiles can ever be requested and the
+        // map stays an empty grid. This listener fires on the first real
+        // layout (the setLayout() resize below included) and removes
+        // itself, so the fit always runs against the true map size.
+        map.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(
+                v: View, left: Int, top: Int, right: Int, bottom: Int,
+                oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int
+            ) {
+                if (map.width > 0 && map.height > 0) {
+                    map.removeOnLayoutChangeListener(this)
+                    fitRoute(map, points)
+                }
+            }
+        })
 
         binding.routeClose.setOnClickListener { dialog.dismiss() }
         dialog.setOnDismissListener { map.onPause() }
@@ -68,6 +86,28 @@ object RouteMapDialog {
             (context.resources.displayMetrics.widthPixels * 0.92).toInt(),
             android.view.ViewGroup.LayoutParams.WRAP_CONTENT
         )
+        map.onResume()
+    }
+
+    private fun fitRoute(map: MapView, points: List<GeoPoint>) {
+        val box = BoundingBox.fromGeoPoints(points)
+        // A ride that barely moved has a near-zero bounding box; zooming
+        // to fit it would pin the map to max zoom on one spot. Center on
+        // the midpoint at a sensible zoom instead.
+        val nw = GeoPoint(box.latNorth, box.lonWest)
+        val se = GeoPoint(box.latSouth, box.lonEast)
+        if (nw.distanceToAsDouble(se) < 100.0) {
+            map.controller.setZoom(16.0)
+            map.controller.setCenter(
+                GeoPoint(
+                    (box.latNorth + box.latSouth) / 2.0,
+                    (box.lonEast + box.lonWest) / 2.0
+                )
+            )
+        } else {
+            map.zoomToBoundingBox(box, false, 40)
+        }
+        map.invalidate()
     }
 
     private fun marker(map: MapView, point: GeoPoint, color: Int, title: String): Marker {

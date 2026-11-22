@@ -41,7 +41,7 @@ class GaugeView @JvmOverloads constructor(
     private val orbitron700: Typeface by lazy { resources.getFont(R.font.orbitron_700) }
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#181818")
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#4a4a4a")
     }
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
@@ -86,14 +86,14 @@ class GaugeView @JvmOverloads constructor(
         val r = min(w, h) / 2f - 18f * scale
         val ratio = min(speed / maxSpd, 1.0)
 
-        trackPaint.strokeWidth = 13f * scale
+        trackPaint.strokeWidth = 18f * scale
         canvas.drawArc(cx - r, cy - r, cx + r, cy + r,
             Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, trackPaint)
 
         // Target marker (green tick) while a run is armed/running.
         if (showTarget && target > 0 && target <= maxSpd) {
             val ta = Math.toDegrees(angleFor(target)).toFloat()
-            targetPaint.strokeWidth = 13f * scale
+            targetPaint.strokeWidth = 18f * scale
             targetPaint.setShadowLayer(14f * scale, 0f, 0f, Color.parseColor("#39ff14"))
             canvas.drawArc(cx - r, cy - r, cx + r, cy + r, ta - 1.5f, 3f, false, targetPaint)
             targetPaint.clearShadowLayer()
@@ -107,8 +107,8 @@ class GaugeView @JvmOverloads constructor(
                 else -> "#ff6a00"
             }
             arcPaint.color = Color.parseColor(col)
-            arcPaint.strokeWidth = 13f * scale
-            arcPaint.setShadowLayer(14f * scale, 0f, 0f, Color.parseColor(col))
+            arcPaint.strokeWidth = 18f * scale
+            arcPaint.setShadowLayer(18f * scale, 0f, 0f, Color.parseColor(col))
             canvas.drawArc(cx - r, cy - r, cx + r, cy + r,
                 Math.toDegrees(a0).toFloat(), (Math.toDegrees(sweep) * ratio).toFloat(), false, arcPaint)
             arcPaint.clearShadowLayer()
