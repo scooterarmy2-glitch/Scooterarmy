@@ -36,6 +36,7 @@ object RouteMapDialog {
     fun show(context: Context, ride: RideRecord) {
         if (ride.route.size < 2) return
         val binding = DialogRouteBinding.inflate(LayoutInflater.from(context))
+        FontLoader.applyFonts(binding.root)
         binding.routeTitle.text = "ROUTE — ${ride.name}"
         binding.routeSub.text = ride.dist
 

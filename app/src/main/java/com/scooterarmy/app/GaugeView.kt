@@ -38,11 +38,9 @@ class GaugeView @JvmOverloads constructor(
 
     private val maxSpd: Double get() = if (useMetric) 160.0 else 100.0
 
-    private val orbitron700: Typeface? = try {
-        resources.getFont(R.font.orbitron_700)
-    } catch (_: Exception) {
-        null
-    }
+    // Typeface comes from FontLoader (runtime-decoded from res/raw) — there is
+    // no longer any font resource for the framework loader to load.
+    private val orbitron700: Typeface? by lazy { FontLoader.orbitron700(context) }
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#181818")

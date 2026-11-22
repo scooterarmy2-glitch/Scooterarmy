@@ -36,46 +36,11 @@ android {
         viewBinding true
     }
 
-    // Orbitron / Share Tech Mono ship as base64 text (res/raw/*.b64) because
-    // binary font files cannot be pushed through the GitHub connector.
-    // decodeFonts (below) decodes them into real .ttf font resources.
-    // NOTE: the generated res dir is NOT added via sourceSets.res.srcDirs —
-    // that made every resource task consume decodeFonts' output with no
-    // declared dependency, and Gradle validation then failed one task at a
-    // time (Build #50 merge, #52 generate, #53 package). It is registered
-    // through the AGP variant sources API instead (see androidComponents
-    // below), which declares decodeFonts as its producer once.
-}
-
-tasks.register('decodeFonts') {
-    def rawDir = file('src/main/res/raw')
-    def outDir = file("${project.buildDir}/generated/res/font")
-    inputs.dir(rawDir)
-    outputs.dir(outDir)
-    doLast {
-        outDir.mkdirs()
-        ['orbitron_400', 'orbitron_700', 'orbitron_900', 'share_tech_mono'].each { name ->
-            def b64 = new File(rawDir, name + '.b64').text.replaceAll('\\s', '')
-            new File(outDir, name + '.ttf').bytes = b64.decodeBase64()
-        }
-    }
-}
-
-// ROOT FIX for Builds #50/#52/#53 — ends the whack-a-mole, do not revert to
-// per-task dependsOn wiring. Previously the generated res dir was declared
-// via sourceSets.res.srcDirs and decodeFonts was wired to individual tasks
-// (merge, then generate) — each patch just revealed the next undeclared
-// consumer (packageReleaseResources in #53, then process*Resources, ...).
-// Registering the directory through the AGP variant sources API declares
-// decodeFonts as the producer of the directory ONCE, so every downstream
-// resource task — generate, merge, package, process, both variants, APK
-// and AAB — implicitly depends on it.
-androidComponents {
-    onVariants(selector().all()) { variant ->
-        variant.sources.res?.addGeneratedSourceDirectory(tasks.named('decodeFonts')) {
-            layout.buildDirectory.dir('generated/res')
-        }
-    }
+    // Fonts: Orbitron / Share Tech Mono ship as base64 text (res/raw/*.b64)
+    // because binary font files cannot be pushed through the GitHub
+    // connector. They are decoded at RUNTIME by FontLoader (on first use)
+    // — there is no build-time font step at all, by design: build-time
+    // font decoding failed four straight builds on Gradle task wiring.
 }
 
 dependencies {
