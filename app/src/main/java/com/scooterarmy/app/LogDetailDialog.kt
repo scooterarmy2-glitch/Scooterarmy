@@ -67,7 +67,11 @@ fun rideAvgSpeedRow(ride: RideRecord): Pair<String, String>? {
         else -> parts[0] * 3600 + parts[1] * 60 + parts[2]
     }
     if (totalSec <= 0) return null
-    val unit = if (dm.groupValues[2] == "km") "km/h" else "mph"
-    val avg = dm.groupValues[1].toDoubleOrNull()?.div(totalSec / 3600.0) ?: return null
-    return "Avg Speed" to String.format("%.1f %s", avg, unit)
+    // Distances are stored in miles now. A legacy ride saved while the
+    // metric toggle still existed may read "km" — convert it so the
+    // average always shows in mph.
+    val distVal = dm.groupValues[1].toDoubleOrNull() ?: return null
+    val distMi = if (dm.groupValues[2] == "km") distVal * 0.621371 else distVal
+    val avg = distMi / (totalSec / 3600.0)
+    return "Avg Speed" to String.format("%.1f mph", avg)
 }

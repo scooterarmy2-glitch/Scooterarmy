@@ -113,9 +113,8 @@ class MainActivity : Activity() {
     }
 
     // ── State ───────────────────────────────────────────────────
-    private var useMetric = false
     private var state = RunState.IDLE
-    private var currentSpd = 0.0        // display units (mph or km/h), raw GPS
+    private var currentSpd = 0.0        // mph, raw GPS
     private var rawMps = 0.0
     private var gpsReady = false
     private var allTimeTopSpd = 0.0
@@ -222,7 +221,6 @@ class MainActivity : Activity() {
         imuBridge = ImuBridge(this)
         RouteMapDialog.configure(this)
 
-        useMetric = store.useMetric
         alertMph = store.alertMph
         rides = store.rides
         runs = store.runs
@@ -237,15 +235,14 @@ class MainActivity : Activity() {
         binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff4400"))
         binding.spdNum.setShadowLayer(20f * density, 0f, 0f, Color.parseColor("#ff4400"))
         binding.timerBig.setShadowLayer(15f * density, 0f, 0f, Color.parseColor("#59ff6400"))
-        binding.spdUnit.text = if (useMetric) "KM/H ⇄" else "MPH ⇄"
-        binding.tgtSuf.text = if (useMetric) "KM/H" else "MPH"
-        binding.topSpdUnit.text = if (useMetric) "KM/H" else "MPH"
+        binding.spdUnit.text = "MPH"
+        binding.tgtSuf.text = "MPH"
+        binding.topSpdUnit.text = "MPH"
         if (alertMph > 0) {
             binding.alertInp.setText(trimNum(alertMph))
             binding.alertHint.text = "on — over ${trimNum(alertMph)} mph"
         }
 
-        binding.spdUnit.setOnClickListener { toggleUnit() }
         binding.sessBtn.setOnClickListener { toggleSession() }
         binding.armBtn.setOnClickListener { armRun() }
         binding.resetBtn.setOnClickListener { resetRun() }
@@ -562,14 +559,13 @@ class MainActivity : Activity() {
     private fun trimNum(v: Double): String =
         if (v == v.toLong().toDouble()) v.toLong().toString() else v.toString()
 
-    // ── Unit conversion ─────────────────────────────────────────
-    private fun toMps(displayVal: Double): Double =
-        if (useMetric) displayVal / 3.6 else displayVal / 2.23694
+    // ── Unit conversion: mph only ───────────────────────────────
+    // GPS works in m/s internally; everything the user sees is mph.
+    private fun toMps(mph: Double): Double = mph / 2.23694
 
-    private fun fromMps(mps: Double): Double =
-        if (useMetric) mps * 3.6 else mps * 2.23694
+    private fun fromMps(mps: Double): Double = mps * 2.23694
 
-    private fun maxSpd(): Double = if (useMetric) 160.0 else 100.0
+    private fun maxSpd(): Double = 100.0
 
     private fun tgtVal(): Double =
         binding.tgtInp.text.toString().toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
@@ -804,7 +800,7 @@ class MainActivity : Activity() {
             fixClockT = f.t
             fixClockPerf = perf
 
-            if (state == RunState.ARMED && mps > toMps(if (useMetric) 6.0 else 4.0)) {
+            if (state == RunState.ARMED && mps > toMps(4.0)) {
                 runStartT = estimateStart(prev, mps, f.t)
                 startRun()
             }
@@ -881,12 +877,11 @@ class MainActivity : Activity() {
         }
         binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, glowColor)
         binding.gauge.speed = disp
-        binding.gauge.useMetric = useMetric
 
         if (gpsReady && currentSpd > allTimeTopSpd) {
             allTimeTopSpd = currentSpd
             binding.topSpdVal.text = allTimeTopSpd.roundToInt().toString()
-            binding.topSpdUnit.text = if (useMetric) "KM/H" else "MPH"
+            binding.topSpdUnit.text = "MPH"
         }
         binding.gpsWait.visibility = if (gpsReady) View.GONE else View.VISIBLE
 
@@ -895,8 +890,7 @@ class MainActivity : Activity() {
     }
 
     private fun updateFsInfo() {
-        binding.fsTopVal.text =
-            "${allTimeTopSpd.roundToInt()} ${if (useMetric) "KM/H" else "MPH"}"
+        binding.fsTopVal.text = "${allTimeTopSpd.roundToInt()} MPH"
         val gpsEl = binding.fsGpsVal
         when {
             lastSig >= 3 -> { gpsEl.text = "LOCKED"; gpsEl.setTextColor(Color.parseColor("#39ff14")) }
@@ -1006,27 +1000,6 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun toggleUnit() {
-        // Convert the in-progress ride's top speed across the toggle first:
-        // sessionTopSpd is stored in display units, so flipping without
-        // converting would record e.g. a 76 km/h ride as "76 mph".
-        val rideTopMps = toMps(sessionTopSpd)
-        useMetric = !useMetric
-        store.useMetric = useMetric
-        if (sessionActive) sessionTopSpd = fromMps(rideTopMps)
-        // currentSpd is also display units; refresh it so the speed alert
-        // evaluates against the new units on the next tick, not the old ones.
-        currentSpd = fromMps(rawMps)
-        val u = if (useMetric) "KM/H" else "MPH"
-        binding.spdUnit.text = "$u ⇄"
-        binding.tgtSuf.text = u
-        allTimeTopSpd = 0.0
-        binding.topSpdVal.text = "0"
-        binding.topSpdUnit.text = u
-        binding.gauge.useMetric = useMetric
-        resetRun()
-    }
-
     // ── Timed run ───────────────────────────────────────────────
     private fun armRun() {
         val tgt = tgtVal()
@@ -1082,8 +1055,7 @@ class MainActivity : Activity() {
         setBtn(binding.armBtn, true)
         binding.tgtInp.isEnabled = true
         binding.gauge.showTarget = false
-        val u = if (useMetric) "km/h" else "mph"
-        val runLbl = "0 → ${trimNum(tgtVal())} $u"
+        val runLbl = "0 → ${trimNum(tgtVal())} mph"
         saveRecord(elapsedMs, runLbl)
         renderHistory()
         renderBvL()
@@ -1204,16 +1176,11 @@ class MainActivity : Activity() {
             return
         }
 
-        val u = if (useMetric) "km/h" else "mph"
-        val dist = if (useMetric) {
-            String.format("%.2f km", distSnap / 1000.0)
-        } else {
-            String.format("%.2f mi", distSnap / 1609.34)
-        }
+        val dist = String.format("%.2f mi", distSnap / 1609.34)
         val record = RideRecord(
             id = System.currentTimeMillis(),
             name = rideName(startSnap),
-            topSpd = "${topSpdSnap.roundToInt()} $u",
+            topSpd = "${topSpdSnap.roundToInt()} mph",
             topSpdNum = topSpdSnap,
             dist = dist,
             dur = fmtDur(durSec),
@@ -1241,13 +1208,8 @@ class MainActivity : Activity() {
     private fun updateSessionLive() {
         val start = sessionStart ?: return
         val durSec = Math.round((Date().time - start.time) / 1000.0).toInt()
-        val u = if (useMetric) "km/h" else "mph"
-        val dist = if (useMetric) {
-            String.format("%.2f km", sessionDist / 1000.0)
-        } else {
-            String.format("%.2f mi", sessionDist / 1609.34)
-        }
-        binding.liveTopSpd.text = "${sessionTopSpd.roundToInt()} $u"
+        val dist = String.format("%.2f mi", sessionDist / 1609.34)
+        binding.liveTopSpd.text = "${sessionTopSpd.roundToInt()} mph"
         binding.liveDist.text = dist
         binding.liveDur.text = fmtDur(durSec)
     }
@@ -1385,7 +1347,7 @@ class MainActivity : Activity() {
     }
 
     /** Alert fires on true GPS speed, never on the IMU interpolation. */
-    private fun checkSpeedAlert(spdDisplayUnits: Double) {
+    private fun checkSpeedAlert(spdMph: Double) {
         val banner = binding.alertBanner
         if (alertMph <= 0) {
             banner.visibility = View.GONE
@@ -1393,11 +1355,11 @@ class MainActivity : Activity() {
             alertOn = false
             return
         }
-        val limit = if (useMetric) alertMph * 1.60934 else alertMph
-        val over = spdDisplayUnits >= limit
+        val limit = alertMph
+        val over = spdMph >= limit
         if (over && !alertOn) {
             alertOn = true
-            banner.text = "⚠ OVER ${trimNum(alertMph)} ${if (useMetric) "KM/H" else "MPH"}"
+            banner.text = "⚠ OVER ${trimNum(alertMph)} MPH"
             banner.visibility = View.VISIBLE
             alertFlashAnimator?.cancel()
             alertFlashAnimator = android.animation.ObjectAnimator.ofFloat(banner, "alpha", 1f, 0.55f).apply {
@@ -1407,7 +1369,7 @@ class MainActivity : Activity() {
                 start()
             }
             beep()
-        } else if (!over && spdDisplayUnits < limit - 2) {
+        } else if (!over && spdMph < limit - 2) {
             alertOn = false
             alertFlashAnimator?.cancel()
             banner.alpha = 1f

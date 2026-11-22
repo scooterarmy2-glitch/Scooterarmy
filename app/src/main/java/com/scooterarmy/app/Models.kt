@@ -25,7 +25,7 @@ data class RideRecord(
     val id: Long,
     val name: String,          // e.g. "Sun, Nov 22 08:02 AM"
     val topSpd: String,        // e.g. "47 mph" (display string, unit included)
-    val topSpdNum: Double,     // top speed in display units
+    val topSpdNum: Double,     // top speed in mph
     val dist: String,          // e.g. "3.42 mi"
     val dur: String,           // e.g. "12:34"
     val ts: String,            // ISO start time

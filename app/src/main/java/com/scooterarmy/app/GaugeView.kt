@@ -21,14 +21,11 @@ class GaugeView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    /** Speed to show, in display units (mph or km/h). */
+    /** Speed to show, in mph. */
     var speed: Double = 0.0
         set(value) { field = value; invalidate() }
 
-    var useMetric: Boolean = false
-        set(value) { field = value; invalidate() }
-
-    /** Target speed for the timed run, display units (0 = none). */
+    /** Target speed for the timed run, in mph (0 = none). */
     var target: Double = 0.0
         set(value) { field = value; invalidate() }
 
@@ -36,7 +33,7 @@ class GaugeView @JvmOverloads constructor(
     var showTarget: Boolean = false
         set(value) { field = value; invalidate() }
 
-    private val maxSpd: Double get() = if (useMetric) 160.0 else 100.0
+    private val maxSpd: Double get() = 100.0
 
     private val orbitron700: Typeface by lazy { resources.getFont(R.font.orbitron_700) }
     private val orbitron900: Typeface by lazy { resources.getFont(R.font.orbitron_900) }
@@ -116,8 +113,8 @@ class GaugeView @JvmOverloads constructor(
         }
 
         // Ticks + numbers.
-        val minorStep = if (useMetric) 10 else 5
-        val majorStep = if (useMetric) 20 else 10
+        val minorStep = 5
+        val majorStep = 10
         var v = 0
         while (v <= maxSpd.toInt()) {
             val a = angleFor(v.toDouble())
