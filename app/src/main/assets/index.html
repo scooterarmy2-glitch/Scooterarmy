@@ -517,29 +517,28 @@ canvas#gauge { display:block; }
     </div>
   </div>
 
-  <!-- RUN PANEL -->
+  <!-- RIDE BOX -->
   <div class="run-panel">
-    <div class="plabel">0 → TARGET — ACCELERATION</div>
+    <div class="plabel">RIDE</div>
+    <div class="btn-row" style="margin-bottom:4px">
+      <button class="btn session-start" id="sessBtn" onclick="toggleSession()">START RIDE</button>
+    </div>
+    <div class="splits-hint">Tap again to stop — saves time, distance &amp; top speed to the Ride Log</div>
+  </div>
+
+  <!-- TIMED SPEED RUN BOX -->
+  <div class="run-panel">
+    <div class="plabel">TIMED SPEED RUN</div>
     <div class="tgt-row">
       <span class="tgt-pre">0 →</span>
       <input class="tgt-inp" id="tgtInp" type="number" value="45" min="1" max="999">
       <span class="tgt-suf" id="tgtSuf">MPH</span>
     </div>
-    <div id="splitsWrap">
-      <div class="splits-row">
-        <span class="splits-label">Splits (optional):</span>
-        <input class="splits-inp" id="splitsInp" type="text" placeholder="e.g. 30, 45">
-      </div>
-      <div class="splits-hint">Comma-separated intermediate speeds — recorded automatically</div>
-    </div>
     <div class="timer-big" id="timerBig">0.000</div>
-    <div class="timer-sub" id="timerSub">Set target, then ARM</div>
+    <div class="timer-sub" id="timerSub">Set target, then START TIMED RUN</div>
     <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
-    <div class="btn-row" style="margin-bottom:4px">
-      <button class="btn session-start" id="sessBtn" onclick="toggleSession()">START SESSION</button>
-    </div>
     <div class="btn-row">
-      <button class="btn primary"   id="armBtn"   onclick="armRun()">ARM TIMER</button>
+      <button class="btn primary"   id="armBtn"   onclick="armRun()">START TIMED RUN</button>
       <button class="btn secondary" id="resetBtn" onclick="resetRun()" disabled>RESET</button>
     </div>
   </div>
@@ -584,25 +583,25 @@ canvas#gauge { display:block; }
     <div class="bvl-delta" id="bvlDelta"></div>
   </div>
 
-  <!-- HISTORY -->
+  <!-- RIDE LOG -->
+  <div class="session-log">
+    <div class="sess-hdr">
+      <div class="sess-title">Ride Log</div>
+      <button class="sess-clear" onclick="clearSessions()">CLEAR ALL</button>
+    </div>
+    <div class="sess-list" id="sessList">
+      <div class="no-sess" id="noSess">— no rides recorded —</div>
+    </div>
+  </div>
+
+  <!-- TIMED RUN LOG -->
   <div class="history">
     <div class="hist-hdr">
-      <div class="hist-title">Run History</div>
+      <div class="hist-title">Timed Run Log</div>
       <button class="hist-clear" onclick="clearHistory()">CLEAR ALL</button>
     </div>
     <div class="hist-list" id="histList">
       <div class="no-hist" id="noHist">— no runs recorded —</div>
-    </div>
-  </div>
-
-  <!-- SESSION LOG -->
-  <div class="session-log">
-    <div class="sess-hdr">
-      <div class="sess-title">Session Log</div>
-      <button class="sess-clear" onclick="clearSessions()">CLEAR ALL</button>
-    </div>
-    <div class="sess-list" id="sessList">
-      <div class="no-sess" id="noSess">— no sessions recorded —</div>
     </div>
   </div>
 
@@ -667,7 +666,7 @@ let fixClockT      = 0;      // fix-clock time of newest accepted fix (ms)
 let fixClockPerf   = 0;      // performance.now() when that fix was processed
 let runStartT      = null;   // run start on the fix clock (ms)
 let nativeFixSeen  = false;
-const SPD_ACC_REJECT = 1.5;  // m/s — reject fixes whose own speed-error estimate is worse
+const SPD_ACC_REJECT = 1.0;  // m/s (~2.2 mph) — reject fixes whose own speed-error estimate is worse
 function toMps(v)   { return useMetric ? v/3.6 : v/2.23694; }
 function fromMps(m) { return useMetric ? m*3.6 : m*2.23694; }
 function nowT()     { return fixClockT + (performance.now() - fixClockPerf); }
@@ -769,12 +768,12 @@ function drawGauge(spd) {
 // MAIN LOOP
 // ─────────────────────────────────────────────
 function loop() {
-  dispSpd += (currentSpd - dispSpd) * (Math.abs(currentSpd - dispSpd) > 3 ? 0.45 : 0.25);
+  dispSpd += (currentSpd - dispSpd) * 0.12;  // needle glides; the big number below stays raw
   if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
 
   const ratio = dispSpd / maxSpd();
   const ne = document.getElementById('spdNum');
-  ne.textContent = Math.round(dispSpd);
+  ne.textContent = Math.round(currentSpd);
   ne.className = 'spd-num' + (ratio>.85?' danger':ratio>.6?' warn':'');
 
   // Update top speed box
@@ -805,7 +804,7 @@ function armRun() {
   const tgt = tgtVal();
   if (!tgt) { setBar('Enter a valid target speed','warn'); return; }
 
-  parseSplits();
+  if (document.getElementById('splitsInp')) parseSplits();
   splitHits = {};
   state = S.ARMED;
 
@@ -818,7 +817,7 @@ function armRun() {
   document.getElementById('armBtn').disabled      = true;
   document.getElementById('resetBtn').disabled    = false;
   document.getElementById('tgtInp').disabled      = true;
-  document.getElementById('splitsInp').disabled   = true;
+  const _si=document.getElementById('splitsInp'); if(_si) _si.disabled = true;
   setBar('Armed — waiting…','warn');
   setArmInd('armed');
   if (!watchId) startGPS();
@@ -839,16 +838,16 @@ function finishRun(elapsed) {
   document.getElementById('timerBig').textContent = fmt(elapsed);
   document.getElementById('timerBig').className   = 'timer-big done';
   document.getElementById('progFill').className   = 'prog-fill done';
-  document.getElementById('armBtn').textContent   = 'ARM TIMER';
+  document.getElementById('armBtn').textContent   = 'START TIMED RUN';
   document.getElementById('armBtn').disabled      = false;
   document.getElementById('tgtInp').disabled      = false;
-  document.getElementById('splitsInp').disabled   = false;
+  const _si=document.getElementById('splitsInp'); if(_si) _si.disabled = false;
   setArmInd('done');
 
   const u      = useMetric ? 'km/h' : 'mph';
   const runLbl = `0 → ${tgtVal()} ${u}`;
   document.getElementById('timerSub').textContent = `${runLbl}  ·  ${fmt(elapsed)}s`;
-  setBar('Run complete 🏁 — ARM for next run','active');
+  setBar('Run complete 🏁 — START TIMED RUN for next run','active');
 
   saveRecord(elapsed, runLbl);
   renderHistory();
@@ -860,16 +859,16 @@ function resetRun() {
   state = S.IDLE; timerStart = null; runStartT = null; splitHits = {};
   document.getElementById('timerBig').textContent = '0.000';
   document.getElementById('timerBig').className   = 'timer-big';
-  document.getElementById('timerSub').textContent = 'Set target, then ARM';
+  document.getElementById('timerSub').textContent = 'Set target, then START TIMED RUN';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progFill').className   = 'prog-fill';
-  document.getElementById('armBtn').textContent   = 'ARM TIMER';
+  document.getElementById('armBtn').textContent   = 'START TIMED RUN';
   document.getElementById('armBtn').disabled      = false;
   document.getElementById('resetBtn').disabled    = true;
   document.getElementById('tgtInp').disabled      = false;
-  document.getElementById('splitsInp').disabled   = false;
+  const _si=document.getElementById('splitsInp'); if(_si) _si.disabled = false;
   setArmInd('idle');
-  setBar(watchId ? 'GPS Locked' : 'Press ARM to enable GPS', watchId ? 'active' : '');
+  setBar(watchId ? 'GPS Locked' : 'Press START TIMED RUN to enable GPS', watchId ? 'active' : '');
 }
 
 // ─────────────────────────────────────────────
@@ -1054,7 +1053,9 @@ function handleFix(f) {
     if (dt > 0.2 && dt < 5) mps = haversine(fixPrev.lat, fixPrev.lon, f.lat, f.lon) / dt;
   }
   const badSpd = f.speedAcc >= 0 && f.speedAcc > SPD_ACC_REJECT;
-  const usable = mps >= 0 && acc <= ACC_REJECT && !badSpd;
+  // Spike guard (cars/bikes): >12 m/s (~27 mph) in <1.5 s is implausible — GPS glitch, not acceleration
+  const spike = fixPrev && mps >= 0 && Math.abs(mps - fixPrev.mps) > 12 && (f.t - fixPrev.t) < 1500;
+  const usable = mps >= 0 && acc <= ACC_REJECT && !badSpd && !spike;
 
   // During a run, drop unusable fixes without touching the timing references
   if (state === S.RUNNING && !usable) { updateSignalDisplay(acc); return; }
@@ -1212,7 +1213,7 @@ function startSession() {
 
   // Update button
   const btn = document.getElementById('sessBtn');
-  btn.textContent = 'STOP SESSION';
+  btn.textContent = 'STOP RIDE';
   btn.className   = 'btn session-stop';
 
   // Show live strip
@@ -1245,7 +1246,7 @@ function stopSession() {
 
   // Reset button
   const btn = document.getElementById('sessBtn');
-  btn.textContent = 'START SESSION';
+  btn.textContent = 'START RIDE';
   btn.className   = 'btn session-start';
 
   // Hide live strip
