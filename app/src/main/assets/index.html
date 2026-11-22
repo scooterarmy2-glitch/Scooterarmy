@@ -1102,6 +1102,16 @@ window.onNativeFix = function(lat, lon, speed, acc, speedAcc, t) {
   nativeFixSeen = true;
   handleFix({src:'native', lat, lon, speed, acc, speedAcc, t});
 };
+let netAcc = null;   // assisted (cell/Wi-Fi) accuracy, only shown while GPS is still locking
+window.onNetworkFix = function(lat, lon, acc) {
+  if (gpsReady) return;               // once GPS locks, network is irrelevant
+  netAcc = acc;
+  const giS = document.getElementById('giStatus');
+  if (giS) giS.textContent = 'ASSISTED';
+  const giA = document.getElementById('giAcc');
+  if (giA) giA.textContent = '±' + Math.round(acc);
+  setBar('Assisted fix — waiting for GPS lock…', 'warn');
+};
 window.onSatCount = function(used, total) {
   const el = document.getElementById('satCount');
   if (el) el.textContent = used;
@@ -1241,7 +1251,8 @@ function onErr(e) {
 function setSdot(cls) {
   document.getElementById('sdot').className = 'sdot' + (cls ? ' '+cls : '');
   document.getElementById('statusTxt').textContent =
-    {active:'GPS LOCKED', warn:'SEARCHING', error:'NO SIGNAL'}[cls] || 'SEARCHING';
+    (cls === 'active' ? (acc <= 5 ? 'GPS LOCKED · EXCELLENT' : acc <= 10 ? 'GPS LOCKED · GOOD' : 'GPS LOCKED · FAIR')
+                     : {warn:'SEARCHING', error:'NO SIGNAL'}[cls] || 'SEARCHING');
 }
 
 // ─────────────────────────────────────────────

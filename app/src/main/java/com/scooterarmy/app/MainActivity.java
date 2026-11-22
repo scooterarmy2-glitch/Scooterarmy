@@ -35,6 +35,20 @@ public class MainActivity extends Activity {
     }
 
     // Raw GPS-provider fixes (no fused-provider smoothing) pushed straight into the page.
+    // Assisted (network) fixes: coarse position from cell/Wi-Fi while GPS is still locking.
+    // Never used for speed or timing — only to show an assisted status instantly.
+    private final LocationListener netListener = new LocationListener() {
+        @Override public void onLocationChanged(Location l) {
+            double acc = l.hasAccuracy() ? l.getAccuracy() : 999;
+            js(String.format(Locale.US,
+                "window.onNetworkFix&&window.onNetworkFix(%.7f,%.7f,%.1f)",
+                l.getLatitude(), l.getLongitude(), acc));
+        }
+        @Override public void onProviderEnabled(String p) {}
+        @Override public void onProviderDisabled(String p) {}
+        @Override public void onStatusChanged(String p, int status, Bundle extras) {}
+    };
+
     private final LocationListener locListener = new LocationListener() {
         @Override public void onLocationChanged(Location l) { pushFix(l); }
         @Override public void onProviderEnabled(String p)  { js("window.onNativeProvider&&window.onNativeProvider(true)"); }
@@ -68,6 +82,7 @@ public class MainActivity extends Activity {
         try {
             locMgr = (LocationManager) getSystemService(LOCATION_SERVICE);
             locMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locListener);
+            try { locMgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000L, 0f, netListener); } catch (Exception ignored) {}
             gnssCallback = new GnssStatus.Callback() {
                 @Override public void onSatelliteStatusChanged(GnssStatus s) { pushSatCount(s); }
             };
@@ -83,6 +98,7 @@ public class MainActivity extends Activity {
     private void stopLocation() {
         if (listening && locMgr != null) {
             locMgr.removeUpdates(locListener);
+            try { locMgr.removeUpdates(netListener); } catch (Exception ignored) {}
             if (gnssCallback != null) locMgr.unregisterGnssStatusCallback(gnssCallback);
             listening = false;
         }
