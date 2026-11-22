@@ -461,6 +461,18 @@ canvas#gauge { display:block; }
   .gauge-wrap { width: min(100vh - 16px, 100vw - 16px); height: min(100vh - 16px, 100vw - 16px); }
   canvas#gauge { width: 100% !important; height: 100% !important; }
 }
+
+/* LOG DETAIL POPUP */
+.log-modal { position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; align-items:center; justify-content:center; z-index:999; padding:20px; }
+.log-modal.open { display:flex; }
+.log-card { width:100%; max-width:420px; background:linear-gradient(180deg,#1a1a1a,#0d0d0d); border:1px solid #444; border-top:2px solid var(--red); border-radius:12px; padding:24px; box-shadow:0 10px 40px rgba(0,0,0,.9); }
+.log-card-title { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; letter-spacing:.2em; color:#ccc; text-transform:uppercase; }
+.log-card-big { font-family:'Orbitron',sans-serif; font-size:64px; font-weight:900; color:#fff; line-height:1.1; margin:12px 0 4px; text-shadow:0 0 24px var(--glow); }
+.log-card-big-lbl { font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:.3em; color:var(--amber); text-transform:uppercase; margin-bottom:16px; }
+.log-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid #2a2a2a; }
+.log-row-lbl { font-size:15px; color:#aaa; letter-spacing:.1em; }
+.log-row-val { font-family:'Orbitron',sans-serif; font-size:19px; font-weight:700; color:#fff; text-align:right; }
+.log-close { width:100%; margin-top:18px; padding:14px; background:#1e1e1e; border:1px solid #444; border-radius:8px; color:#fff; font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:.25em; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -946,6 +958,40 @@ function saveRecord(elapsed, runLbl) {
   return { isBest };
 }
 
+
+// ─────────────────────────────────────────────
+// LOG DETAIL POPUP — tap any log entry for a big, readable view
+// ─────────────────────────────────────────────
+function openLogModal(title, big, bigLbl, rows) {
+  document.getElementById('logTitle').textContent = title;
+  document.getElementById('logBig').textContent = big;
+  document.getElementById('logBigLbl').textContent = bigLbl;
+  document.getElementById('logRows').innerHTML = rows.map(([l,v]) =>
+    `<div class="log-row"><span class="log-row-lbl">${l}</span><span class="log-row-val">${v}</span></div>`).join('');
+  document.getElementById('logModal').classList.add('open');
+}
+function closeLogModal() { document.getElementById('logModal').classList.remove('open'); }
+function openRunModal(i) {
+  const r = history[i]; if (!r) return;
+  openLogModal('TIMED RUN', r.time + 's', '0 → TARGET TIME',
+    [['Run', r.runLbl], ['Date', r.date], ['Result', r.isBest ? '★ BEST' : '—']]);
+}
+function openRideModal(i) {
+  const s = sessions[i]; if (!s) return;
+  const rows = [['Date', s.name], ['Duration', s.dur], ['Distance', s.dist], ['Top Speed', s.topSpd]];
+  // Average speed, when duration and distance both parse
+  const dm = s.dist.match(/([\d.]+)\s*(mi|km)/);
+  const tm = s.dur.match(/(?:(\d+):)?(\d+)/);
+  if (dm && tm) {
+    const mins = (tm[1] ? +tm[1] : 0) + (+tm[2] / 60);
+    if (mins > 0) {
+      const unit = dm[2] === 'km' ? 'km/h' : 'mph';
+      rows.push(['Avg Speed', (parseFloat(dm[1]) / (mins / 60)).toFixed(1) + ' ' + unit]);
+    }
+  }
+  openLogModal('RIDE LOG', s.topSpd, 'TOP SPEED', rows);
+}
+
 function renderHistory() {
   const list = document.getElementById('histList');
   const noH  = document.getElementById('noHist');
@@ -955,7 +1001,7 @@ function renderHistory() {
   noH.style.display = 'none';
   list.innerHTML = history.map((r,i) => `
     <div class="hist-item${r.isBest?' best':''}">
-      <div class="hist-top" onclick="toggleSplit(${i})">
+      <div class="hist-top" onclick="openRunModal(${i})">
         <div class="hist-type">ACCEL</div>
         <div class="hist-run">
           <div class="hist-run-lbl">${r.runLbl}</div>
@@ -1362,9 +1408,9 @@ function renderSessions() {
   noS.style.display = 'none';
   list.innerHTML = sessions.map((s, i) => `
     <div class="sess-item">
-      <div class="sess-row">
+      <div class="sess-row" onclick="openRideModal(${i})">
         <div class="sess-name-wrap">
-          <input class="sess-name" value="${s.name.replace(/"/g,'&quot;')}"
+          <input class="sess-name" value="${s.name.replace(/"/g,'&quot;')}" onclick="event.stopPropagation()"
             onblur="renameSess(${i}, this.value)"
             onkeydown="if(event.key==='Enter')this.blur()">
           <div class="sess-meta">
@@ -1376,7 +1422,7 @@ function renderSessions() {
           <div class="sess-topspd">${s.topSpd}</div>
           <div class="sess-topspd-lbl">TOP SPEED</div>
         </div>
-        <button class="sess-del" onclick="delSess(${i})">✕</button>
+        <button class="sess-del" onclick="event.stopPropagation();delSess(${i})">✕</button>
       </div>
     </div>`).join('');
 }
@@ -1610,5 +1656,16 @@ function tryFullscreen() {
 document.addEventListener('touchstart', tryFullscreen, {once:true});
 document.addEventListener('click',      tryFullscreen, {once:true});
 </script>
+
+  <!-- LOG DETAIL POPUP -->
+  <div class="log-modal" id="logModal" onclick="if(event.target===this)closeLogModal()">
+    <div class="log-card">
+      <div class="log-card-title" id="logTitle"></div>
+      <div class="log-card-big" id="logBig"></div>
+      <div class="log-card-big-lbl" id="logBigLbl"></div>
+      <div id="logRows"></div>
+      <button class="log-close" onclick="closeLogModal()">CLOSE</button>
+    </div>
+  </div>
 </body>
 </html>
