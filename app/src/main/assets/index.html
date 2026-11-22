@@ -818,21 +818,12 @@ function drawGauge(spd) {
 // MAIN LOOP
 // ─────────────────────────────────────────────
 function loop() {
-  // Between GPS fixes (~1 Hz): predict from the last speed trend so the display
-  // moves in real time instead of stepping once a second. Timer still uses raw fixes.
+  // Accuracy first: show the raw GPS speed exactly as reported — no trend
+  // prediction, no needle glide. The number steps with each GPS fix (~1 Hz)
+  // but it is always the true speed, never a smoothed guess.
   let showSpd = currentSpd;
-  if (prevMps !== null && lastMpsT > prevMpsT) {
-    const dt = (lastMpsT - prevMpsT) / 1000;
-    const age = (performance.now() - lastFixPerfTime) / 1000;
-    if (dt > 0.2 && age < 1.2) {
-      const trend = (lastMps - prevMps) / dt;               // m/s per second
-      const pred = lastMps + trend * age;
-      if (pred >= 0 && Math.abs(pred - lastMps) < 5) showSpd = fromMps(pred);
-    }
-  }
-  dispSpd += (showSpd - dispSpd) * 0.12;  // needle glides to the predicted speed
-  checkSpeedAlert(showSpd);
-  if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
+  dispSpd = currentSpd;
+  checkSpeedAlert(currentSpd);
 
   const ratio = dispSpd / maxSpd();
   const ne = document.getElementById('spdNum');
@@ -1503,16 +1494,24 @@ function stopSession() {
   if (sessions.length > 100) sessions.pop();
   try { localStorage.setItem('sa_sessions', JSON.stringify(sessions)); }
   catch (e) { console.warn('Ride saved in app, phone storage write failed:', e); }
+  // Re-read from storage so the list shows exactly what was saved, then render
+  try { sessions = JSON.parse(localStorage.getItem('sa_sessions') || '[]'); } catch (e) {}
   renderSessions();
   // Verify the new ride actually shows at the top; force a second render if not
   setTimeout(() => {
+    try { sessions = JSON.parse(localStorage.getItem('sa_sessions') || '[]'); } catch (e) {}
+    renderSessions();
     const firstRow = document.querySelector('#sessList .sess-name');
     if (!firstRow || firstRow.textContent.trim() !== record.name) renderSessions();
   }, 100);
-  // Scroll session log into view
+  // Scroll session log into view — plain scrollIntoView plus a direct window
+  // scroll fallback, since smooth scrolling is unreliable in some WebViews
   setTimeout(() => {
     const list = document.getElementById('sessList');
-    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (list) {
+      list.scrollIntoView({ block: 'start' });
+      try { window.scrollTo(0, list.getBoundingClientRect().top + window.scrollY - 8); } catch (e) {}
+    }
   }, 150);
   setBar('Session saved ✓ — ' + sessions.length + ' ride' + (sessions.length === 1 ? '' : 's'),'active');
 }
