@@ -77,9 +77,9 @@ jobs:
         run: |
           gradle assembleRelease
 
-              - name: Build Release AAB (Google Play)
-                run: |
-                  gradle bundleRelease
+      - name: Build Release AAB (Google Play)
+        run: |
+          gradle bundleRelease
 
       - name: Sign APK
         run: |
@@ -97,10 +97,10 @@ jobs:
           SIZE=$(stat -c%s "$OUTPUT")
           echo "APK size: $SIZE bytes — done"
         
-                - name: Sign AAB (Google Play)
-                  run: |
-                    jarsigner -keystore app/scooterarmy.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" -keypass "${{ secrets.KEY_PASSWORD }}" app/build/outputs/bundle/release/app-release.aab "${{ secrets.KEY_ALIAS }}"
-                    jarsigner -verify app/build/outputs/bundle/release/app-release.aab
+      - name: Sign AAB (Google Play)
+        run: |
+          jarsigner -keystore app/scooterarmy.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" -keypass "${{ secrets.KEY_PASSWORD }}" app/build/outputs/bundle/release/app-release.aab "${{ secrets.KEY_ALIAS }}"
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab
 
       - name: Copy APK and AAB to docs
         run: |
