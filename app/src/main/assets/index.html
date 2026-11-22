@@ -501,11 +501,9 @@ canvas#gauge { display:block; }
       <div class="brand">
         <span class="h">#</span><span style="background:linear-gradient(180deg,#f0f0f0 0%,#bbb 40%,#eee 60%,#999 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;">SAMO GPS</span>
       </div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.35em;color:#aaa;margin-top:2px;">GPS PERFORMANCE METER</div>
     </div>
     <div class="gps-block">
       <div class="gps-row">
-        <span id="statusTxt">SEARCHING</span>
         <div class="sdot warn" id="sdot"></div>
       </div>
       <div class="gps-row" style="gap:6px">
@@ -1380,7 +1378,8 @@ function onErr(e) {
 
 function setSdot(cls) {
   document.getElementById('sdot').className = 'sdot' + (cls ? ' '+cls : '');
-  document.getElementById('statusTxt').textContent =
+  const stEl = document.getElementById('statusTxt');
+  if (stEl) stEl.textContent =
     (cls === 'active' ? (acc <= 5 ? 'GPS LOCKED · EXCELLENT' : acc <= 10 ? 'GPS LOCKED · GOOD' : 'GPS LOCKED · FAIR')
                      : {warn:'SEARCHING', error:'NO SIGNAL'}[cls] || 'SEARCHING');
 }
