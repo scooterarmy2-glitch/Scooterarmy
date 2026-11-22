@@ -34,7 +34,11 @@ class LogStore(context: Context) {
         val out = mutableListOf<RideRecord>()
         try {
             val arr = JSONArray(prefs.getString("sa_sessions", "[]") ?: "[]")
-            for (i in 0 until arr.length()) out += RideRecord.fromJson(arr.getJSONObject(i))
+            // Skip a corrupt entry instead of aborting the whole load —
+            // one bad row used to hide every ride after it.
+            for (i in 0 until arr.length()) {
+                try { out += RideRecord.fromJson(arr.getJSONObject(i)) } catch (_: Exception) {}
+            }
         } catch (_: Exception) {
         }
         return out
@@ -50,7 +54,9 @@ class LogStore(context: Context) {
         val out = mutableListOf<RunRecord>()
         try {
             val arr = JSONArray(prefs.getString("sa_v2_hist", "[]") ?: "[]")
-            for (i in 0 until arr.length()) out += RunRecord.fromJson(arr.getJSONObject(i))
+            for (i in 0 until arr.length()) {
+                try { out += RunRecord.fromJson(arr.getJSONObject(i)) } catch (_: Exception) {}
+            }
         } catch (_: Exception) {
         }
         return out

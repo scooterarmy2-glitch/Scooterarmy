@@ -337,6 +337,14 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // The three pulse/flash animators repeat forever; if any is still
+        // running it holds its View (and the Activity) past destroy.
+        flashAnimator?.cancel()
+        alertFlashAnimator?.cancel()
+        stopPulseAnimator?.cancel()
+        flashAnimator = null
+        alertFlashAnimator = null
+        stopPulseAnimator = null
         try { toneGen?.release() } catch (_: Exception) {}
         toneGen = null
     }
@@ -999,8 +1007,16 @@ class MainActivity : Activity() {
     }
 
     private fun toggleUnit() {
+        // Convert the in-progress ride's top speed across the toggle first:
+        // sessionTopSpd is stored in display units, so flipping without
+        // converting would record e.g. a 76 km/h ride as "76 mph".
+        val rideTopMps = toMps(sessionTopSpd)
         useMetric = !useMetric
         store.useMetric = useMetric
+        if (sessionActive) sessionTopSpd = fromMps(rideTopMps)
+        // currentSpd is also display units; refresh it so the speed alert
+        // evaluates against the new units on the next tick, not the old ones.
+        currentSpd = fromMps(rawMps)
         val u = if (useMetric) "KM/H" else "MPH"
         binding.spdUnit.text = "$u ⇄"
         binding.tgtSuf.text = u
@@ -1430,15 +1446,18 @@ class MainActivity : Activity() {
             val sb = StringBuilder()
             sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
             sb.append("<gpx version=\"1.1\" creator=\"#SAMO GPS\" xmlns=\"http://www.topografix.com/GPX/1/1\">")
+            // One formatter for the whole export — building one per route
+            // point (up to 2000 per ride) was pure waste.
+            val gpxTimeFmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }
             for (s in rides) {
                 if (s.route.isEmpty()) continue
                 sb.append("<trk><name>").append(escapeXml(s.name)).append("</name><trkseg>")
                 for (p in s.route) {
                     sb.append("<trkpt lat=\"").append(p.lat).append("\" lon=\"").append(p.lon)
                         .append("\"><time>")
-                        .append(java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
-                            timeZone = java.util.TimeZone.getTimeZone("UTC")
-                        }.format(Date(p.t)))
+                        .append(gpxTimeFmt.format(Date(p.t)))
                         .append("</time></trkpt>")
                 }
                 sb.append("</trkseg></trk>")
