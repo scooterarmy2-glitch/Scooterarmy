@@ -1,15 +1,11 @@
-plugins {
-    id 'com.android.application'
-}
-
 android {
     namespace 'com.scooterarmy.app'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.scooterarmy.app"
         minSdk 26
-        targetSdk 34
+        targetSdk 36
         versionCode 3
         versionName "1.0.2"
     }
