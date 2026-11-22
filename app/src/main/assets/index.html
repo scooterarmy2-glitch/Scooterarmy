@@ -581,7 +581,6 @@ canvas#gauge { display:block; }
       <span class="tgt-suf" id="tgtSuf">MPH</span>
     </div>
     <div class="timer-big" id="timerBig">0.000</div>
-    <div class="timer-sub" id="timerSub">Set target, then START TIMED RUN</div>
     <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
     <div class="btn-row">
       <button class="btn primary"   id="armBtn"   onclick="armRun()">START TIMED RUN</button>
@@ -922,7 +921,7 @@ function resetRun() {
   state = S.IDLE; timerStart = null; runStartT = null; splitHits = {};
   document.getElementById('timerBig').textContent = '0.000';
   document.getElementById('timerBig').className   = 'timer-big';
-  document.getElementById('timerSub').textContent = 'Set target, then START TIMED RUN';
+  const tsEl = document.getElementById('timerSub'); if (tsEl) tsEl.textContent = 'Set target, then START TIMED RUN';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progFill').className   = 'prog-fill';
   document.getElementById('armBtn').textContent   = 'START TIMED RUN';
