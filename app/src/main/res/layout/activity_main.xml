@@ -646,32 +646,36 @@
                         <Button
                             android:id="@+id/armBtn"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_marginRight="4dp"
                             android:layout_weight="1"
                             android:background="@drawable/btn_orange"
                             android:elevation="6dp"
                             android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
+                            android:gravity="center"
+                            android:letterSpacing="0.12"
+                            android:maxLines="1"
                             android:outlineAmbientShadowColor="#ff5722"
                             android:outlineSpotShadowColor="#ff5722"
                             android:text="START TIMED RUN"
                             android:textColor="#ffffff"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
 
                         <Button
                             android:id="@+id/resetBtn"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_marginLeft="4dp"
                             android:layout_weight="1"
                             android:background="@drawable/btn_gray"
                             android:enabled="false"
                             android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
+                            android:gravity="center"
+                            android:letterSpacing="0.12"
+                            android:maxLines="1"
                             android:text="RESET"
                             android:textColor="#ffffff"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>
 

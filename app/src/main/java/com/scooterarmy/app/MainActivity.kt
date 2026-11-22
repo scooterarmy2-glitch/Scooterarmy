@@ -13,6 +13,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.location.GnssMeasurementsEvent
 import android.location.GnssStatus
@@ -234,7 +236,7 @@ class MainActivity : Activity() {
         val density = resources.displayMetrics.density
         binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff4400"))
         binding.spdNum.setShadowLayer(20f * density, 0f, 0f, Color.parseColor("#ff4400"))
-        binding.timerBig.setShadowLayer(15f * density, 0f, 0f, Color.parseColor("#26ff6400"))
+        binding.timerBig.setShadowLayer(15f * density, 0f, 0f, Color.parseColor("#59ff6400"))
         binding.spdUnit.text = if (useMetric) "KM/H ⇄" else "MPH ⇄"
         binding.tgtSuf.text = if (useMetric) "KM/H" else "MPH"
         binding.topSpdUnit.text = if (useMetric) "KM/H" else "MPH"
@@ -470,18 +472,28 @@ class MainActivity : Activity() {
         }
     }
 
-    /** Root background: ember radial glow (app_bg) + tiled diamond-plate texture,
-     *  matching the old web app's body background. Visual only. */
+    /** Root background: ember glow + diamond-plate texture covering the WHOLE
+     *  screen, matching the old web app's body background. The web app's radial
+     *  glows are sized relative to the viewport (ellipse at 50% 100%, fading at
+     *  55% of the farthest-corner distance), so the native version sizes its
+     *  radii from the actual screen height instead of fixed dp values — the old
+     *  fixed 420dp/300dp radii died halfway up a ~900dp screen, which is why the
+     *  glow only showed at the bottom. The texture is also stronger (10% white
+     *  vs 4%) so the diamonds read everywhere, not just where the glow sits
+     *  behind them. Visual only. */
     private fun applyTexturedBackground() {
-        val density = resources.displayMetrics.density
+        val dm = resources.displayMetrics
+        val density = dm.density
+        val screenH = dm.heightPixels.toFloat()
+        // Diamond-plate texture tile (28x16dp, like the web app's 28px x 16px).
         val w = (28f * density).toInt().coerceAtLeast(2)
         val h = (16f * density).toInt().coerceAtLeast(2)
         val tile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(tile)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 0.6f * density
-            color = Color.parseColor("#0affffff")
+            strokeWidth = 0.8f * density
+            color = Color.parseColor("#1affffff")
         }
         val diamond = Path().apply {
             moveTo(w / 2f, 0f)
@@ -495,8 +507,43 @@ class MainActivity : Activity() {
             tileModeX = Shader.TileMode.REPEAT
             tileModeY = Shader.TileMode.REPEAT
         }
-        val base = getDrawable(R.drawable.app_bg)
-        binding.rootLayout.background = LayerDrawable(arrayOf(base, tiled))
+        // Wide ember glow, bottom center — reaches ~85% up the screen.
+        val wideGlow = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            setGradientCenter(0.5f, 1.0f)
+            gradientRadius = screenH * 0.85f
+            colors = intArrayOf(Color.parseColor("#40c83c00"), Color.TRANSPARENT)
+        }
+        // Hotter orange core, bottom center.
+        val coreGlow = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            setGradientCenter(0.5f, 1.0f)
+            gradientRadius = screenH * 0.52f
+            colors = intArrayOf(Color.parseColor("#26ff6400"), Color.TRANSPARENT)
+        }
+        // Dark vignette at the top (as in the web app).
+        val vignette = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            setGradientCenter(0.5f, 0.0f)
+            gradientRadius = screenH * 0.7f
+            colors = intArrayOf(Color.parseColor("#b3000000"), Color.TRANSPARENT)
+        }
+        // Bottom ember fade (web body::after, 160dp tall).
+        val fadeH = (160f * density).toInt()
+        val bottomFade = GradientDrawable(
+            GradientDrawable.Orientation.BOTTOM_TOP,
+            intArrayOf(
+                Color.parseColor("#2eb42800"),
+                Color.parseColor("#14ff5000"),
+                Color.TRANSPARENT
+            )
+        )
+        val base = ColorDrawable(Color.parseColor("#080808"))
+        val layers = LayerDrawable(arrayOf(base, wideGlow, coreGlow, vignette, bottomFade, tiled))
+        // Confine the bottom fade to the bottom 160dp of the screen.
+        val topInset = (screenH - fadeH).toInt().coerceAtLeast(0)
+        layers.setLayerInset(4, 0, topInset, 0, 0)
+        binding.rootLayout.background = layers
     }
 
     private fun setBtn(btn: Button, enabled: Boolean) {
@@ -1034,7 +1081,7 @@ class MainActivity : Activity() {
         binding.timerBig.alpha = 1f
         binding.timerBig.text = "0.000"
         binding.timerBig.setTextColor(Color.WHITE)
-        binding.timerBig.setShadowLayer(15f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#26ff6400"))
+        binding.timerBig.setShadowLayer(15f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#59ff6400"))
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
         binding.armBtn.text = "START TIMED RUN"
