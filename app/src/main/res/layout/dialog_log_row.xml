@@ -12,7 +12,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:fontFamily="monospace" android:tag="font_share_tech_mono"
+        android:fontFamily="@font/share_tech_mono"
         android:textColor="#aaaaaa"
         android:textSize="15sp" />
 
@@ -20,7 +20,7 @@
         android:id="@+id/rowValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:gravity="end"
         android:textColor="#ffffff"
         android:textSize="19sp" />

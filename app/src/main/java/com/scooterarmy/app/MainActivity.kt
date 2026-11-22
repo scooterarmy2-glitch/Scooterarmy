@@ -210,7 +210,6 @@ class MainActivity : Activity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        FontLoader.applyFonts(binding.root)
         store = LogStore(this)
         imuBridge = ImuBridge(this)
         RouteMapDialog.configure(this)
@@ -1120,7 +1119,6 @@ class MainActivity : Activity() {
         val inflater = LayoutInflater.from(this)
         for (ride in rides) {
             val row = ItemRideBinding.inflate(inflater, binding.sessList, false)
-            FontLoader.applyFonts(row.root)
             row.rideName.text = ride.name
             row.rideMeta.text = "${ride.dur}   ${ride.dist}"
             row.rideTopSpd.text = ride.topSpd
@@ -1140,7 +1138,6 @@ class MainActivity : Activity() {
         val inflater = LayoutInflater.from(this)
         for (run in runs) {
             val row = ItemRunBinding.inflate(inflater, binding.histList, false)
-            FontLoader.applyFonts(row.root)
             row.runLbl.text = run.runLbl
             row.runDate.text = run.date
             row.runTime.text = "${run.time}s"

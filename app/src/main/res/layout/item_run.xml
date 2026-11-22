@@ -11,7 +11,7 @@
     <TextView
         android:layout_width="50dp"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:text="ACCEL"
         android:textColor="#cccccc"
         android:textSize="9sp" />
@@ -26,7 +26,7 @@
             android:id="@+id/runLbl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace" android:tag="font_share_tech_mono"
+            android:fontFamily="@font/share_tech_mono"
             android:textColor="#dddddd"
             android:textSize="11sp" />
 
@@ -35,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:fontFamily="monospace" android:tag="font_share_tech_mono"
+            android:fontFamily="@font/share_tech_mono"
             android:textColor="#aaaaaa"
             android:textSize="9sp" />
     </LinearLayout>
@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="8dp"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:text="BEST"
         android:textColor="@color/amber"
         android:textSize="9sp"
@@ -55,7 +55,7 @@
         android:id="@+id/runTime"
         android:layout_width="70dp"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_900"
+        android:fontFamily="@font/orbitron_900"
         android:gravity="end"
         android:textColor="@color/chrome"
         android:textSize="20sp" />

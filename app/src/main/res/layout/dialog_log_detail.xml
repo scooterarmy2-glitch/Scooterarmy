@@ -10,7 +10,7 @@
         android:id="@+id/logTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:textColor="#cccccc"
         android:textSize="13sp" />
 
@@ -19,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_900"
+        android:fontFamily="@font/orbitron_900"
         android:textColor="#ffffff"
         android:textSize="64sp" />
 
@@ -27,7 +27,7 @@
         android:id="@+id/logBigLbl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:textColor="@color/amber"
         android:textSize="11sp" />
 
@@ -44,7 +44,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:background="#1e1e1e"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:text="VIEW ROUTE"
         android:textColor="#ffffff"
         android:textSize="13sp"
@@ -56,7 +56,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
         android:background="#1e1e1e"
-        android:fontFamily="sans-serif" android:tag="font_orbitron_700"
+        android:fontFamily="@font/orbitron_700"
         android:text="CLOSE"
         android:textColor="#ffffff"
         android:textSize="13sp" />

@@ -24,7 +24,6 @@ object LogDetailDialog {
         onViewRoute: (() -> Unit)? = null
     ) {
         val binding = DialogLogDetailBinding.inflate(LayoutInflater.from(context))
-        FontLoader.applyFonts(binding.root)
         binding.logTitle.text = title
         binding.logBig.text = big
         binding.logBigLbl.text = bigLbl
@@ -33,7 +32,6 @@ object LogDetailDialog {
         val inflater = LayoutInflater.from(context)
         for ((label, value) in rows) {
             val row = inflater.inflate(R.layout.dialog_log_row, binding.logRows, false)
-            FontLoader.applyFonts(row)
             row.findViewById<TextView>(R.id.rowLabel).text = label
             row.findViewById<TextView>(R.id.rowValue).text = value
             binding.logRows.addView(row)
