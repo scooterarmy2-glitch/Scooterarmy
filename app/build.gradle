@@ -60,8 +60,15 @@ tasks.register('decodeFonts') {
     }
 }
 
-tasks.named('mergeDebugResources').configure { dependsOn('decodeFonts') }
-tasks.named('mergeReleaseResources').configure { dependsOn('decodeFonts') }
+// Build #50 fix: AGP creates the merge<Variant>Resources tasks AFTER this
+// script is evaluated, so tasks.named('mergeDebugResources') threw at
+// configuration time ("Task with name 'mergeDebugResources' not found").
+// configureEach on the live matching view wires decodeFonts in whenever
+// AGP creates the tasks — covers both assembleRelease and bundleRelease
+// (both merge release resources).
+tasks.matching { it.name == 'mergeDebugResources' || it.name == 'mergeReleaseResources' }.configureEach {
+    dependsOn 'decodeFonts'
+}
 
 dependencies {
     // Route map (VIEW ROUTE) — OpenStreetMap tiles, no API key
