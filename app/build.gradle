@@ -60,13 +60,16 @@ tasks.register('decodeFonts') {
     }
 }
 
-// Build #50 fix: AGP creates the merge<Variant>Resources tasks AFTER this
+// Build #50 fix: AGP creates the per-variant resource tasks AFTER this
 // script is evaluated, so tasks.named('mergeDebugResources') threw at
 // configuration time ("Task with name 'mergeDebugResources' not found").
 // configureEach on the live matching view wires decodeFonts in whenever
-// AGP creates the tasks — covers both assembleRelease and bundleRelease
-// (both merge release resources).
-tasks.matching { it.name == 'mergeDebugResources' || it.name == 'mergeReleaseResources' }.configureEach {
+// AGP creates the tasks.
+// Build #52 fix: generateReleaseResources ALSO reads the generated res
+// dir — Gradle validation failed because it used decodeFonts' output
+// without a declared dependency — so the generate*Resources tasks need
+// the same wiring. Covers both assembleRelease and bundleRelease.
+tasks.matching { it.name in ['mergeDebugResources', 'mergeReleaseResources', 'generateDebugResources', 'generateReleaseResources'] }.configureEach {
     dependsOn 'decodeFonts'
 }
 
