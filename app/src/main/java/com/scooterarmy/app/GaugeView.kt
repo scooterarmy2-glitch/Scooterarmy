@@ -39,9 +39,10 @@ class GaugeView @JvmOverloads constructor(
     private val maxSpd: Double get() = if (useMetric) 160.0 else 100.0
 
     private val orbitron700: Typeface by lazy { resources.getFont(R.font.orbitron_700) }
+    private val orbitron900: Typeface by lazy { resources.getFont(R.font.orbitron_900) }
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#4a4a4a")
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#757575")
     }
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
@@ -57,7 +58,7 @@ class GaugeView @JvmOverloads constructor(
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#cccccc"); textAlign = Paint.Align.CENTER
-        typeface = orbitron700
+        typeface = orbitron900; isFakeBoldText = true
     }
     private val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL; color = Color.parseColor("#ff3c00")
@@ -86,15 +87,15 @@ class GaugeView @JvmOverloads constructor(
         val r = min(w, h) / 2f - 18f * scale
         val ratio = min(speed / maxSpd, 1.0)
 
-        trackPaint.strokeWidth = 18f * scale
+        trackPaint.strokeWidth = 9f * scale
         canvas.drawArc(cx - r, cy - r, cx + r, cy + r,
             Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, trackPaint)
 
         // Target marker (green tick) while a run is armed/running.
         if (showTarget && target > 0 && target <= maxSpd) {
             val ta = Math.toDegrees(angleFor(target)).toFloat()
-            targetPaint.strokeWidth = 18f * scale
-            targetPaint.setShadowLayer(14f * scale, 0f, 0f, Color.parseColor("#39ff14"))
+            targetPaint.strokeWidth = 12f * scale
+            targetPaint.setShadowLayer(12f * scale, 0f, 0f, Color.parseColor("#39ff14"))
             canvas.drawArc(cx - r, cy - r, cx + r, cy + r, ta - 1.5f, 3f, false, targetPaint)
             targetPaint.clearShadowLayer()
         }
@@ -130,7 +131,7 @@ class GaugeView @JvmOverloads constructor(
                 (cx + cos(a) * outer).toFloat(), (cy + sin(a) * outer).toFloat(), p
             )
             if (isMaj) {
-                textPaint.textSize = 10f * scale
+                textPaint.textSize = 11f * scale
                 val tr = r - 36f * scale
                 canvas.drawText(
                     v.toString(),
