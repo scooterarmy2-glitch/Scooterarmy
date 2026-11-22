@@ -592,11 +592,6 @@ canvas#gauge { display:block; }
     </div>
   </div>
 
-  <!-- STATUS BAR -->
-  <div class="status-bar">
-    <span class="status-txt" id="statusBar">Waiting for GPS…</span>
-    <span class="arm-indicator" id="armInd">IDLE</span>
-  </div>
 
   <!-- SESSION LIVE STRIP -->
   <div class="sess-live" id="sessLive">
@@ -1412,12 +1407,14 @@ function fmt(ms) { return ms < 10000 ? (ms/1000).toFixed(3) : (ms/1000).toFixed(
 
 function setBar(msg, cls) {
   const el = document.getElementById('statusBar');
+  if (!el) return;
   el.textContent = msg;
   el.className   = 'status-txt' + (cls ? ' '+cls : '');
 }
 
 function setArmInd(s) {
   const el = document.getElementById('armInd');
+  if (!el) return;
   el.textContent = {idle:'IDLE',armed:'ARMED',running:'RUNNING',done:'DONE'}[s] || 'IDLE';
   el.className   = 'arm-indicator' + (s !== 'idle' ? ' '+s : '');
 }
