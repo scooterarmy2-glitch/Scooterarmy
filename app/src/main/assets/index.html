@@ -213,8 +213,9 @@ canvas#gauge { display:block; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.5);
 }
 .btn:disabled { opacity:.3; cursor:not-allowed; }
-.btn.primary  { border-color:#661a00; border-top-color:#993300; color:var(--glow); background:linear-gradient(180deg,#200a00,#120400); }
-.btn.primary:hover:not(:disabled) { background:linear-gradient(180deg,#2e0e00,#1a0600); box-shadow:0 0 14px rgba(255,60,0,.25), inset 0 1px 0 rgba(255,100,0,0.1); }
+.btn.primary  { border-color:#d84315; border-top-color:#ff7043; color:#fff; background:linear-gradient(180deg,#ff5722,#d84315); font-size:12px; padding:12px; box-shadow:0 0 18px rgba(255,87,34,.45), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn.primary:hover:not(:disabled) { background:linear-gradient(180deg,#ff6e40,#e64a19); box-shadow:0 0 26px rgba(255,87,34,.7), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn.secondary { border-color:#616161; border-top-color:#9e9e9e; color:#fff; background:linear-gradient(180deg,#616161,#424242); font-size:12px; padding:12px; }
 .btn.secondary:hover:not(:disabled) { border-color:#777; color:#fff; }
 
 /* STATUS BAR */
@@ -397,8 +398,8 @@ canvas#gauge { display:block; }
 /* SESSION BUTTON */
 .btn.session-start { border-color:#00b248; border-top-color:#00e676; color:#fff; background:linear-gradient(180deg,#00c853,#009624); font-size:12px; padding:12px; box-shadow:0 0 18px rgba(0,200,83,.45), inset 0 1px 0 rgba(255,255,255,.25); }
 .btn.session-start:hover:not(:disabled) { box-shadow:0 0 26px rgba(0,200,83,.7), inset 0 1px 0 rgba(255,255,255,.25); }
-.btn.session-stop  { border-color:#661a00; border-top-color:#993300; color:var(--amber); background:linear-gradient(180deg,#1a0800,#0e0400); animation:sessionPulse 2s infinite; }
-@keyframes sessionPulse { 0%,100%{box-shadow:0 0 6px rgba(255,179,71,.15)}50%{box-shadow:0 0 14px rgba(255,179,71,.35)} }
+.btn.session-stop  { border-color:#c62828; border-top-color:#ef5350; color:#fff; background:linear-gradient(180deg,#e53935,#b71c1c); font-size:12px; padding:12px; box-shadow:0 0 18px rgba(229,57,53,.45), inset 0 1px 0 rgba(255,255,255,.25); animation:sessionPulse 2s infinite; }
+@keyframes sessionPulse { 0%,100%{box-shadow:0 0 10px rgba(229,57,53,.3)}50%{box-shadow:0 0 22px rgba(229,57,53,.6)} }
 
 /* SESSION LOG */
 .session-log { width:100%; display:flex; flex-direction:column; gap:6px; }
