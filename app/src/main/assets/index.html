@@ -1058,7 +1058,7 @@ function openRouteModal(i) {
   const s = sessions[i]; if (!s || !s.route || s.route.length < 2) return;
   closeLogModal();
   document.getElementById('routeTitle').textContent = 'ROUTE — ' + s.name;
-  document.getElementById('routeSub').textContent = s.route.length + ' points · ' + s.dist;
+  document.getElementById('routeSub').textContent = s.dist;
   document.getElementById('routeModal').classList.add('open');
   setTimeout(() => {
     if (routeMap) { routeMap.remove(); routeMap = null; }
