@@ -473,9 +473,19 @@ canvas#gauge { display:block; }
 .log-row-lbl { font-size:15px; color:#aaa; letter-spacing:.1em; }
 .log-row-val { font-family:'Orbitron',sans-serif; font-size:19px; font-weight:700; color:#fff; text-align:right; }
 .log-close { width:100%; margin-top:18px; padding:14px; background:#1e1e1e; border:1px solid #444; border-radius:8px; color:#fff; font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:.25em; cursor:pointer; }
+
+/* SPEED ALERT */
+.alert-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:998; background:#ff2200; color:#fff; font-family:'Orbitron',sans-serif; font-size:16px; font-weight:900; letter-spacing:.15em; text-align:center; padding:10px; animation:alertflash .5s infinite alternate; }
+.alert-banner.on { display:block; }
+@keyframes alertflash { from { opacity:1; } to { opacity:.55; } }
+.alert-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.alert-row .tgt-inp { font-size:16px; padding:4px 8px; }
+.export-btn { background:none; border:1px solid #444; border-radius:4px; font-family:'Share Tech Mono',monospace; font-size:10px; color:#aaa; cursor:pointer; letter-spacing:.1em; padding:3px 8px; }
+.export-btn:hover { color:#fff; border-color:#888; }
 </style>
 </head>
 <body>
+  <div class="alert-banner" id="alertBanner">⚠ OVER SPEED LIMIT</div>
 <div class="wrap">
 
   <!-- HEADER -->
@@ -551,6 +561,11 @@ canvas#gauge { display:block; }
       <button class="btn session-start" id="sessBtn" onclick="toggleSession()">START RIDE</button>
     </div>
     <div class="splits-hint">Tap again to stop — saves time, distance &amp; top speed to the Ride Log</div>
+    <div class="alert-row">
+      <span class="plabel">SPEED ALERT</span>
+      <input class="tgt-inp" id="alertInp" type="number" value="" min="1" max="999" placeholder="mph" style="max-width:90px" onchange="saveAlert()">
+      <span class="splits-hint" id="alertHint">off</span>
+    </div>
   </div>
 
   <!-- TIMED SPEED RUN BOX -->
@@ -614,7 +629,7 @@ canvas#gauge { display:block; }
   <div class="session-log">
     <div class="sess-hdr">
       <div class="sess-title">Ride Log</div>
-      <button class="sess-clear" onclick="clearSessions()">CLEAR ALL</button>
+      <span><button class="export-btn" onclick="exportRides('csv')">CSV</button> <button class="export-btn" onclick="exportRides('gpx')">GPX</button> <button class="sess-clear" onclick="clearSessions()">CLEAR ALL</button></span>
     </div>
     <div class="sess-list" id="sessList">
       <div class="no-sess" id="noSess">— no rides recorded —</div>
@@ -625,7 +640,7 @@ canvas#gauge { display:block; }
   <div class="history">
     <div class="hist-hdr">
       <div class="hist-title">Timed Run Log</div>
-      <button class="hist-clear" onclick="clearHistory()">CLEAR ALL</button>
+      <span><button class="export-btn" onclick="exportRuns('csv')">CSV</button> <button class="hist-clear" onclick="clearHistory()">CLEAR ALL</button></span>
     </div>
     <div class="hist-list" id="histList">
       <div class="no-hist" id="noHist">— no runs recorded —</div>
@@ -719,6 +734,9 @@ function estimateStart(p, mps, t) {
 // SESSION STATE
 // ─────────────────────────────────────────────
 let sessionActive    = false;
+let alertMph         = parseFloat(localStorage.getItem('sa_alert') || '') || 0;
+let alertOn          = false;
+let audioCtx         = null;
 let sessionStart     = null;     // Date object
 let sessionTopSpd    = 0;        // in display units
 let sessionDist      = 0;        // metres
@@ -812,6 +830,7 @@ function loop() {
     }
   }
   dispSpd += (showSpd - dispSpd) * 0.12;  // needle glides to the predicted speed
+  checkSpeedAlert(showSpd);
   if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
 
   const ratio = dispSpd / maxSpd();
@@ -958,6 +977,67 @@ function saveRecord(elapsed, runLbl) {
   return { isBest };
 }
 
+
+
+// ─────────────────────────────────────────────
+// SPEED ALERT, ROUTE MAP, EXPORT
+// ─────────────────────────────────────────────
+function saveAlert() {
+  const v = parseFloat(document.getElementById('alertInp').value);
+  alertMph = isNaN(v) ? 0 : v;
+  localStorage.setItem('sa_alert', alertMph ? String(alertMph) : '');
+  document.getElementById('alertHint').textContent = alertMph ? ('on — over ' + alertMph + ' mph') : 'off';
+}
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = 880; o.type = 'square';
+    g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.25);
+  } catch (e) {}
+}
+function checkSpeedAlert(spd) {
+  const b = document.getElementById('alertBanner');
+  if (!alertMph) { b.classList.remove('on'); alertOn = false; return; }
+  const limit = useMetric ? alertMph * 1.60934 : alertMph;
+  const over = spd >= limit;
+  if (over && !alertOn) { alertOn = true; b.textContent = '⚠ OVER ' + alertMph + (useMetric ? ' KM/H' : ' MPH'); b.classList.add('on'); beep(); }
+  else if (!over && spd < limit - 2) { alertOn = false; b.classList.remove('on'); }
+}
+function downloadFile(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function exportRides(fmt) {
+  if (!sessions.length) return;
+  const date = new Date().toISOString().slice(0, 10);
+  if (fmt === 'csv') {
+    const rows = [['Date', 'Duration', 'Distance', 'Top Speed'].join(',')];
+    sessions.forEach(s => rows.push([s.name, s.dur, s.dist, s.topSpd].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')));
+    downloadFile('samo-ride-log-' + date + '.csv', rows.join('\n'), 'text/csv');
+  } else {
+    let gpx = '<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="#SAMO GPS" xmlns="http://www.topografix.com/GPX/1/1">';
+    sessions.forEach(s => {
+      if (!s.route || !s.route.length) return;
+      gpx += '<trk><name>' + s.name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</name><trkseg>';
+      s.route.forEach(p => { gpx += '<trkpt lat="' + p.lat + '" lon="' + p.lon + '"><time>' + new Date(p.t).toISOString() + '</time></trkpt>'; });
+      gpx += '</trkseg></trk>';
+    });
+    gpx += '</gpx>';
+    downloadFile('samo-ride-log-' + date + '.gpx', gpx, 'application/gpx+xml');
+  }
+}
+function exportRuns(fmt) {
+  if (!history.length) return;
+  const date = new Date().toISOString().slice(0, 10);
+  const rows = [['Date', 'Run', 'Time (s)', 'Best'].join(',')];
+  history.forEach(r => rows.push([r.date, r.runLbl, r.time, r.isBest ? 'YES' : ''].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')));
+  downloadFile('samo-timed-runs-' + date + '.csv', rows.join('\n'), 'text/csv');
+}
 
 // ─────────────────────────────────────────────
 // LOG DETAIL POPUP — tap any log entry for a big, readable view
