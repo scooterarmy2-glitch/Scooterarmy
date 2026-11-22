@@ -485,6 +485,8 @@ canvas#gauge { display:block; }
 
 /* ROUTE MAP */
 .route-map { width:100%; height:300px; background:#0a0a0a; border:1px solid #333; border-radius:8px; z-index:1; }
+/* Keep OSM's light tiles dark to match the app — no API key needed */
+.route-map .leaflet-tile-pane { filter: invert(0.92) hue-rotate(180deg) brightness(0.9) contrast(0.92); }
 </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1047,6 +1049,11 @@ function exportRuns(fmt) {
 }
 
 
+function openRouteModalById(id) {
+  const i = sessions.findIndex(s => s.id === id);
+  if (i < 0) return;
+  openRouteModal(i);
+}
 function openRouteModal(i) {
   const s = sessions[i]; if (!s || !s.route || s.route.length < 2) return;
   closeLogModal();
@@ -1057,7 +1064,7 @@ function openRouteModal(i) {
     if (routeMap) { routeMap.remove(); routeMap = null; }
     const pts = s.route.map(p => [p.lat, p.lon]);
     routeMap = L.map('routeMap', { zoomControl: true, attributionControl: false });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(routeMap);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(routeMap);
     L.polyline(pts, { color: '#ff6600', weight: 4 }).addTo(routeMap);
     L.circleMarker(pts[0], { radius: 7, color: '#39ff14', fillColor: '#39ff14', fillOpacity: 1 }).addTo(routeMap).bindPopup('Start');
     L.circleMarker(pts[pts.length-1], { radius: 7, color: '#ff2200', fillColor: '#ff2200', fillOpacity: 1 }).addTo(routeMap).bindPopup('End');
@@ -1083,6 +1090,11 @@ function openRunModal(i) {
   openLogModal('TIMED RUN', r.time + 's', '0 → TARGET TIME',
     [['Run', r.runLbl], ['Date', r.date], ['Result', r.isBest ? '★ BEST' : '—']]);
 }
+function openRideModalById(id) {
+  const i = sessions.findIndex(s => s.id === id);
+  if (i < 0) return;
+  openRideModal(i);
+}
 function openRideModal(i) {
   const s = sessions[i]; if (!s) return;
   const rows = [['Date', s.name], ['Duration', s.dur], ['Distance', s.dist], ['Top Speed', s.topSpd]];
@@ -1105,7 +1117,7 @@ function openRideModal(i) {
     rb = document.createElement('button');
     rb.id = 'viewRouteBtn'; rb.className = 'log-close'; rb.textContent = 'VIEW ROUTE';
     rb.style.marginTop = '10px';
-    rb.onclick = () => openRouteModal(i);
+    rb.onclick = () => openRouteModalById(s.id);
     card.insertBefore(rb, card.querySelector('.log-close'));
   }
 }
@@ -1492,19 +1504,23 @@ function stopSession() {
     route:      sessionRoute.slice()
   };
 
-  // Prepend to list
+  // Prepend to list — save first, then render no matter what storage does
   sessions.unshift(record);
   if (sessions.length > 100) sessions.pop();
-  localStorage.setItem('sa_sessions', JSON.stringify(sessions));
-  // Re-read from storage to guarantee fresh data
-  sessions = JSON.parse(localStorage.getItem('sa_sessions') || '[]');
+  try { localStorage.setItem('sa_sessions', JSON.stringify(sessions)); }
+  catch (e) { console.warn('Ride saved in app, phone storage write failed:', e); }
   renderSessions();
+  // Verify the new ride actually shows at the top; force a second render if not
+  setTimeout(() => {
+    const firstRow = document.querySelector('#sessList .sess-name');
+    if (!firstRow || firstRow.textContent.trim() !== record.name) renderSessions();
+  }, 100);
   // Scroll session log into view
   setTimeout(() => {
     const list = document.getElementById('sessList');
     if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 150);
-  setBar('Session saved ✓','active');
+  setBar('Session saved ✓ — ' + sessions.length + ' ride' + (sessions.length === 1 ? '' : 's'),'active');
 }
 
 function updateSessionLive() {
@@ -1546,7 +1562,7 @@ function renderSessions() {
   noS.style.display = 'none';
   list.innerHTML = sessions.map((s, i) => `
     <div class="sess-item">
-      <div class="sess-row" onclick="openRideModal(${i})">
+      <div class="sess-row" onclick="openRideModalById(${s.id})">
         <div class="sess-name-wrap">
           <div class="sess-name">${s.name}</div>
           <div class="sess-meta">
@@ -1558,7 +1574,7 @@ function renderSessions() {
           <div class="sess-topspd">${s.topSpd}</div>
           <div class="sess-topspd-lbl">TOP SPEED</div>
         </div>
-        <button class="sess-del" onclick="event.stopPropagation();delSess(${i})">✕</button>
+        <button class="sess-del" onclick="event.stopPropagation();delSessById(${s.id})">✕</button>
       </div>
     </div>`).join('');
 }
@@ -1570,6 +1586,11 @@ function renameSess(i, val) {
   renderSessions();
 }
 
+function delSessById(id) {
+  const i = sessions.findIndex(s => s.id === id);
+  if (i < 0) return;
+  delSess(i);
+}
 function delSess(i) {
   sessions.splice(i, 1);
   localStorage.setItem('sa_sessions', JSON.stringify(sessions));
@@ -1765,7 +1786,12 @@ rafId = requestAnimationFrame(loop);
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && sessionActive) stopSession(false);
+  if (document.visibilityState === 'visible') {
+    try { sessions = JSON.parse(localStorage.getItem('sa_sessions') || '[]'); } catch (e) {}
+    renderSessions(); renderHistory(); renderBvL();
+  }
 });
+window.addEventListener('pageshow', () => { renderSessions(); renderHistory(); renderBvL(); });
 
 async function keepAwake() {
   if ('wakeLock' in navigator) {
