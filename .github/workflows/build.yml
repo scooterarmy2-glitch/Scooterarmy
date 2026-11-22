@@ -21,6 +21,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Gradle 8.11.1 (AGP 8.9.1 needs Gradle 8.11.1+)
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+          unzip -q gradle-8.11.1-bin.zip
+          echo "$PWD/gradle-8.11.1/bin" >> $GITHUB_PATH
       
       - name: Embed Google Fonts offline
         run: |
@@ -72,9 +77,13 @@ jobs:
         run: |
           gradle assembleRelease
 
+              - name: Build Release AAB (Google Play)
+                run: |
+                  gradle bundleRelease
+
       - name: Sign APK
         run: |
-          APKSIGNER="${ANDROID_SDK_ROOT}/build-tools/34.0.0/apksigner"
+          APKSIGNER="${ANDROID_SDK_ROOT}/build-tools/36.0.0/apksigner"
           INPUT=app/build/outputs/apk/release/app-release-unsigned.apk
           OUTPUT=app/build/outputs/apk/release/app-release.apk
           echo "Signing APK..."
@@ -86,16 +95,23 @@ jobs:
             --out $OUTPUT \
             $INPUT
           SIZE=$(stat -c%s "$OUTPUT")
-          echo "APK size: $SIZE bytes — done" 
+          echo "APK size: $SIZE bytes — done"
+        
+                - name: Sign AAB (Google Play)
+                  run: |
+                    jarsigner -keystore app/scooterarmy.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" -keypass "${{ secrets.KEY_PASSWORD }}" app/build/outputs/bundle/release/app-release.aab "${{ secrets.KEY_ALIAS }}"
+                    jarsigner -verify app/build/outputs/bundle/release/app-release.aab
 
-      - name: Copy APK to docs
-        run: cp app/build/outputs/apk/release/app-release.apk docs/scooterarmy-gps.apk
+      - name: Copy APK and AAB to docs
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk docs/scooterarmy-gps.apk
+          cp app/build/outputs/bundle/release/app-release.aab docs/scooterarmy-gps.aab
 
-      - name: Commit APK to repo
+      - name: Commit APK and AAB to repo
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/scooterarmy-gps.apk
+          git add docs/scooterarmy-gps.apk docs/scooterarmy-gps.aab
           git diff --staged --quiet || git commit -m "Auto-update APK [skip ci]"
           git push
 
@@ -103,5 +119,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scooterarmy-gps-signed
-          path: docs/scooterarmy-gps.apk
+          path: |
+            docs/scooterarmy-gps.apk
+            docs/scooterarmy-gps.aab
           retention-days: 30
