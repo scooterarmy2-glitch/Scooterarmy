@@ -38,12 +38,13 @@ android {
 
     // Orbitron / Share Tech Mono ship as base64 text (res/raw/*.b64) because
     // binary font files cannot be pushed through the GitHub connector.
-    // This task decodes them into real .ttf font resources before merging.
-    sourceSets {
-        main {
-            res.srcDirs += "${project.buildDir}/generated/res"
-        }
-    }
+    // decodeFonts (below) decodes them into real .ttf font resources.
+    // NOTE: the generated res dir is NOT added via sourceSets.res.srcDirs —
+    // that made every resource task consume decodeFonts' output with no
+    // declared dependency, and Gradle validation then failed one task at a
+    // time (Build #50 merge, #52 generate, #53 package). It is registered
+    // through the AGP variant sources API instead (see androidComponents
+    // below), which declares decodeFonts as its producer once.
 }
 
 tasks.register('decodeFonts') {
@@ -60,17 +61,21 @@ tasks.register('decodeFonts') {
     }
 }
 
-// Build #50 fix: AGP creates the per-variant resource tasks AFTER this
-// script is evaluated, so tasks.named('mergeDebugResources') threw at
-// configuration time ("Task with name 'mergeDebugResources' not found").
-// configureEach on the live matching view wires decodeFonts in whenever
-// AGP creates the tasks.
-// Build #52 fix: generateReleaseResources ALSO reads the generated res
-// dir — Gradle validation failed because it used decodeFonts' output
-// without a declared dependency — so the generate*Resources tasks need
-// the same wiring. Covers both assembleRelease and bundleRelease.
-tasks.matching { it.name in ['mergeDebugResources', 'mergeReleaseResources', 'generateDebugResources', 'generateReleaseResources'] }.configureEach {
-    dependsOn 'decodeFonts'
+// ROOT FIX for Builds #50/#52/#53 — ends the whack-a-mole, do not revert to
+// per-task dependsOn wiring. Previously the generated res dir was declared
+// via sourceSets.res.srcDirs and decodeFonts was wired to individual tasks
+// (merge, then generate) — each patch just revealed the next undeclared
+// consumer (packageReleaseResources in #53, then process*Resources, ...).
+// Registering the directory through the AGP variant sources API declares
+// decodeFonts as the producer of the directory ONCE, so every downstream
+// resource task — generate, merge, package, process, both variants, APK
+// and AAB — implicitly depends on it.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(tasks.named('decodeFonts')) {
+            layout.buildDirectory.dir('generated/res')
+        }
+    }
 }
 
 dependencies {
