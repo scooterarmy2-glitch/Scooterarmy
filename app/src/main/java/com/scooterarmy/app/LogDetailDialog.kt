@@ -57,10 +57,17 @@ object LogDetailDialog {
 /** Builds the average-speed row for a ride, when duration + distance parse. */
 fun rideAvgSpeedRow(ride: RideRecord): Pair<String, String>? {
     val dm = Regex("""([\d.]+)\s*(mi|km)""").find(ride.dist) ?: return null
-    val tm = Regex("""(?:(\d+):)?(\d+)""").find(ride.dur) ?: return null
-    val mins = (tm.groupValues[1].toDoubleOrNull() ?: 0.0) + (tm.groupValues[2].toDoubleOrNull() ?: 0.0) / 60.0
-    if (mins <= 0) return null
+    // Duration is "m:ss" or "h:mm:ss" — parse every part. The old regex
+    // matched only the first two numbers, so a 1:02:34 ride read as 1.03 min.
+    val parts = ride.dur.split(":").mapNotNull { it.toDoubleOrNull() }
+    if (parts.isEmpty()) return null
+    val totalSec = when (parts.size) {
+        1 -> parts[0]
+        2 -> parts[0] * 60 + parts[1]
+        else -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+    }
+    if (totalSec <= 0) return null
     val unit = if (dm.groupValues[2] == "km") "km/h" else "mph"
-    val avg = dm.groupValues[1].toDoubleOrNull()?.div(mins / 60.0) ?: return null
+    val avg = dm.groupValues[1].toDoubleOrNull()?.div(totalSec / 3600.0) ?: return null
     return "Avg Speed" to String.format("%.1f %s", avg, unit)
 }

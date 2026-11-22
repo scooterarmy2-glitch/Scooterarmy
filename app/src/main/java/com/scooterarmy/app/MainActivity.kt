@@ -172,10 +172,25 @@ class MainActivity : Activity() {
         }
     }
 
+    // Refreshes the speedo ~10x/sec between GPS fixes. Without this the IMU
+    // bridge never ran: updateSpeedDisplay() was only called on a fix, and
+    // onGpsFix() zeroes the bridge delta right before it — so the display
+    // only ever showed raw 1 Hz GPS. The tick lets the bridge interpolate
+    // between fixes while GPS truth still wins on every fresh fix.
+    private val displayTick = object : Runnable {
+        override fun run() {
+            updateSpeedDisplay()
+            uiHandler.postDelayed(this, 100)
+        }
+    }
+
     private val idleStop = Runnable { if (sessionActive) stopSession() }
 
     // SAF export: content waiting for the user to pick a file.
     private var pendingExport: String? = null
+    // True while the export file picker is open — opening it pauses the
+    // activity, and a pause must not end a ride the way leaving the app does.
+    private var exporting = false
     private var pendingExportMime = "text/csv"
 
     companion object {
@@ -268,6 +283,18 @@ class MainActivity : Activity() {
         startLocation()
         imuBridge.start()
         uiHandler.post(fixAgeTick)
+        uiHandler.post(displayTick)
+        // Resume anything the pause interrupted: a run's timer, the armed
+        // flash, the ride's live strip and idle timer.
+        if (state == RunState.RUNNING && runStartT != null) {
+            binding.timerBig.text = fmtTimer(max(0L, nowT() - runStartT!!))
+            uiHandler.post(timerTick)
+        }
+        if (state == RunState.ARMED) startArmFlash()
+        if (sessionActive) {
+            uiHandler.post(liveTick)
+            resetIdleTimer()
+        }
         // Fresh read, exactly what is stored — the log always shows the truth.
         rides = store.rides
         runs = store.runs
@@ -279,13 +306,16 @@ class MainActivity : Activity() {
     override fun onPause() {
         super.onPause()
         // Same as the web app hiding: a ride ends when the app leaves the screen.
-        if (sessionActive) stopSession()
+        // Except the export file picker — that also pauses us, and in the web
+        // app exporting was a plain download that never ended a ride.
+        if (sessionActive && !exporting) stopSession()
         stopLocation()
         imuBridge.stop()
         uiHandler.removeCallbacks(timerTick)
         uiHandler.removeCallbacks(fixAgeTick)
         uiHandler.removeCallbacks(liveTick)
         uiHandler.removeCallbacks(idleStop)
+        uiHandler.removeCallbacks(displayTick)
     }
 
     override fun onDestroy() {
@@ -303,10 +333,15 @@ class MainActivity : Activity() {
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQ_LOCATION &&
-            grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            startLocation()
+        if (requestCode == REQ_LOCATION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startLocation()
+            } else {
+                binding.giStatus.text = "ERROR"
+                binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+                setSdot("error")
+                Toast.makeText(this, "Location permission denied — GPS won't work", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -447,7 +482,11 @@ class MainActivity : Activity() {
                     binding.satCount.text = used.toString()
                 }
             }
-            lm.registerGnssStatusCallback(gnssCallback!!)
+            try {
+                lm.registerGnssStatusCallback(gnssCallback!!)
+            } catch (_: Exception) {
+                gnssCallback = null
+            }
 
             // Raw GNSS measurements: dual-frequency (L1+L5) detection.
             // Some chipsets never deliver these — the badge just stays off.
@@ -505,6 +544,9 @@ class MainActivity : Activity() {
             if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 gpsReady = false
                 setSdot("error")
+                binding.giStatus.text = "ERROR"
+                binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+                Toast.makeText(this, "Location is off — turn on GPS", Toast.LENGTH_LONG).show()
             }
         } catch (_: SecurityException) {
             listening = false
@@ -862,13 +904,7 @@ class MainActivity : Activity() {
         state = RunState.ARMED
         binding.timerBig.text = "0.000"
         binding.timerBig.setTextColor(Color.parseColor("#ffb347"))
-        flashAnimator?.cancel()
-        flashAnimator = android.animation.ObjectAnimator.ofFloat(binding.timerBig, "alpha", 1f, 0.2f).apply {
-            duration = 500
-            repeatMode = android.animation.ValueAnimator.REVERSE
-            repeatCount = android.animation.ValueAnimator.INFINITE
-            start()
-        }
+        startArmFlash()
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
         binding.armBtn.text = "ARMED"
@@ -877,6 +913,18 @@ class MainActivity : Activity() {
         binding.tgtInp.isEnabled = false
         binding.gauge.target = tgt
         binding.gauge.showTarget = true
+    }
+
+    /** Amber flash on the timer while a run is ARMED and waiting to start. */
+    private fun startArmFlash() {
+        flashAnimator?.cancel()
+        binding.timerBig.alpha = 1f
+        flashAnimator = android.animation.ObjectAnimator.ofFloat(binding.timerBig, "alpha", 1f, 0.2f).apply {
+            duration = 500
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            start()
+        }
     }
 
     private fun startRun() {
@@ -992,7 +1040,7 @@ class MainActivity : Activity() {
         if (!sessionActive) return
         val endTime = Date()
         val startSnap = sessionStart ?: endTime
-        val durSec = ((endTime.time - startSnap.time) / 1000).toInt()
+        val durSec = Math.round((endTime.time - startSnap.time) / 1000.0).toInt()
         val topSpdSnap = sessionTopSpd
         val distSnap = sessionDist
 
@@ -1047,7 +1095,7 @@ class MainActivity : Activity() {
 
     private fun updateSessionLive() {
         val start = sessionStart ?: return
-        val durSec = ((Date().time - start.time) / 1000).toInt()
+        val durSec = Math.round((Date().time - start.time) / 1000.0).toInt()
         val u = if (useMetric) "km/h" else "mph"
         val dist = if (useMetric) {
             String.format("%.2f km", sessionDist / 1000.0)
@@ -1296,8 +1344,10 @@ class MainActivity : Activity() {
             putExtra(Intent.EXTRA_TITLE, fileName)
         }
         try {
+            exporting = true
             startActivityForResult(intent, REQ_EXPORT)
         } catch (_: Exception) {
+            exporting = false
             pendingExport = null
             Toast.makeText(this, "No file app available to save with", Toast.LENGTH_SHORT).show()
         }
@@ -1305,19 +1355,23 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQ_EXPORT && resultCode == RESULT_OK) {
-            val uri: Uri? = data?.data
-            val content = pendingExport
+        if (requestCode != REQ_EXPORT) return
+        exporting = false
+        if (resultCode != RESULT_OK) {
             pendingExport = null
-            if (uri != null && content != null) {
-                try {
-                    contentResolver.openOutputStream(uri)?.use { out ->
-                        out.write(content.toByteArray(Charsets.UTF_8))
-                    }
-                    Toast.makeText(this, "Export saved", Toast.LENGTH_SHORT).show()
-                } catch (_: Exception) {
-                    Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val uri: Uri? = data?.data
+        val content = pendingExport
+        pendingExport = null
+        if (uri != null && content != null) {
+            try {
+                contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(content.toByteArray(Charsets.UTF_8))
                 }
+                Toast.makeText(this, "Export saved", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show()
             }
         }
     }
