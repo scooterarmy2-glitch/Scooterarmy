@@ -28,7 +28,8 @@
                 android:paddingLeft="18dp"
                 android:paddingTop="12dp"
                 android:paddingRight="18dp"
-                android:paddingBottom="10dp">
+                android:paddingBottom="10dp"
+                android:elevation="6dp">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -41,6 +42,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/orbitron_900"
+                        android:letterSpacing="0.06"
                         android:text="#"
                         android:textColor="#ff3300"
                         android:textSize="18sp" />
@@ -50,6 +52,11 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/orbitron_900"
+                        android:letterSpacing="0.06"
+                        android:shadowColor="#000000"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:text="SAMO GPS"
                         android:textColor="@color/chrome"
                         android:textSize="18sp" />
@@ -63,8 +70,8 @@
 
                     <View
                         android:id="@+id/sdot"
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
                         android:layout_gravity="end"
                         android:background="@drawable/dot_amber" />
 
@@ -83,8 +90,8 @@
             <View
                 android:id="@+id/headerDivider"
                 android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:background="#000000" />
+                android:layout_height="4dp"
+                android:background="@drawable/header_divider" />
 
             <LinearLayout
                 android:id="@+id/innerCol"
@@ -113,7 +120,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_horizontal|bottom"
-                        android:layout_marginBottom="50dp"
+                        android:layout_marginBottom="34dp"
                         android:gravity="center_horizontal"
                         android:orientation="vertical">
 
@@ -122,6 +129,12 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_900"
+                            android:letterSpacing="-0.03"
+                            android:padding="16dp"
+                            android:shadowColor="#ff4400"
+                            android:shadowDx="0"
+                            android:shadowDy="0"
+                            android:shadowRadius="24"
                             android:text="0"
                             android:textColor="#ffffff"
                             android:textSize="72sp" />
@@ -132,6 +145,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.3"
                             android:text="MPH ⇄"
                             android:textColor="#cccccc"
                             android:textSize="11sp" />
@@ -145,6 +159,9 @@
                         android:layout_marginTop="18dp"
                         android:layout_marginEnd="12dp"
                         android:background="@drawable/top_spd_bg"
+                        android:elevation="4dp"
+                        android:outlineAmbientShadowColor="#ff3c00"
+                        android:outlineSpotShadowColor="#ff3c00"
                         android:gravity="center_horizontal"
                         android:minWidth="64dp"
                         android:orientation="vertical"
@@ -166,6 +183,11 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_900"
+                            android:letterSpacing="0.02"
+                            android:shadowColor="#4dffb347"
+                            android:shadowDx="0"
+                            android:shadowDy="0"
+                            android:shadowRadius="8"
                             android:text="0"
                             android:textColor="@color/amber"
                             android:textSize="18sp" />
@@ -192,6 +214,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="ACQUIRING"
                             android:textColor="#ff8800"
                             android:textSize="11sp" />
@@ -201,6 +224,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:fontFamily="@font/share_tech_mono"
+                            android:letterSpacing="0.15"
                             android:text="WAITING FOR GOOD FIX"
                             android:textColor="#666666"
                             android:textSize="9sp" />
@@ -214,6 +238,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/gps_info_bg"
+                    android:elevation="4dp"
                     android:orientation="horizontal"
                     android:padding="8dp">
 
@@ -228,6 +253,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="STATUS"
                             android:textColor="#cccccc"
                             android:textSize="8sp" />
@@ -259,6 +285,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="ACCURACY"
                             android:textColor="#cccccc"
                             android:textSize="8sp" />
@@ -278,6 +305,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
+                            android:letterSpacing="0.08"
                             android:text="metres"
                             android:textColor="#aaaaaa"
                             android:textSize="8sp" />
@@ -299,6 +327,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="FIX AGE"
                             android:textColor="#cccccc"
                             android:textSize="8sp" />
@@ -317,6 +346,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
+                            android:letterSpacing="0.08"
                             android:text="seconds"
                             android:textColor="#aaaaaa"
                             android:textSize="8sp" />
@@ -338,6 +368,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="SIGNAL"
                             android:textColor="#cccccc"
                             android:textSize="8sp" />
@@ -417,6 +448,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/panel_bg"
+                    android:elevation="4dp"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -432,6 +464,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/orbitron_700"
                         android:gravity="center_horizontal"
+                        android:letterSpacing="0.25"
                         android:text="RIDE"
                         android:textColor="#cccccc"
                         android:textSize="9sp" />
@@ -442,7 +475,11 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="11dp"
                         android:background="@drawable/btn_green"
+                        android:elevation="6dp"
                         android:fontFamily="@font/orbitron_700"
+                        android:letterSpacing="0.2"
+                        android:outlineAmbientShadowColor="#00c853"
+                        android:outlineSpotShadowColor="#00c853"
                         android:text="START RIDE"
                         android:textColor="#ffffff"
                         android:textSize="12sp" />
@@ -458,6 +495,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.25"
                             android:text="SPEED ALERT"
                             android:textColor="#cccccc"
                             android:textSize="9sp" />
@@ -483,6 +521,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="8dp"
                             android:fontFamily="@font/share_tech_mono"
+                            android:letterSpacing="0.05"
                             android:text="off"
                             android:textColor="#aaaaaa"
                             android:textSize="9sp" />
@@ -496,6 +535,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/panel_bg"
+                    android:elevation="4dp"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -511,6 +551,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/orbitron_700"
                         android:gravity="center_horizontal"
+                        android:letterSpacing="0.25"
                         android:text="TIMED SPEED RUN"
                         android:textColor="#cccccc"
                         android:textSize="9sp" />
@@ -563,6 +604,13 @@
                         android:layout_marginTop="11dp"
                         android:fontFamily="@font/orbitron_900"
                         android:gravity="center_horizontal"
+                        android:letterSpacing="0.05"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp"
+                        android:shadowColor="#26ff6400"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="15"
                         android:text="0.000"
                         android:textColor="#ffffff"
                         android:textSize="52sp" />
@@ -602,7 +650,11 @@
                             android:layout_marginRight="4dp"
                             android:layout_weight="1"
                             android:background="@drawable/btn_orange"
+                            android:elevation="6dp"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
+                            android:outlineAmbientShadowColor="#ff5722"
+                            android:outlineSpotShadowColor="#ff5722"
                             android:text="START TIMED RUN"
                             android:textColor="#ffffff"
                             android:textSize="12sp" />
@@ -616,6 +668,7 @@
                             android:background="@drawable/btn_gray"
                             android:enabled="false"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="RESET"
                             android:textColor="#ffffff"
                             android:textSize="12sp" />
@@ -629,6 +682,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/live_strip_bg"
+                    android:elevation="4dp"
+                    android:outlineAmbientShadowColor="#39ff14"
+                    android:outlineSpotShadowColor="#39ff14"
                     android:orientation="horizontal"
                     android:padding="10dp"
                     android:visibility="gone">
@@ -644,6 +700,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="TOP SPEED"
                             android:textColor="#006633"
                             android:textSize="7sp" />
@@ -675,6 +732,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="DISTANCE"
                             android:textColor="#006633"
                             android:textSize="7sp" />
@@ -706,6 +764,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
                             android:text="DURATION"
                             android:textColor="#006633"
                             android:textSize="7sp" />
@@ -729,14 +788,24 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/panel_bg"
+                    android:elevation="4dp"
                     android:orientation="vertical"
                     android:padding="14dp"
                     android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:layout_marginTop="-14dp"
+                        android:layout_marginBottom="11dp"
+                        android:alpha="0.5"
+                        android:background="@drawable/accent_top_amber" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/orbitron_700"
+                        android:letterSpacing="0.25"
                         android:text="BEST VS LAST"
                         android:textColor="#cccccc"
                         android:textSize="9sp" />
@@ -758,6 +827,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/share_tech_mono"
+                                android:letterSpacing="0.2"
                                 android:text="BEST"
                                 android:textColor="#cccccc"
                                 android:textSize="9sp" />
@@ -799,6 +869,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/share_tech_mono"
+                                android:letterSpacing="0.2"
                                 android:text="LAST"
                                 android:textColor="#cccccc"
                                 android:textSize="9sp" />
@@ -832,6 +903,7 @@
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/orbitron_700"
                         android:gravity="center_horizontal"
+                        android:letterSpacing="0.1"
                         android:text=""
                         android:textColor="#cccccc"
                         android:textSize="11sp" />
@@ -856,6 +928,8 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/orbitron_700"
+                            android:id="@+id/rideLogTitle"
+                            android:letterSpacing="0.3"
                             android:text="RIDE LOG"
                             android:textColor="#bbbbbb"
                             android:textSize="9sp" />
@@ -863,12 +937,17 @@
                         <Button
                             android:id="@+id/exportRidesCsv"
                             style="?android:attr/borderlessButtonStyle"
+                            android:background="@drawable/export_btn_bg"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
                             android:minHeight="0dp"
                             android:minWidth="0dp"
-                            android:padding="3dp"
+                            android:letterSpacing="0.1"
+                            android:paddingLeft="8dp"
+                            android:paddingRight="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingBottom="3dp"
                             android:text="CSV"
                             android:textColor="#aaaaaa"
                             android:textSize="10sp" />
@@ -876,12 +955,17 @@
                         <Button
                             android:id="@+id/exportRidesGpx"
                             style="?android:attr/borderlessButtonStyle"
+                            android:background="@drawable/export_btn_bg"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
                             android:minHeight="0dp"
                             android:minWidth="0dp"
-                            android:padding="3dp"
+                            android:letterSpacing="0.1"
+                            android:paddingLeft="8dp"
+                            android:paddingRight="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingBottom="3dp"
                             android:text="GPX"
                             android:textColor="#aaaaaa"
                             android:textSize="10sp" />
@@ -889,6 +973,7 @@
                         <Button
                             android:id="@+id/clearSessions"
                             style="?android:attr/borderlessButtonStyle"
+                            android:letterSpacing="0.1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
@@ -915,6 +1000,7 @@
                         android:gravity="center_horizontal"
                         android:paddingTop="12dp"
                         android:paddingBottom="12dp"
+                        android:letterSpacing="0.2"
                         android:text="— no rides recorded —"
                         android:textColor="#888888"
                         android:textSize="10sp" />
@@ -939,6 +1025,8 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/orbitron_700"
+                            android:id="@+id/runLogTitle"
+                            android:letterSpacing="0.3"
                             android:text="TIMED RUN LOG"
                             android:textColor="#bbbbbb"
                             android:textSize="9sp" />
@@ -946,12 +1034,17 @@
                         <Button
                             android:id="@+id/exportRunsCsv"
                             style="?android:attr/borderlessButtonStyle"
+                            android:background="@drawable/export_btn_bg"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
                             android:minHeight="0dp"
                             android:minWidth="0dp"
-                            android:padding="3dp"
+                            android:letterSpacing="0.1"
+                            android:paddingLeft="8dp"
+                            android:paddingRight="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingBottom="3dp"
                             android:text="CSV"
                             android:textColor="#aaaaaa"
                             android:textSize="10sp" />
@@ -959,6 +1052,7 @@
                         <Button
                             android:id="@+id/clearHistory"
                             style="?android:attr/borderlessButtonStyle"
+                            android:letterSpacing="0.1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/share_tech_mono"
@@ -985,6 +1079,7 @@
                         android:gravity="center_horizontal"
                         android:paddingTop="12dp"
                         android:paddingBottom="12dp"
+                        android:letterSpacing="0.2"
                         android:text="— no runs recorded —"
                         android:textColor="#888888"
                         android:textSize="10sp" />
@@ -1003,6 +1098,7 @@
         android:fontFamily="@font/orbitron_900"
         android:gravity="center_horizontal"
         android:padding="10dp"
+        android:letterSpacing="0.15"
         android:text="⚠ OVER SPEED LIMIT"
         android:textColor="#ffffff"
         android:textSize="16sp"
@@ -1016,6 +1112,7 @@
         android:layout_gravity="top|center_horizontal"
         android:layout_marginTop="14dp"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.25"
         android:text="DOUBLE TAP TO EXIT"
         android:textColor="#444444"
         android:textSize="8sp"
@@ -1027,7 +1124,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#080808"
+        android:background="@drawable/fs_info_bg"
         android:orientation="horizontal"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
@@ -1044,6 +1141,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
                 android:text="GPS"
                 android:textColor="#444444"
                 android:textSize="8sp" />
@@ -1075,6 +1173,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
                 android:text="TOP SPEED"
                 android:textColor="#444444"
                 android:textSize="8sp" />
@@ -1106,6 +1205,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
                 android:text="ACCURACY"
                 android:textColor="#444444"
                 android:textSize="8sp" />

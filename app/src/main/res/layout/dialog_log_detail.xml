@@ -11,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.2"
         android:textColor="#cccccc"
         android:textSize="13sp" />
 
@@ -20,6 +21,12 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:fontFamily="@font/orbitron_900"
+        android:letterSpacing="-0.02"
+        android:padding="16dp"
+        android:shadowColor="#ff4400"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="24"
         android:textColor="#ffffff"
         android:textSize="64sp" />
 
@@ -28,6 +35,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.3"
         android:textColor="@color/amber"
         android:textSize="11sp" />
 
@@ -43,8 +51,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:background="#1e1e1e"
+        android:background="@drawable/dialog_btn_bg"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.25"
         android:text="VIEW ROUTE"
         android:textColor="#ffffff"
         android:textSize="13sp"
@@ -55,8 +64,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
-        android:background="#1e1e1e"
+        android:background="@drawable/dialog_btn_bg"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.25"
         android:text="CLOSE"
         android:textColor="#ffffff"
         android:textSize="13sp" />

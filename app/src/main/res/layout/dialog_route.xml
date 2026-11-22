@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_700"
         android:text="ROUTE"
+        android:letterSpacing="0.2"
         android:textColor="#cccccc"
         android:textSize="13sp" />
 
@@ -19,7 +20,9 @@
         android:id="@+id/routeMap"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="12dp"
+        android:background="@drawable/map_frame_bg"
+        android:clipToOutline="true" />
 
     <TextView
         android:id="@+id/routeSub"
@@ -27,6 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.2"
         android:textColor="@color/amber"
         android:textSize="11sp" />
 
@@ -35,8 +39,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
-        android:background="#1e1e1e"
+        android:background="@drawable/dialog_btn_bg"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.25"
         android:text="CLOSE"
         android:textColor="#ffffff"
         android:textSize="13sp" />

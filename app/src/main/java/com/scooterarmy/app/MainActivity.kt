@@ -5,9 +5,15 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Shader
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.LayerDrawable
 import android.location.GnssMeasurementsEvent
 import android.location.GnssStatus
 import android.location.Location
@@ -220,6 +226,15 @@ class MainActivity : Activity() {
         runs = store.runs
 
         applyChromeGradient(binding.brandText)
+        applyEmberGradient(binding.brandHash)
+        applyChromeGradient(binding.rideLogTitle)
+        applyChromeGradient(binding.runLogTitle)
+        applyTexturedBackground()
+        // Ember glows (density-scaled so they render the same on every screen).
+        val density = resources.displayMetrics.density
+        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff4400"))
+        binding.spdNum.setShadowLayer(20f * density, 0f, 0f, Color.parseColor("#ff4400"))
+        binding.timerBig.setShadowLayer(15f * density, 0f, 0f, Color.parseColor("#26ff6400"))
         binding.spdUnit.text = if (useMetric) "KM/H ⇄" else "MPH ⇄"
         binding.tgtSuf.text = if (useMetric) "KM/H" else "MPH"
         binding.topSpdUnit.text = if (useMetric) "KM/H" else "MPH"
@@ -434,6 +449,54 @@ class MainActivity : Activity() {
                 tv.invalidate()
             }
         }
+    }
+
+    /** Red-orange gradient for the "#" in the brand, matching the web header. */
+    private fun applyEmberGradient(tv: android.widget.TextView) {
+        tv.post {
+            if (tv.height > 0) {
+                tv.paint.shader = LinearGradient(
+                    0f, 0f, 0f, tv.height.toFloat(),
+                    intArrayOf(
+                        Color.parseColor("#ff6644"),
+                        Color.parseColor("#cc1a00"),
+                        Color.parseColor("#ff3300")
+                    ),
+                    floatArrayOf(0f, 0.5f, 1f),
+                    Shader.TileMode.CLAMP
+                )
+                tv.invalidate()
+            }
+        }
+    }
+
+    /** Root background: ember radial glow (app_bg) + tiled diamond-plate texture,
+     *  matching the old web app's body background. Visual only. */
+    private fun applyTexturedBackground() {
+        val density = resources.displayMetrics.density
+        val w = (28f * density).toInt().coerceAtLeast(2)
+        val h = (16f * density).toInt().coerceAtLeast(2)
+        val tile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(tile)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 0.6f * density
+            color = Color.parseColor("#0affffff")
+        }
+        val diamond = Path().apply {
+            moveTo(w / 2f, 0f)
+            lineTo(w.toFloat(), h / 2f)
+            lineTo(w / 2f, h.toFloat())
+            lineTo(0f, h / 2f)
+            close()
+        }
+        canvas.drawPath(diamond, paint)
+        val tiled = BitmapDrawable(resources, tile).apply {
+            tileModeX = Shader.TileMode.REPEAT
+            tileModeY = Shader.TileMode.REPEAT
+        }
+        val base = getDrawable(R.drawable.app_bg)
+        binding.rootLayout.background = LayerDrawable(arrayOf(base, tiled))
     }
 
     private fun setBtn(btn: Button, enabled: Boolean) {
@@ -755,6 +818,13 @@ class MainActivity : Activity() {
                 else -> Color.WHITE
             }
         )
+        // Ember glow follows the speed color (web .spd-num text-shadow).
+        val glowColor = when {
+            ratio > 0.85 -> Color.parseColor("#ff5522")
+            ratio > 0.6 -> Color.parseColor("#ffb347")
+            else -> Color.parseColor("#ff4400")
+        }
+        binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, glowColor)
         binding.gauge.speed = disp
         binding.gauge.useMetric = useMetric
 
@@ -904,6 +974,7 @@ class MainActivity : Activity() {
         state = RunState.ARMED
         binding.timerBig.text = "0.000"
         binding.timerBig.setTextColor(Color.parseColor("#ffb347"))
+        binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ffb347"))
         startArmFlash()
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
@@ -932,6 +1003,7 @@ class MainActivity : Activity() {
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
         binding.timerBig.setTextColor(Color.parseColor("#ffb347"))
+        binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ffb347"))
         uiHandler.post(timerTick)
     }
 
@@ -940,6 +1012,7 @@ class MainActivity : Activity() {
         uiHandler.removeCallbacks(timerTick)
         binding.timerBig.text = fmtTimer(elapsedMs)
         binding.timerBig.setTextColor(Color.parseColor("#39ff14"))
+        binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#39ff14"))
         binding.progFill.setBackgroundResource(R.drawable.prog_fill_done)
         setProg(1.0)
         binding.armBtn.text = "START TIMED RUN"
@@ -961,6 +1034,7 @@ class MainActivity : Activity() {
         binding.timerBig.alpha = 1f
         binding.timerBig.text = "0.000"
         binding.timerBig.setTextColor(Color.WHITE)
+        binding.timerBig.setShadowLayer(15f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#26ff6400"))
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
         binding.armBtn.text = "START TIMED RUN"
@@ -1023,6 +1097,10 @@ class MainActivity : Activity() {
 
         binding.sessBtn.text = "STOP RIDE"
         binding.sessBtn.setBackgroundResource(R.drawable.btn_red)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#e53935")
+            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#e53935")
+        }
         stopPulseAnimator?.cancel()
         stopPulseAnimator = android.animation.ObjectAnimator.ofFloat(binding.sessBtn, "alpha", 1f, 0.8f).apply {
             duration = 1000
@@ -1051,6 +1129,10 @@ class MainActivity : Activity() {
         binding.sessBtn.alpha = 1f
         binding.sessBtn.text = "START RIDE"
         binding.sessBtn.setBackgroundResource(R.drawable.btn_green)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#00c853")
+            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#00c853")
+        }
         binding.sessLive.visibility = View.GONE
         applyChromeVisibility()
 
@@ -1142,6 +1224,7 @@ class MainActivity : Activity() {
             row.runDate.text = run.date
             row.runTime.text = "${run.time}s"
             row.runBestBadge.visibility = if (run.isBest) View.VISIBLE else View.GONE
+            row.root.setBackgroundResource(if (run.isBest) R.drawable.log_item_best_bg else R.drawable.log_item_bg)
             row.runTime.setTextColor(
                 if (run.isBest) Color.parseColor("#ffb347") else Color.parseColor("#f0f0f0")
             )

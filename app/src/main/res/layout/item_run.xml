@@ -12,6 +12,7 @@
         android:layout_width="50dp"
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.15"
         android:text="ACCEL"
         android:textColor="#cccccc"
         android:textSize="9sp" />
@@ -27,6 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/share_tech_mono"
+            android:letterSpacing="0.08"
             android:textColor="#dddddd"
             android:textSize="11sp" />
 
@@ -46,6 +48,7 @@
         android:layout_height="wrap_content"
         android:layout_marginRight="8dp"
         android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.1"
         android:text="BEST"
         android:textColor="@color/amber"
         android:textSize="9sp"
@@ -57,6 +60,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_900"
         android:gravity="end"
+        android:letterSpacing="0.03"
         android:textColor="@color/chrome"
         android:textSize="20sp" />
 

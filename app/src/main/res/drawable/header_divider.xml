@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Header divider: 2px black over a 2px ember line (web header bottom border + #3a1800 shadow line). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:height="2dp" android:gravity="top">
+        <shape android:shape="rectangle">
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+    <item android:height="2dp" android:gravity="bottom">
+        <shape android:shape="rectangle">
+            <solid android:color="#3a1800" />
+        </shape>
+    </item>
+</layer-list>
