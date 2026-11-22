@@ -450,6 +450,15 @@ canvas#gauge { display:block; }
 .sess-live-col:not(:last-child) { border-right:1px solid #003318; }
 .sess-live-lbl { font-family:'Orbitron',sans-serif; font-size:7px; font-weight:700; letter-spacing:.2em; color:#006633; text-transform:uppercase; }
 .sess-live-val { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:900; color:var(--green); letter-spacing:.03em; }
+
+/* LANDSCAPE — speedo only */
+@media (orientation: landscape) {
+  body { padding: 0; }
+  .wrap { max-width: none; width: 100%; height: 100vh; justify-content: center; }
+  .wrap > div:not(.gauge-wrap) { display: none !important; }
+  .gauge-wrap { width: min(100vh - 16px, 100vw - 16px); height: min(100vh - 16px, 100vw - 16px); }
+  canvas#gauge { width: 100% !important; height: 100% !important; }
+}
 </style>
 </head>
 <body>
