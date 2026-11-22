@@ -660,6 +660,31 @@ let   gpsReady     = false;
 let   allTimeTopSpd = 0;   // highest speed ever seen this session
 let   lastFixPerfTime = 0;
 
+// ── Fix-clock timing (times come from the GPS fix, not from when JS happens to run)
+let fixPrev        = null;   // previous accepted fix {t (ms), mps, lat, lon}
+let fixSrc         = null;   // 'native' | 'web' — reset history if the source changes
+let fixClockT      = 0;      // fix-clock time of newest accepted fix (ms)
+let fixClockPerf   = 0;      // performance.now() when that fix was processed
+let runStartT      = null;   // run start on the fix clock (ms)
+let nativeFixSeen  = false;
+const SPD_ACC_REJECT = 1.5;  // m/s — reject fixes whose own speed-error estimate is worse
+function toMps(v)   { return useMetric ? v/3.6 : v/2.23694; }
+function fromMps(m) { return useMetric ? m*3.6 : m*2.23694; }
+function nowT()     { return fixClockT + (performance.now() - fixClockPerf); }
+// Moment speed crossed `level` (m/s) between previous fix and this one (linear interpolation)
+function crossT(p, mps, t, level) {
+  if (!p || mps <= p.mps) return t;
+  const f = (level - p.mps) / (mps - p.mps);
+  return p.t + Math.min(Math.max(f, 0), 1) * (t - p.t);
+}
+// Run start = where the speed line through the first two fixes meets 0 m/s
+function estimateStart(p, mps, t) {
+  if (!p) return t;
+  const a = (mps - p.mps) / ((t - p.t) / 1000);      // m/s²
+  if (a <= 0.05) return p.t;
+  return Math.min(t, Math.max(t - (mps / a) * 1000, t - 4000));
+}
+
 // ─────────────────────────────────────────────
 // SESSION STATE
 // ─────────────────────────────────────────────
@@ -744,7 +769,7 @@ function drawGauge(spd) {
 // MAIN LOOP
 // ─────────────────────────────────────────────
 function loop() {
-  dispSpd += (currentSpd - dispSpd) * 0.18;
+  dispSpd += (currentSpd - dispSpd) * (Math.abs(currentSpd - dispSpd) > 3 ? 0.45 : 0.25);
   if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
 
   const ratio = dispSpd / maxSpd();
@@ -765,21 +790,10 @@ function loop() {
   updateFs();
 
   if (state === S.RUNNING) {
-    const el = performance.now() - timerStart;
-    document.getElementById('timerBig').textContent = fmt(el);
+    document.getElementById('timerBig').textContent = fmt(Math.max(0, nowT() - runStartT));
     document.getElementById('progFill').style.width = Math.min((currentSpd/tgtVal())*100,100)+'%';
-
-    splitTargets.forEach(sv => {
-      if (!splitHits[sv] && currentSpd >= sv)
-        splitHits[sv] = (lastFixTime||performance.now()) - timerStart;
-    });
-
-    if (currentSpd >= tgtVal()) finishRun();
   }
-
-  // Auto-start when moving (raised threshold avoids false triggers at standstill)
-  const armThreshold = useMetric ? 6 : 4;
-  if (state === S.ARMED && currentSpd > armThreshold) startRun();
+  // Run start / splits / finish are decided in handleFix() on GPS-fix time
 
   rafId = requestAnimationFrame(loop);
 }
@@ -812,16 +826,14 @@ function armRun() {
 }
 
 function startRun() {
-  state      = S.RUNNING;
-  timerStart = lastFixTime || performance.now();
+  state = S.RUNNING;
   document.getElementById('timerBig').className   = 'timer-big running';
   document.getElementById('timerSub').textContent = 'Running…';
   setBar('Timer running','active');
   setArmInd('running');
 }
 
-function finishRun() {
-  const elapsed = (lastFixTime || performance.now()) - timerStart;
+function finishRun(elapsed) {
   state = S.DONE;
 
   document.getElementById('timerBig').textContent = fmt(elapsed);
@@ -845,7 +857,7 @@ function finishRun() {
 }
 
 function resetRun() {
-  state = S.IDLE; timerStart = null; splitHits = {};
+  state = S.IDLE; timerStart = null; runStartT = null; splitHits = {};
   document.getElementById('timerBig').textContent = '0.000';
   document.getElementById('timerBig').className   = 'timer-big';
   document.getElementById('timerSub').textContent = 'Set target, then ARM';
@@ -988,57 +1000,107 @@ function renderBvL() {
 // GPS
 // ─────────────────────────────────────────────
 function startGPS() {
+  if (window.AndroidGPS) {                       // native GPS from MainActivity (no fused smoothing)
+    watchId = 'native';
+    setBar('Searching for GPS…','');
+    if (!fixAgeInterval) fixAgeInterval = setInterval(updateFixAge, 1000);
+    setTimeout(() => { if (!nativeFixSeen) startWebGPS(); }, 6000);   // fall back to browser GPS
+    return;
+  }
+  startWebGPS();
+}
+
+function startWebGPS() {
   if (!navigator.geolocation) { setBar('GPS not supported','error'); return; }
   setBar('Searching for GPS…','');
   watchId = navigator.geolocation.watchPosition(onPos, onErr, {
     enableHighAccuracy: true,
     maximumAge:         0,       // always fresh — never use cached position
-    timeout:            3000     // retry quickly
+    timeout:            15000    // short timeouts wipe the lock and blank the speedo
   });
-  fixAgeInterval = setInterval(updateFixAge, 1000);
+  if (!fixAgeInterval) fixAgeInterval = setInterval(updateFixAge, 1000);
 }
 
-function onPos(pos) {
-  const acc = pos.coords.accuracy;
-  const now = performance.now();
-  if (state === S.RUNNING && acc > ACC_REJECT) { updateSignalDisplay(acc); return; }
+// Called by MainActivity for every GPS-provider fix. t = elapsed-realtime ms of the fix.
+window.onNativeFix = function(lat, lon, speed, acc, speedAcc, t) {
+  nativeFixSeen = true;
+  handleFix({src:'native', lat, lon, speed, acc, speedAcc, t});
+};
+window.onNativeProvider = function(on) {
+  if (on) { setBar('Searching for GPS…',''); }
+  else { gpsReady = false; setBar('Location is off — turn on GPS','error'); setSdot('error'); }
+};
 
-  lastFixTime = now;
-  lastFixTs   = pos.timestamp;
-  lastFixPerfTime = now;
+function onPos(pos) {
+  if (nativeFixSeen) return;
+  const c = pos.coords;
+  handleFix({src:'web', lat:c.latitude, lon:c.longitude, speed:c.speed,
+             acc:c.accuracy, speedAcc:-1, t:pos.timestamp});
+}
+
+function handleFix(f) {
+  const perf = performance.now();
+  const acc  = f.acc;
+  if (fixSrc !== f.src) { fixPrev = null; fixSrc = f.src; }
+  if (fixPrev && f.t <= fixPrev.t) return;                 // duplicate / out-of-order
 
   const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
   fsLastAcc = acc; fsLastSig = sig;
 
-  // Simple direct GPS speed — trust the chip
-  rawMps = pos.coords.speed != null && pos.coords.speed >= 0 ? pos.coords.speed : 0;
-
-  // Gate display on fix quality
-  if (acc <= ACC_GOOD && sig >= SIG_GOOD) {
-    gpsReady   = true;
-    currentSpd = useMetric ? rawMps * 3.6 : rawMps * 2.23694;
-  } else if (!gpsReady) {
-    currentSpd = 0;
+  // Speed straight from the chip (Doppler). Only derive from positions if the chip gave none.
+  let mps = (f.speed != null && f.speed >= 0) ? f.speed : -1;
+  if (mps < 0 && fixPrev) {
+    const dt = (f.t - fixPrev.t) / 1000;
+    if (dt > 0.2 && dt < 5) mps = haversine(fixPrev.lat, fixPrev.lon, f.lat, f.lon) / dt;
   }
+  const badSpd = f.speedAcc >= 0 && f.speedAcc > SPD_ACC_REJECT;
+  const usable = mps >= 0 && acc <= ACC_REJECT && !badSpd;
+
+  // During a run, drop unusable fixes without touching the timing references
+  if (state === S.RUNNING && !usable) { updateSignalDisplay(acc); return; }
+
+  lastFixTime = perf; lastFixTs = f.t; lastFixPerfTime = perf;
+
+  // Unlock once on a good fix; after that keep updating on every usable fix
+  // (the old code froze the needle whenever accuracy drifted past 20 m)
+  if (acc <= ACC_GOOD && sig >= SIG_GOOD) gpsReady = true;
+  if (gpsReady && usable) { rawMps = mps; currentSpd = fromMps(mps); }
+  else if (!gpsReady)     { currentSpd = 0; }
+
+  // ── Run logic on fix time, with interpolation between fixes
+  if (gpsReady && usable) {
+    const prev = fixPrev;
+    fixClockT = f.t; fixClockPerf = perf;
+
+    if (state === S.ARMED && mps > toMps(useMetric ? 6 : 4)) {
+      runStartT = estimateStart(prev, mps, f.t);
+      startRun();
+    }
+    if (state === S.RUNNING) {
+      splitTargets.forEach(sv => {
+        const lvl = toMps(sv);
+        if (splitHits[sv] === undefined && mps >= lvl)
+          splitHits[sv] = Math.max(0, crossT(prev, mps, f.t, lvl) - runStartT);
+      });
+      const tl = toMps(tgtVal());
+      if (mps >= tl) finishRun(Math.max(0, crossT(prev, mps, f.t, tl) - runStartT));
+    }
+    fixPrev = { t:f.t, mps, lat:f.lat, lon:f.lon };
+  }
+
   document.querySelectorAll('.sbar').forEach((b,i) => b.classList.toggle('on', i < sig));
   document.getElementById('acctxt').textContent = `±${Math.round(acc)}m`;
   updateGpsPanel(acc, sig);
+
   // Session tracking — only when GPS is reliable
   if (sessionActive && gpsReady) {
-    // Track top speed
     if (currentSpd > sessionTopSpd) sessionTopSpd = currentSpd;
-    // Track distance
-    if (pos.coords.latitude && sessionLastPos) {
-      sessionDist += haversine(sessionLastPos.lat, sessionLastPos.lon,
-                               pos.coords.latitude, pos.coords.longitude);
+    if (f.lat && sessionLastPos) {
+      sessionDist += haversine(sessionLastPos.lat, sessionLastPos.lon, f.lat, f.lon);
     }
-    // Reset idle timer on movement
     if (rawMps > 0.5) resetIdleTimer();
   }
-  // Always update position reference
-  if (pos.coords.latitude) {
-    sessionLastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-  }
+  if (f.lat) sessionLastPos = { lat: f.lat, lon: f.lon };
 
   setSdot('active');
   if (state !== S.ARMED && state !== S.RUNNING && state !== S.DONE) {
@@ -1082,6 +1144,7 @@ function updateFixAge() {
 
 function onErr(e) {
   gpsReady = false;
+  fixPrev = null;
   lastFixPerfTime = 0;
   const m = {1:'Location denied', 2:'Signal unavailable', 3:'GPS timed out'};
   setBar(m[e.code]||'GPS error','error'); setSdot('error');

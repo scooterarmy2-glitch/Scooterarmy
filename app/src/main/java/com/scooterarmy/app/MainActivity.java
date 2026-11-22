@@ -3,18 +3,81 @@ package com.scooterarmy.app;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.util.Locale;
+
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private LocationManager locMgr;
+    private boolean listening = false;
+
+    // Raw GPS-provider fixes (no fused-provider smoothing) pushed straight into the page.
+    private final LocationListener locListener = new LocationListener() {
+        @Override public void onLocationChanged(Location l) { pushFix(l); }
+        @Override public void onProviderEnabled(String p)  { js("window.onNativeProvider&&window.onNativeProvider(true)"); }
+        @Override public void onProviderDisabled(String p) { js("window.onNativeProvider&&window.onNativeProvider(false)"); }
+        @Override public void onStatusChanged(String p, int status, Bundle extras) {}
+    };
+
+    /** Marker so the page knows native GPS is available. */
+    private static class GpsBridge {
+        @JavascriptInterface public boolean available() { return true; }
+    }
+
+    private void js(String code) {
+        if (webView != null) webView.evaluateJavascript(code, null);
+    }
+
+    private void pushFix(Location l) {
+        double speed    = l.hasSpeed() ? l.getSpeed() : -1;
+        double speedAcc = l.hasSpeedAccuracy() ? l.getSpeedAccuracyMetersPerSecond() : -1;
+        double acc      = l.hasAccuracy() ? l.getAccuracy() : 999;
+        double tMs      = l.getElapsedRealtimeNanos() / 1e6;   // GPS fix time, monotonic clock
+        js(String.format(Locale.US,
+            "window.onNativeFix&&window.onNativeFix(%.7f,%.7f,%.3f,%.1f,%.3f,%.3f)",
+            l.getLatitude(), l.getLongitude(), speed, acc, speedAcc, tMs));
+    }
+
+    private void startLocation() {
+        if (listening) return;
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) return;
+        try {
+            locMgr = (LocationManager) getSystemService(LOCATION_SERVICE);
+            locMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locListener);
+            listening = true;
+            if (!locMgr.isProviderEnabled(LocationManager.GPS_PROVIDER))
+                js("window.onNativeProvider&&window.onNativeProvider(false)");
+        } catch (SecurityException e) {
+            listening = false;
+        }
+    }
+
+    private void stopLocation() {
+        if (listening && locMgr != null) {
+            locMgr.removeUpdates(locListener);
+            listening = false;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        startLocation();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +118,7 @@ public class MainActivity extends Activity {
             }, 1);
         }
 
+        webView.addJavascriptInterface(new GpsBridge(), "AndroidGPS");
         webView.loadUrl("file:///android_asset/index.html");
     }
 
@@ -62,6 +126,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         webView.onResume();
+        startLocation();
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_FULLSCREEN |
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
@@ -73,5 +138,6 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         webView.onPause();
+        stopLocation();
     }
 }
