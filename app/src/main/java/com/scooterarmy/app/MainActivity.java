@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
+import android.location.GnssStatus;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
@@ -23,6 +24,15 @@ public class MainActivity extends Activity {
     private WebView webView;
     private LocationManager locMgr;
     private boolean listening = false;
+    private GnssStatus.Callback gnssCallback;
+
+    // Satellite count (used in fix / in view) pushed to the page for the signal bars.
+    private void pushSatCount(GnssStatus s) {
+        int used = 0, total = s.getSatelliteCount();
+        for (int i = 0; i < total; i++) if (s.usedInFix(i)) used++;
+        final int u = used, tot = total;
+        js(String.format(Locale.US, "window.onSatCount&&window.onSatCount(%d,%d)", u, tot));
+    }
 
     // Raw GPS-provider fixes (no fused-provider smoothing) pushed straight into the page.
     private final LocationListener locListener = new LocationListener() {
@@ -58,6 +68,10 @@ public class MainActivity extends Activity {
         try {
             locMgr = (LocationManager) getSystemService(LOCATION_SERVICE);
             locMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locListener);
+            gnssCallback = new GnssStatus.Callback() {
+                @Override public void onSatelliteStatusChanged(GnssStatus s) { pushSatCount(s); }
+            };
+            locMgr.registerGnssStatusCallback(gnssCallback);
             listening = true;
             if (!locMgr.isProviderEnabled(LocationManager.GPS_PROVIDER))
                 js("window.onNativeProvider&&window.onNativeProvider(false)");
@@ -69,6 +83,7 @@ public class MainActivity extends Activity {
     private void stopLocation() {
         if (listening && locMgr != null) {
             locMgr.removeUpdates(locListener);
+            if (gnssCallback != null) locMgr.unregisterGnssStatusCallback(gnssCallback);
             listening = false;
         }
     }

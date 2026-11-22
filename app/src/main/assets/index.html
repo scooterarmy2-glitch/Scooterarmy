@@ -90,10 +90,12 @@ body::after {
 .sdot.error  { background:var(--dred);  box-shadow:0 0 6px var(--dred);  animation:blink .4s infinite; }
 @keyframes blink   { 0%,100%{opacity:1}50%{opacity:.1} }
 @keyframes breathe { 0%,100%{opacity:1}50%{opacity:.5} }
-.sbars { display:flex; gap:2px; align-items:flex-end; height:12px; }
+.sbars { display:flex; gap:2px; align-items:flex-end; height:18px; }
+.sat-count { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:900; color:var(--green); margin-left:6px; }
 .sbar  { width:4px; border-radius:1px; background:#333; transition:background .5s; }
 .sbar:nth-child(1){height:3px;} .sbar:nth-child(2){height:6px;}
 .sbar:nth-child(3){height:9px;} .sbar:nth-child(4){height:12px;}
+.sbar:nth-child(5){height:15px;} .sbar:nth-child(6){height:18px;}
 .sbar.on { background:var(--green); }
 .acctxt { font-size:9px; color:#ccc; }
 
@@ -519,9 +521,13 @@ canvas#gauge { display:block; }
     </div>
     <div class="gps-info-col">
       <div class="gi-lbl">Signal</div>
-      <div class="sbars" style="margin-top:4px">
+      <div style="display:flex;align-items:flex-end;gap:2px;margin-top:4px">
+        <div class="sbars">
         <div class="sbar" id="sb1"></div><div class="sbar" id="sb2"></div>
         <div class="sbar" id="sb3"></div><div class="sbar" id="sb4"></div>
+        <div class="sbar" id="sb5"></div><div class="sbar" id="sb6"></div>
+        </div><span class="sat-count" id="satCount">—</span>
+      </div>
       </div>
     </div>
   </div>
@@ -651,6 +657,10 @@ let state          = S.IDLE;
 let useMetric      = false;
 let timerStart     = null;
 let currentSpd     = 0;
+let prevMps        = null;   // last two raw GPS speeds, for between-fix prediction
+let prevMpsT       = 0;
+let lastMps        = 0;
+let lastMpsT       = 0;
 let rawMps         = 0;
 let dispSpd        = 0;
 let watchId        = null;
@@ -662,8 +672,8 @@ let lastFixTime    = null;
 let lastFixTs      = null;
 let fixAgeInterval = null;
 const ACC_REJECT   = 50;    // reject fixes worse than this during active run (metres)
-const ACC_GOOD     = 20;    // must beat this before speedo unlocks
-const SIG_GOOD     = 2;     // minimum signal bars before speedo activates
+const ACC_GOOD     = 10;    // must beat this before speedo unlocks (tighter lock)
+const SIG_GOOD     = 3;     // minimum signal bars (of 6) before speedo activates
 let   gpsReady     = false;
 let   allTimeTopSpd = 0;   // highest speed ever seen this session
 let   lastFixPerfTime = 0;
@@ -777,12 +787,24 @@ function drawGauge(spd) {
 // MAIN LOOP
 // ─────────────────────────────────────────────
 function loop() {
-  dispSpd += (currentSpd - dispSpd) * 0.12;  // needle glides; the big number below stays raw
+  // Between GPS fixes (~1 Hz): predict from the last speed trend so the display
+  // moves in real time instead of stepping once a second. Timer still uses raw fixes.
+  let showSpd = currentSpd;
+  if (prevMps !== null && lastMpsT > prevMpsT) {
+    const dt = (lastMpsT - prevMpsT) / 1000;
+    const age = (performance.now() - lastFixPerfTime) / 1000;
+    if (dt > 0.2 && age < 1.2) {
+      const trend = (lastMps - prevMps) / dt;               // m/s per second
+      const pred = lastMps + trend * age;
+      if (pred >= 0 && Math.abs(pred - lastMps) < 5) showSpd = fromMps(pred);
+    }
+  }
+  dispSpd += (showSpd - dispSpd) * 0.12;  // needle glides to the predicted speed
   if (Math.abs(dispSpd - currentSpd) < 0.05) dispSpd = currentSpd;
 
   const ratio = dispSpd / maxSpd();
   const ne = document.getElementById('spdNum');
-  ne.textContent = Math.round(currentSpd);
+  ne.textContent = Math.round(showSpd);
   ne.className = 'spd-num' + (ratio>.85?' danger':ratio>.6?' warn':'');
 
   // Update top speed box
@@ -1034,6 +1056,10 @@ window.onNativeFix = function(lat, lon, speed, acc, speedAcc, t) {
   nativeFixSeen = true;
   handleFix({src:'native', lat, lon, speed, acc, speedAcc, t});
 };
+window.onSatCount = function(used, total) {
+  const el = document.getElementById('satCount');
+  if (el) el.textContent = used;
+};
 window.onNativeProvider = function(on) {
   if (on) { setBar('Searching for GPS…',''); }
   else { gpsReady = false; setBar('Location is off — turn on GPS','error'); setSdot('error'); }
@@ -1052,7 +1078,7 @@ function handleFix(f) {
   if (fixSrc !== f.src) { fixPrev = null; fixSrc = f.src; }
   if (fixPrev && f.t <= fixPrev.t) return;                 // duplicate / out-of-order
 
-  const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
+  const sig = acc < 3 ? 6 : acc < 5 ? 5 : acc < 10 ? 4 : acc < 20 ? 3 : acc < 40 ? 2 : acc < 60 ? 1 : 0;
   fsLastAcc = acc; fsLastSig = sig;
 
   // Speed straight from the chip (Doppler). Only derive from positions if the chip gave none.
@@ -1074,7 +1100,8 @@ function handleFix(f) {
   // Unlock once on a good fix; after that keep updating on every usable fix
   // (the old code froze the needle whenever accuracy drifted past 20 m)
   if (acc <= ACC_GOOD && sig >= SIG_GOOD) gpsReady = true;
-  if (gpsReady && usable) { rawMps = mps; currentSpd = fromMps(mps); }
+  if (gpsReady && usable) { rawMps = mps; currentSpd = fromMps(mps);
+    prevMps = lastMps; prevMpsT = lastMpsT; lastMps = mps; lastMpsT = f.t; }
   else if (!gpsReady)     { currentSpd = 0; }
 
   // ── Run logic on fix time, with interpolation between fixes
@@ -1127,7 +1154,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 function updateSignalDisplay(acc) {
-  const sig = acc < 5 ? 4 : acc < 12 ? 3 : acc < 30 ? 2 : acc < 60 ? 1 : 0;
+  const sig = acc < 3 ? 6 : acc < 5 ? 5 : acc < 10 ? 4 : acc < 20 ? 3 : acc < 40 ? 2 : acc < 60 ? 1 : 0;
   document.querySelectorAll('.sbar').forEach((b,i) => b.classList.toggle('on', i < sig));
   document.getElementById('acctxt').textContent = `±${Math.round(acc)}m`;
   updateGpsPanel(acc, sig);
