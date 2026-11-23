@@ -1,5 +1,6 @@
 package com.scooterarmy.app
 
+
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -7,6 +8,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.roundToInt
+
+/** Build #83: the human-facing build number shown in the header ("Build 83")
+ * and in Settings ("Build 83 • v1.1.0"). This is a SINGLE constant — never
+ * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
+ * (the Play version code), so the header read "Build 5" on Builds #81/#82
+ * even though the APK was Build #81/#82. Bump this constant every build. */
+const val BUILD_NUMBER = 83
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {
