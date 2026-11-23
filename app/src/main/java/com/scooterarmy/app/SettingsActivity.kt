@@ -38,7 +38,7 @@ class SettingsActivity : Activity() {
         // Build #81: visible build identifier — "Build 81 • v1.1.0" —
         // so any screenshot proves which build is installed.
         binding.buildLabel.text =
-            "Build ${BuildConfig.VERSION_CODE} • v${BuildConfig.VERSION_NAME}"
+            "Build $BUILD_NUMBER • v${BuildConfig.VERSION_NAME}"
 
         // ── Speed response preset ──
         binding.presetGroup.setOnCheckedChangeListener { _, checkedId ->
