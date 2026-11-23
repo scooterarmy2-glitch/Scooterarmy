@@ -81,8 +81,21 @@ data class FixData(
     val acc: Float,            // horizontal accuracy, metres
     val speedAcc: Float?,      // speed accuracy estimate, m/s (null = unknown)
     val t: Long,               // fix time on the elapsed-realtime clock (ms)
-    val bearingDeg: Float?     // direction of travel, when the chip reports one
+    val bearingDeg: Float?,    // direction of travel, when the chip reports one
+    val alt: Double? = null    // altitude above sea level, metres (null = unknown)
 )
+
+/** 16-point compass from a GPS bearing. Null/unknown bearing shows "—". */
+fun compassPoint(bearingDeg: Float?): String {
+    if (bearingDeg == null || bearingDeg.isNaN()) return "—"
+    val dirs = arrayOf(
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+    )
+    var b = bearingDeg % 360f
+    if (b < 0) b += 360f
+    return dirs[((b + 11.25f) / 22.5f).toInt() % 16]
+}
 
 fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = Math.PI / 180.0

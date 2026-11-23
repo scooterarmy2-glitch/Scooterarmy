@@ -1,6 +1,7 @@
 package com.scooterarmy.app
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.widget.SeekBar
 import com.scooterarmy.app.databinding.ActivitySettingsBinding
@@ -133,6 +134,17 @@ class SettingsActivity : Activity() {
             loadAll()
         }
         binding.doneBtn.setOnClickListener { finish() }
+
+        // Bottom tabs — Speed / Trips / Settings (look-v2 navigation).
+        binding.tabSpeed.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
+        binding.tabTrips.setOnClickListener {
+            startActivity(Intent(this, LogsActivity::class.java))
+            finish()
+        }
+        binding.tabSettings.setOnClickListener { /* already here */ }
 
         loadAll()
     }

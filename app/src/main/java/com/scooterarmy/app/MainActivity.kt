@@ -10,7 +10,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.Shader
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
@@ -52,6 +51,9 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 
 /**
  * #SAMO GPS — fully native (v1.1.0).
@@ -92,12 +94,10 @@ class MainActivity : Activity() {
 
     private val locListener = object : LocationListener {
         override fun onLocationChanged(l: Location) { onGpsFix(l) }
-        override fun onProviderEnabled(p: String) { setSdot(if (gpsReady) "active" else "warn") }
+        override fun onProviderEnabled(p: String) {}
         override fun onProviderDisabled(p: String) {
             gpsReady = false
-            setSdot("error")
-            binding.giStatus.text = "ERROR"
-            binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+            setGpsStatus("ERROR", "#ff5533")
         }
         override fun onStatusChanged(p: String?, status: Int, extras: Bundle?) {}
     }
@@ -126,6 +126,21 @@ class MainActivity : Activity() {
     private var satUsed = -1
     private var dualBand = false
     private var fullscreen = false
+    private var lastBearingDeg: Float? = null
+    private var lastAlt: Double? = null
+
+    // ── Live map (Esri dark tiles, no key) ──────────────────────
+    private var liveMapInit = false
+    private var liveRoute = mutableListOf<GeoPoint>()
+    private var liveLine: Polyline? = null
+    private var liveStartMarker: Marker? = null
+    private var liveEndMarker: Marker? = null
+    private var mapShown = false
+    private var liveCentered = false
+
+    // ── Pages: gauge (home) / map (swipe right) / stats (swipe left) ──
+    private enum class Page { GAUGE, MAP, STATS }
+    private var currentPage = Page.GAUGE
 
     private data class PrevFix(val t: Long, val mps: Double, val lat: Double, val lon: Double)
 
@@ -232,17 +247,12 @@ class MainActivity : Activity() {
         rides = store.rides
         runs = store.runs
 
-        applyChromeGradient(binding.brandText)
-        applyEmberGradient(binding.brandHash)
         applyTexturedBackground()
         // Ember glows (density-scaled so they render the same on every screen).
         val density = resources.displayMetrics.density
-        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff4400"))
         binding.spdNum.setShadowLayer(20f * density, 0f, 0f, Color.parseColor("#ff4400"))
         binding.timerBig.setShadowLayer(15f * density, 0f, 0f, Color.parseColor("#59ff6400"))
-        binding.spdUnit.text = "MPH"
         binding.tgtSuf.text = "MPH"
-        binding.topSpdUnit.text = "MPH"
         if (alertMph > 0) {
             binding.alertInp.setText(trimNum(alertMph))
             binding.alertHint.text = "on — over ${trimNum(alertMph)} mph"
@@ -251,10 +261,6 @@ class MainActivity : Activity() {
         binding.sessBtn.setOnClickListener { toggleSession() }
         binding.armBtn.setOnClickListener { armRun() }
         binding.resetBtn.setOnClickListener { resetRun() }
-        binding.logsBtn.setOnClickListener {
-            openingLogs = true
-            startActivity(Intent(this, LogsActivity::class.java))
-        }
         // Landscape trip panel STOP — same action as the portrait STOP RIDE.
         binding.landStopBtn.setOnClickListener { toggleSession() }
         binding.alertInp.setOnEditorActionListener { _, actionId, _ ->
@@ -267,10 +273,45 @@ class MainActivity : Activity() {
         binding.alertInp.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) saveAlert()
         }
-        binding.settingsBtn.setOnClickListener {
+        // Gear (Settings, top-center in the chips row) + LOGS link
+        // (bottom-left) — they do not dominate the full-screen gauge,
+        // per the mockup-v4 brief.
+        binding.gearBtn.setOnClickListener {
             openingSettings = true
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        binding.logsLink.setOnClickListener {
+            openingLogs = true
+            startActivity(Intent(this, LogsActivity::class.java))
+        }
+        binding.statsBackLink.setOnClickListener { showPage(Page.GAUGE) }
+        binding.mapBackLink.setOnClickListener { showPage(Page.GAUGE) }
+        // Swipe between the three full screens: RIGHT → live map,
+        // LEFT → stats; swipe back the other way to return to the gauge.
+        // Vertical scrolls (stats page) and map pan/zoom are untouched —
+        // only a mostly-horizontal fling switches pages.
+        val pageGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float
+            ): Boolean {
+                if (e1 == null) return false
+                val dx = e2.x - e1.x
+                val dy = e2.y - e1.y
+                if (abs(dx) > 120 && abs(vx) > 200 && abs(dx) > abs(dy)) {
+                    when (currentPage) {
+                        Page.GAUGE -> showPage(if (dx > 0) Page.MAP else Page.STATS)
+                        Page.MAP -> if (dx < 0) showPage(Page.GAUGE)
+                        Page.STATS -> if (dx > 0) showPage(Page.GAUGE)
+                    }
+                    return true
+                }
+                return false
+            }
+        })
+        binding.rootLayout.setOnTouchListener { _, event ->
+            pageGesture.onTouchEvent(event)
+        }
+        setupLiveMap()
         // Timed-run target starts at the Settings default (45 mph out of the box).
         binding.tgtInp.setText(trimNum(settings.defaultTarget))
 
@@ -329,6 +370,8 @@ class MainActivity : Activity() {
         runs = store.runs
         renderBvL()
         updateLandPanel()
+        updateStatCards()
+        if (liveMapInit) binding.liveMap.onResume()
     }
 
     override fun onPause() {
@@ -340,6 +383,7 @@ class MainActivity : Activity() {
         if (pauseEndsRide()) stopSession()
         stopLocation()
         imuBridge.stop()
+        if (liveMapInit) binding.liveMap.onPause()
         uiHandler.removeCallbacks(timerTick)
         uiHandler.removeCallbacks(fixAgeTick)
         uiHandler.removeCallbacks(liveTick)
@@ -374,9 +418,7 @@ class MainActivity : Activity() {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startLocation()
             } else {
-                binding.giStatus.text = "ERROR"
-                binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
-                setSdot("error")
+                setGpsStatus("ERROR", "#ff5533")
                 Toast.makeText(this, "Location permission denied — GPS won't work", Toast.LENGTH_LONG).show()
             }
         }
@@ -401,38 +443,35 @@ class MainActivity : Activity() {
     private fun applyChromeVisibility() {
         val speedoOnly = isLandscape() || fullscreen
         // Landscape (not fullscreen): gauge on the LEFT, live trip panel
-        // on the RIGHT — Speedo-style. Fullscreen stays speedo-only.
+        // on the RIGHT — same gauge-frame style, just rearranged.
+        // Fullscreen stays pure dial. Both force the gauge page.
         val landscapePanel = isLandscape() && !fullscreen
         val gone = View.GONE
         val vis = View.VISIBLE
-        binding.headerRow.visibility = if (speedoOnly) gone else vis
-        binding.headerDivider.visibility = if (speedoOnly) gone else vis
-        binding.gpsInfo.visibility = if (speedoOnly) gone else vis
-        binding.rideBox.visibility = if (speedoOnly) gone else vis
-        binding.runBox.visibility = if (speedoOnly) gone else vis
-        binding.bvlCard.visibility =
-            if (speedoOnly || runs.isEmpty()) gone else vis
-        binding.sessLive.visibility =
-            if (speedoOnly) gone else if (sessionActive) vis else gone
+        showPage(currentPage)
+        binding.chipsRow1.visibility = if (fullscreen) gone else vis
+        binding.chipsRow2.visibility = if (fullscreen) gone else vis
+        binding.bottomCards.visibility = if (fullscreen) gone else vis
         binding.fsHint.visibility = if (fullscreen) vis else gone
         binding.fsInfoRow.visibility = if (fullscreen) vis else gone
-        binding.topSpdBox.visibility = if (fullscreen) gone else vis
+        binding.gpsWait.visibility =
+            if (fullscreen) gone else if (gpsReady) gone else vis
         binding.landPanel.visibility = if (landscapePanel) vis else gone
+        binding.odometer.visibility = if (landscapePanel) vis else gone
         binding.gaugeRow.orientation =
             if (landscapePanel) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
         binding.gaugeRow.gravity =
-            if (landscapePanel) Gravity.CENTER_VERTICAL else Gravity.CENTER_HORIZONTAL
+            if (landscapePanel) Gravity.CENTER_VERTICAL else Gravity.CENTER
 
-        // Gauge size: full-screen in speedo-only mode, 320dp in portrait.
-        // In landscape-with-panel the gauge is a square sized to the
-        // (short) screen height, leaving the rest of the width for the panel.
+        // Gauge size: the dial fills the display like frame-11 — nearly
+        // full width in portrait, square to the short side in landscape.
         val dm = resources.displayMetrics
         val wPx = dm.widthPixels
         val hPx = dm.heightPixels
         val (gw, gh) = when {
             fullscreen && !isLandscape() ->
-                (min((wPx * 0.92).toInt(), (hPx * 0.62).toInt()) to
-                    min((wPx * 0.92).toInt(), (hPx * 0.62).toInt()))
+                (min((wPx * 0.96).toInt(), (hPx * 0.80).toInt()) to
+                    min((wPx * 0.96).toInt(), (hPx * 0.80).toInt()))
             landscapePanel -> {
                 val sq = min(wPx, hPx) - (32 * dm.density).toInt()
                 sq to sq
@@ -442,7 +481,7 @@ class MainActivity : Activity() {
                 s to s
             }
             else -> {
-                val s = (320 * dm.density).toInt()
+                val s = min((wPx * 0.94).toInt(), (hPx * 0.58).toInt())
                 s to s
             }
         }
@@ -460,22 +499,48 @@ class MainActivity : Activity() {
             if (landscapePanel) LinearLayout.LayoutParams.MATCH_PARENT
             else LinearLayout.LayoutParams.WRAP_CONTENT
         binding.landPanel.layoutParams = landLp
-        binding.contentCol.gravity =
-            if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
 
-        // Speed number + overlay position scale with the gauge.
+        // Speed number + dial overlay scale with the gauge: the heading
+        // sits near the top inside the dial, "mph" centered just below
+        // the digits. Seven-segment digits at 150sp portrait:
+        // the mockup's bigger digits only work because its numbers are
+        // bunched at the top (AI) — on a true dial 150sp is the largest
+        // size whose corners clear every tick number (0/40/100/140).
         binding.spdNum.setTextSize(
-            TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f
+            TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 155f else 150f
         )
         binding.gaugeWrap.post {
-            val overlayLp = binding.spdOverlay.layoutParams as android.widget.FrameLayout.LayoutParams
-            overlayLp.bottomMargin =
-                if (speedoOnly) (binding.gaugeWrap.height * 0.14).toInt()
-                else (50 * dm.density).toInt()
-            binding.spdOverlay.layoutParams = overlayLp
+            val h = binding.gaugeWrap.height
+            if (h > 0) {
+                val headLp =
+                    binding.dialHeading.layoutParams as android.widget.FrameLayout.LayoutParams
+                headLp.topMargin = (h * 0.165).toInt()
+                binding.dialHeading.layoutParams = headLp
+                positionUnit()
+            }
         }
         if (fullscreen) updateFsInfo()
         updateLandPanel()
+    }
+
+    private var lastUnitDigits = -1
+
+    /** "mph" sits centered just below the seven-segment digits: on a
+     *  true dial the 140 number sits exactly where a right-aligned
+     *  mph would go. Re-run whenever the digit count changes. */
+    private fun positionUnit() {
+        val h = binding.gaugeWrap.height
+        val digitW = binding.spdNum.width
+        val digitH = binding.spdNum.height
+        val unitW = binding.spdUnit.width
+        if (h <= 0 || digitW <= 0 || digitH <= 0 || unitW <= 0) return
+        val unitLp =
+            binding.spdUnit.layoutParams as android.widget.FrameLayout.LayoutParams
+        unitLp.leftMargin = 0
+        unitLp.topMargin =
+            (h + digitH) / 2 + (4 * resources.displayMetrics.density).toInt()
+        binding.spdUnit.layoutParams = unitLp
+        lastUnitDigits = binding.spdNum.text.length
     }
 
     /** Landscape trip panel (Speedo-style): live ride numbers beside the
@@ -548,45 +613,13 @@ class MainActivity : Activity() {
                 else -> binding.timerBig.text.toString()
             }
         }
+        // Landscape odometer under the dial: trip distance, car-odometer style.
+        val odoMi = if (sessionActive) sessionDist / 1609.34
+            else rides.firstOrNull()?.let { parseDistMi(it.dist) } ?: 0.0
+        binding.odometer.text = String.format("%07.1f", odoMi)
     }
 
-    private fun applyChromeGradient(tv: android.widget.TextView) {
-        tv.post {
-            if (tv.height > 0) {
-                tv.paint.shader = LinearGradient(
-                    0f, 0f, 0f, tv.height.toFloat(),
-                    intArrayOf(
-                        Color.WHITE, Color.parseColor("#bbbbbb"),
-                        Color.parseColor("#eeeeee"), Color.parseColor("#999999")
-                    ),
-                    floatArrayOf(0f, 0.4f, 0.6f, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                tv.invalidate()
-            }
-        }
-    }
-
-    /** Red-orange gradient for the "#" in the brand, matching the web header. */
-    private fun applyEmberGradient(tv: android.widget.TextView) {
-        tv.post {
-            if (tv.height > 0) {
-                tv.paint.shader = LinearGradient(
-                    0f, 0f, 0f, tv.height.toFloat(),
-                    intArrayOf(
-                        Color.parseColor("#ff6644"),
-                        Color.parseColor("#cc1a00"),
-                        Color.parseColor("#ff3300")
-                    ),
-                    floatArrayOf(0f, 0.5f, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                tv.invalidate()
-            }
-        }
-    }
-
-    /** Root background: ember glow + diamond-plate texture covering the WHOLE
+    /** Root background: ember glow + carbon-fiber weave covering the WHOLE
      *  screen, matching the old web app's body background. The web app's radial
      *  glows are sized relative to the viewport (ellipse at 50% 100%, fading at
      *  55% of the farthest-corner distance), so the native version sizes its
@@ -599,24 +632,34 @@ class MainActivity : Activity() {
         val dm = resources.displayMetrics
         val density = dm.density
         val screenH = dm.heightPixels.toFloat()
-        // Diamond-plate texture tile (28x16dp, like the web app's 28px x 16px).
-        val w = (28f * density).toInt().coerceAtLeast(2)
-        val h = (16f * density).toInt().coerceAtLeast(2)
+        // Carbon-fiber weave tile (12x12dp, 2x2 twill like the mockup):
+        // alternating horizontal- and vertical-sheen cells, dark gaps.
+        // The mockup's weave is fine — 24dp cells read too coarse.
+        val w = (12f * density).toInt().coerceAtLeast(2)
+        val h = (12f * density).toInt().coerceAtLeast(2)
         val tile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(tile)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = 0.8f * density
-            color = Color.parseColor("#1affffff")
+        val cell = w / 2f
+        val horiz = LinearGradient(
+            0f, 0f, 0f, cell,
+            Color.parseColor("#191919"), Color.parseColor("#0b0b0b"),
+            Shader.TileMode.CLAMP
+        )
+        val vert = LinearGradient(
+            0f, 0f, cell, 0f,
+            Color.parseColor("#191919"), Color.parseColor("#0b0b0b"),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, cell, cell, Paint().apply { shader = horiz })
+        canvas.drawRect(cell, 0f, w.toFloat(), cell, Paint().apply { shader = vert })
+        canvas.drawRect(0f, cell, cell, h.toFloat(), Paint().apply { shader = vert })
+        canvas.drawRect(cell, cell, w.toFloat(), h.toFloat(), Paint().apply { shader = horiz })
+        val gridPaint = Paint().apply {
+            color = Color.parseColor("#050505")
+            strokeWidth = 1f * density
         }
-        val diamond = Path().apply {
-            moveTo(w / 2f, 0f)
-            lineTo(w.toFloat(), h / 2f)
-            lineTo(w / 2f, h.toFloat())
-            lineTo(0f, h / 2f)
-            close()
-        }
-        canvas.drawPath(diamond, paint)
+        canvas.drawLine(cell, 0f, cell, h.toFloat(), gridPaint)
+        canvas.drawLine(0f, cell, w.toFloat(), cell, gridPaint)
         val tiled = BitmapDrawable(resources, tile).apply {
             tileModeX = Shader.TileMode.REPEAT
             tileModeY = Shader.TileMode.REPEAT
@@ -626,14 +669,14 @@ class MainActivity : Activity() {
             gradientType = GradientDrawable.RADIAL_GRADIENT
             setGradientCenter(0.5f, 1.0f)
             gradientRadius = screenH * 0.85f
-            colors = intArrayOf(Color.parseColor("#40c83c00"), Color.TRANSPARENT)
+            colors = intArrayOf(Color.parseColor("#28c83c00"), Color.TRANSPARENT)
         }
         // Hotter orange core, bottom center.
         val coreGlow = GradientDrawable().apply {
             gradientType = GradientDrawable.RADIAL_GRADIENT
             setGradientCenter(0.5f, 1.0f)
             gradientRadius = screenH * 0.52f
-            colors = intArrayOf(Color.parseColor("#26ff6400"), Color.TRANSPARENT)
+            colors = intArrayOf(Color.parseColor("#18ff6400"), Color.TRANSPARENT)
         }
         // Dark vignette at the top (as in the web app).
         val vignette = GradientDrawable().apply {
@@ -778,9 +821,7 @@ class MainActivity : Activity() {
             listening = true
             if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 gpsReady = false
-                setSdot("error")
-                binding.giStatus.text = "ERROR"
-                binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+                setGpsStatus("ERROR", "#ff5533")
                 Toast.makeText(this, "Location is off — turn on GPS", Toast.LENGTH_LONG).show()
             }
         } catch (_: SecurityException) {
@@ -834,7 +875,8 @@ class MainActivity : Activity() {
                 acc = if (l.hasAccuracy()) l.accuracy else 999f,
                 speedAcc = if (l.hasSpeedAccuracy()) l.speedAccuracyMetersPerSecond else null,
                 t = l.elapsedRealtimeNanos / 1_000_000L,
-                bearingDeg = if (l.hasBearing()) l.bearing else null
+                bearingDeg = if (l.hasBearing()) l.bearing else null,
+                alt = if (l.hasAltitude()) l.altitude else null
             )
         )
     }
@@ -843,24 +885,18 @@ class MainActivity : Activity() {
     private fun onNetworkFix(l: Location) {
         if (gpsReady) return
         val acc = if (l.hasAccuracy()) l.accuracy else 999f
-        binding.giStatus.text = "ASSISTED"
-        binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
-        binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#ffb347"))
-        binding.acctxt.text = "±${acc.roundToInt()}m"
-        setSdot("warn")
+        setGpsStatus("ASSISTED", "#cccccc")
+        binding.chipAcc.text = "Accuracy ${acc.roundToInt()}m"
+        binding.chipAcc.setTextColor(Color.parseColor("#ffb347"))
     }
 
     /** Fused fix: fast lock assist only. Never speed, never run timing. */
     private fun onFusedFix(l: Location) {
         if (gpsReady) return
         val acc = if (l.hasAccuracy()) l.accuracy else 999f
-        binding.giStatus.text = "ASSISTED"
-        binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
-        binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#ffb347"))
-        binding.acctxt.text = "±${acc.roundToInt()}m"
-        setSdot("warn")
+        setGpsStatus("ASSISTED", "#cccccc")
+        binding.chipAcc.text = "Accuracy ${acc.roundToInt()}m"
+        binding.chipAcc.setTextColor(Color.parseColor("#ffb347"))
     }
 
     private fun handleFix(f: FixData) {
@@ -914,7 +950,11 @@ class MainActivity : Activity() {
         if (gpsReady && usable) {
             rawMps = mps
             currentSpd = fromMps(mps)
-            f.bearingDeg?.let { imuBridge.setBearingDeg(it) }
+            f.bearingDeg?.let {
+                imuBridge.setBearingDeg(it)
+                lastBearingDeg = it
+            }
+            f.alt?.let { lastAlt = it }
             imuBridge.onGpsFix() // truth wins: snap display, reset the bridge
         } else if (!gpsReady) {
             currentSpd = 0.0
@@ -961,7 +1001,7 @@ class MainActivity : Activity() {
         }
         sessionLastPos = f.lat to f.lon
 
-        setSdot("active")
+        if (sessionActive) updateLiveMap(f.lat, f.lon)
     }
 
     /** Moment speed crossed `level` (m/s) between previous fix and this one. */
@@ -986,31 +1026,26 @@ class MainActivity : Activity() {
         else SystemClock.elapsedRealtime() - lastFixPerf
         val dispMps = imuBridge.displayMps(rawMps, fixAgeMs)
         val disp = fromMps(dispMps)
-        val ratio = disp / maxSpd()
 
         binding.spdNum.text = disp.roundToInt().toString()
-        binding.spdNum.setTextColor(
-            when {
-                ratio > 0.85 -> Color.parseColor("#ff5522")
-                ratio > 0.6 -> Color.parseColor("#ffb347")
-                else -> Color.WHITE
-            }
-        )
-        // Ember glow follows the speed color (web .spd-num text-shadow).
-        val glowColor = when {
-            ratio > 0.85 -> Color.parseColor("#ff5522")
-            ratio > 0.6 -> Color.parseColor("#ffb347")
-            else -> Color.parseColor("#ff4400")
+        if (binding.spdNum.text.length != lastUnitDigits) {
+            binding.spdUnit.post { positionUnit() }
         }
-        binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, glowColor)
+        // Always ember orange like the frame — the huge speed number is
+        // the dial's hero, not a warning scale.
+        binding.spdNum.setTextColor(Color.parseColor("#ff6a00"))
+        binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ff4400"))
         binding.gauge.speed = disp
+        updateHeading()
+        if (mapShown) {
+            binding.liveMapSpeed.text = "${disp.roundToInt()} mph"
+        }
 
         if (gpsReady && currentSpd > allTimeTopSpd) {
             allTimeTopSpd = currentSpd
-            binding.topSpdVal.text = allTimeTopSpd.roundToInt().toString()
-            binding.topSpdUnit.text = "MPH"
         }
-        binding.gpsWait.visibility = if (gpsReady) View.GONE else View.VISIBLE
+        binding.gpsWait.visibility =
+            if (gpsReady || fullscreen) View.GONE else View.VISIBLE
 
         checkSpeedAlert(currentSpd)
         if (fullscreen) updateFsInfo()
@@ -1055,28 +1090,17 @@ class MainActivity : Activity() {
                 if (i < sig) Color.parseColor("#39ff14") else Color.parseColor("#333333")
             )
         }
-        binding.acctxt.text = "±${acc.roundToInt()}m"
+        binding.chipAcc.text = "Accuracy ${acc.roundToInt()}m"
         updateGpsPanel(acc, sig)
     }
 
     private fun updateGpsPanel(acc: Double, sig: Int) {
-        val statusEl = binding.giStatus
         when {
-            sig >= 3 -> {
-                statusEl.text = "LOCKED"
-                statusEl.setTextColor(Color.parseColor("#39ff14"))
-            }
-            sig >= 1 -> {
-                statusEl.text = "WEAK"
-                statusEl.setTextColor(Color.parseColor("#ffb347"))
-            }
-            else -> {
-                statusEl.text = "POOR"
-                statusEl.setTextColor(Color.parseColor("#ff5533"))
-            }
+            sig >= 3 -> setGpsStatus("LOCKED", "#39ff14")
+            sig >= 1 -> setGpsStatus("WEAK", "#ffb347")
+            else -> setGpsStatus("POOR", "#ff5533")
         }
-        val accEl = binding.giAcc
-        accEl.text = acc.roundToInt().toString()
+        val accEl = binding.chipAcc
         accEl.setTextColor(
             when {
                 acc < 5 -> Color.parseColor("#39ff14")
@@ -1096,7 +1120,50 @@ class MainActivity : Activity() {
             lastAcc <= 10 -> "GOOD"
             else -> "FAIR"
         }
-        binding.giAccSub.text = if (dualBand && gpsReady) "L1+L5 · $quality" else quality
+        binding.diagQuality.text = if (dualBand && gpsReady) "L1+L5 · $quality" else quality
+    }
+
+    /** GPS status (LOCKED / WEAK / POOR / ASSISTED / ERROR) — lives on
+     *  the stats diagnostics card now, not on the main screen (mockup v4
+     *  shows GPS + bars only up top). */
+    private fun setGpsStatus(text: String, colorHex: String) {
+        binding.diagStatus.text = text
+        binding.diagStatus.setTextColor(Color.parseColor(colorHex))
+    }
+
+    /** Compass heading in the dial top — the ONLY compass on the main
+     *  screen (mockup v4 dedupe: no heading chip, no heading card). */
+    private fun updateHeading() {
+        val pt = compassPoint(lastBearingDeg)
+        binding.dialHeading.text = pt
+    }
+
+    /** Stat cards under the dial: the live ride while recording, else the
+     *  last saved ride, else dashes. Altitude is metres, like the frame. */
+    private fun updateStatCards() {
+        if (sessionActive) {
+            val start = sessionStart
+            val durSec = if (start != null)
+                Math.round((Date().time - start.time) / 1000.0).toInt() else 0
+            val distMi = sessionDist / 1609.34
+            binding.statDist.text = String.format("%.2f mi", distMi)
+            binding.statDur.text = fmtDur(durSec)
+            val hrs = durSec / 3600.0
+            binding.statAvg.text =
+                if (hrs > 0) String.format("%.1f mph", distMi / hrs) else "0.0 mph"
+        } else {
+            val last = rides.firstOrNull()
+            if (last != null) {
+                binding.statDist.text = last.dist
+                binding.statDur.text = last.dur
+                binding.statAvg.text = rideAvgSpeedRow(last)?.second ?: "—"
+            } else {
+                binding.statDist.text = "—"
+                binding.statDur.text = "—"
+                binding.statAvg.text = "—"
+            }
+        }
+        binding.statAlt.text = lastAlt?.let { "${it.roundToInt()}m" } ?: "—"
     }
 
     private fun updateFixAge() {
@@ -1122,15 +1189,94 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun setSdot(cls: String) {
-        binding.sdot.setBackgroundResource(
-            when (cls) {
-                "active" -> R.drawable.dot_green
-                "warn" -> R.drawable.dot_amber
-                "error" -> R.drawable.dot_red
-                else -> R.drawable.dot_gray
+    // ── Live map (MAP tab) ──────────────────────────────────────
+    /** Esri dark tiles, no key — see EsriDarkTiles. Blue route, green
+     *  Start pin, red End pin, like the map frame. */
+    private fun setupLiveMap() {
+        val map = binding.liveMap
+        map.setTileSource(EsriDarkTiles.source())
+        map.setMultiTouchControls(true)
+        map.setUseDataConnection(true)
+        map.controller.setZoom(15.0)
+        // Glasgow, KY until the first fix arrives.
+        map.controller.setCenter(GeoPoint(36.9959, -85.9118))
+        liveLine = Polyline().apply {
+            color = Color.parseColor("#00b4ff")
+            width = 4f * resources.displayMetrics.density
+        }
+        map.overlays.add(liveLine)
+        liveMapInit = true
+    }
+
+    /** The three full screens — gauge (home), live map, stats. Landscape
+     *  and fullscreen are gauge-only (dial + trip panel / pure dial). */
+    private fun showPage(page: Page) {
+        val target = if (isLandscape() || fullscreen) Page.GAUGE else page
+        currentPage = target
+        mapShown = target == Page.MAP
+        binding.gaugePage.visibility = if (target == Page.GAUGE) View.VISIBLE else View.GONE
+        binding.statsPage.visibility = if (target == Page.STATS) View.VISIBLE else View.GONE
+        binding.mapPage.visibility = if (target == Page.MAP) View.VISIBLE else View.GONE
+        binding.gearBtn.visibility =
+            if (target == Page.GAUGE && !fullscreen) View.VISIBLE else View.GONE
+        binding.logsLink.visibility =
+            if (target == Page.GAUGE && !fullscreen) View.VISIBLE else View.GONE
+        if (target == Page.MAP && liveMapInit) {
+            liveCentered = false
+            binding.liveMap.onResume()
+            binding.liveMap.invalidate()
+        }
+    }
+
+    /** Draws the live route while a ride runs; centers on the rider.
+     *  When no ride runs, the map stays where it is (Glasgow by default,
+     *  or the last fix once the tab has been opened). */
+    private fun updateLiveMap(lat: Double, lon: Double) {
+        if (!liveMapInit) return
+        val map = binding.liveMap
+        val pt = GeoPoint(lat, lon)
+        if (!sessionActive) {
+            if (mapShown && !liveCentered) {
+                map.controller.setCenter(pt)
+                liveCentered = true
             }
-        )
+            return
+        }
+        val lastPt = liveRoute.lastOrNull()
+        if (lastPt == null ||
+            haversineM(lastPt.latitude, lastPt.longitude, lat, lon) > 10
+        ) {
+            liveRoute.add(pt)
+            if (liveRoute.size > 2000) liveRoute.removeAt(0)
+            liveLine?.setPoints(liveRoute)
+            if (liveStartMarker == null && liveRoute.isNotEmpty()) {
+                liveStartMarker = RouteMapDialog.pinMarker(
+                    map, liveRoute.first(), Color.parseColor("#39ff14"), "Start"
+                ).also { map.overlays.add(it) }
+            }
+            liveEndMarker?.let { map.overlays.remove(it) }
+            liveEndMarker = RouteMapDialog.pinMarker(
+                map, pt, Color.parseColor("#ff2200"), "End"
+            ).also { map.overlays.add(it) }
+            binding.liveMapHint.text = "LIVE — ${liveRoute.size} PTS"
+        }
+        map.controller.setCenter(pt)
+        map.invalidate()
+    }
+
+    private fun clearLiveMap() {
+        if (!liveMapInit) return
+        val map = binding.liveMap
+        liveLine?.let { map.overlays.remove(it) }
+        liveStartMarker?.let { map.overlays.remove(it) }
+        liveEndMarker?.let { map.overlays.remove(it) }
+        liveLine = null
+        liveStartMarker = null
+        liveEndMarker = null
+        liveRoute = mutableListOf()
+        liveCentered = false
+        binding.liveMapHint.text = "START A RIDE TO DRAW YOUR ROUTE"
+        map.invalidate()
     }
 
     // ── Timed run ───────────────────────────────────────────────
@@ -1265,6 +1411,7 @@ class MainActivity : Activity() {
         sessionDist = 0.0
         sessionLastPos = null
         sessionRoute = mutableListOf()
+        clearLiveMap()
 
         binding.sessBtn.text = "STOP RIDE"
         binding.sessBtn.setBackgroundResource(R.drawable.btn_red)
@@ -1329,6 +1476,7 @@ class MainActivity : Activity() {
         if (rides.size > 100) rides = rides.subList(0, 100)
         store.rides = rides
         rides = store.rides
+        updateStatCards()
         Toast.makeText(
             this, "Ride saved ✓ — ${rides.size} ride${if (rides.size == 1) "" else "s"}",
             Toast.LENGTH_SHORT
@@ -1343,6 +1491,7 @@ class MainActivity : Activity() {
         binding.liveDist.text = dist
         binding.liveDur.text = fmtDur(durSec)
         updateLandPanel()
+        updateStatCards()
     }
 
     private fun resetIdleTimer() {
@@ -1358,7 +1507,9 @@ class MainActivity : Activity() {
             card.visibility = View.GONE
             return
         }
-        card.visibility = if (isLandscape() || fullscreen) View.GONE else View.VISIBLE
+        // The stats page is its own full screen now — the card shows
+        // whenever there are runs to compare.
+        card.visibility = View.VISIBLE
         val last = runs[0]
         val same = runs.filter { it.runLbl == last.runLbl }
         val best = same.minByOrNull { it.timeMs } ?: last

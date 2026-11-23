@@ -53,8 +53,13 @@ class LogsActivity : Activity() {
         rides = store.rides
         runs = store.runs
 
-        binding.backBtn.setOnClickListener { finish() }
-        binding.settingsBtn.setOnClickListener {
+        // Bottom tabs — Speed / Trips / Settings (look-v2 navigation).
+        binding.tabSpeed.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
+        binding.tabTrips.setOnClickListener { /* already here */ }
+        binding.tabSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         binding.exportRidesCsv.setOnClickListener { exportRides("csv") }
@@ -89,6 +94,8 @@ class LogsActivity : Activity() {
         binding.sumTime.text = fmtDur(s.totalMovingSec.toInt())
         binding.sumTimeSub.text =
             "${s.runCount} run${if (s.runCount == 1) "" else "s"}"
+        val trips = s.rideCount + s.runCount
+        binding.sumTrips.text = "$trips trip${if (trips == 1) "" else "s"}"
     }
 
     private fun renderRides() {
@@ -98,7 +105,8 @@ class LogsActivity : Activity() {
         for (ride in rides) {
             val row = ItemRideBinding.inflate(inflater, binding.ridesList, false)
             row.rideName.text = ride.name
-            row.rideMeta.text = "${ride.dur}   ${ride.dist}"
+            row.rideMeta.text = ride.dur
+            row.rideDist.text = ride.dist
             row.rideTopSpd.text = ride.topSpd
             row.root.setOnClickListener { openRideDetail(ride) }
             row.rideDel.setOnClickListener {
@@ -145,7 +153,13 @@ class LogsActivity : Activity() {
         LogDetailDialog.show(
             this, "RIDE LOG", ride.topSpd, "TOP SPEED", rows,
             onViewRoute = if (ride.route.size > 1) {
-                { RouteMapDialog.show(this, ride) }
+                {
+                    RouteMapDialog.show(
+                        this, ride,
+                        onExportGpx = { exportSingleRide(ride, "gpx") },
+                        onExportCsv = { exportSingleRide(ride, "csv") }
+                    )
+                }
             } else null,
             onExportCsv = { exportSingleRide(ride, "csv") },
             onExportGpx = { exportSingleRide(ride, "gpx") }
