@@ -36,7 +36,7 @@
                 android:layout_marginTop="4dp"
                 android:fontFamily="@font/share_tech_mono"
                 android:text="Changes apply right away — no restart needed."
-                android:textColor="#888888"
+                android:textColor="#aaaaaa"
                 android:textSize="11sp" />
 
             <!-- SPEED RESPONSE -->
@@ -47,8 +47,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="SPEED RESPONSE"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -60,7 +60,7 @@
                 android:layout_marginTop="4dp"
                 android:fontFamily="@font/share_tech_mono"
                 android:text="How fast the speedo follows between GPS fixes. GPS is still the truth every second — this only fills the gaps."
-                android:textColor="#888888"
+                android:textColor="#aaaaaa"
                 android:textSize="11sp" />
 
             <RadioGroup
@@ -207,8 +207,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="GPS"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -317,8 +317,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="TIMER"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -398,8 +398,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="RIDE"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -467,8 +467,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="ALERTS"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -497,8 +497,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="DISPLAY"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -590,8 +590,8 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="ADVANCED"
-                android:textColor="#d99a4e"
-                android:shadowColor="#59d99a4e"
+                android:textColor="#ff8c1a"
+                android:shadowColor="#59ff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="6"
@@ -612,7 +612,7 @@
                 android:layout_marginTop="6dp"
                 android:fontFamily="@font/share_tech_mono"
                 android:text="Adds a row under the GPS panel so you can see on the road whether the phone is really delivering ~1 fix per second."
-                android:textColor="#888888"
+                android:textColor="#aaaaaa"
                 android:textSize="11sp" />
 
             <View
@@ -640,6 +640,19 @@
                 android:text="DONE"
                 android:textColor="#ffffff"
                 android:textSize="12sp" />
+
+            <!-- Build #81: visible build identifier, set from BuildConfig
+                 in onCreate — proves which build is installed. -->
+            <TextView
+                android:id="@+id/buildLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/share_tech_mono"
+                android:text="Build 81"
+                android:textColor="#888888"
+                android:textSize="11sp" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

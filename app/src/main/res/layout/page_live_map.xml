@@ -31,7 +31,7 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center"
                 android:text="‹"
-                android:textColor="#d99a4e"
+                android:textColor="#ff8c1a"
                 android:textSize="28sp" />
 
             <TextView
@@ -201,6 +201,6 @@
         android:paddingRight="16dp"
         android:paddingBottom="8dp"
         android:text="Not recording"
-        android:textColor="#d99a4e"
+        android:textColor="#ff8c1a"
         android:textSize="12sp" />
 </FrameLayout>

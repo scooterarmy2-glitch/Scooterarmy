@@ -23,7 +23,7 @@
         android:fontFamily="@font/orbitron_900"
         android:letterSpacing="-0.02"
         android:padding="16dp"
-        android:shadowColor="#d99a4e"
+        android:shadowColor="#ff6a00"
         android:shadowDx="0"
         android:shadowDy="0"
         android:shadowRadius="24"
