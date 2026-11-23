@@ -8,7 +8,7 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.scooterarmy.app"
+        applicationId "com.scooterarmy.app.reel"
         minSdk 26
         targetSdk 36
         versionCode 4
