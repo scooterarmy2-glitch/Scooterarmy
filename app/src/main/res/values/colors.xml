@@ -2,13 +2,18 @@
 <resources>
     <color name="bg">#080808</color>
     <color name="red">#cc1a00</color>
-    <color name="glow">#d99a4e</color>
-    <color name="ember">#d99a4e</color>
-    <!-- look-pro (Nov 23): muted amber — the bright #ffb347 is toned down
-         everywhere @color/amber is used (top speeds, status ambers). -->
-    <color name="amber">#d99a4e</color>
-    <color name="amberDeep">#a86f28</color>
-    <color name="amberBrick">#c65a2e</color>
+    <color name="glow">#ff6a00</color>
+    <color name="ember">#ff6a00</color>
+    <!-- Build #81 LED orange (Nov 23): the muted amber Casey called
+         "pale, ugly and yellowish" is gone. The
+         accent is now vivid LED orange — bright, saturated, luminous —
+         used as thin glowing lines (needle, speed arc, edge lines, glow
+         halos), never as solid flat fills. Red (#ff2d1a) is the alert /
+         high-speed accent, also as LED lines. -->
+    <color name="amber">#ff8c1a</color>
+    <color name="amberDeep">#e65100</color>
+    <color name="amberBrick">#ff3b1f</color>
+    <color name="ledRed">#ff2d1a</color>
     <!-- Build #78: deep navy for map backgrounds + the navy-tinted map. -->
     <color name="mapNavy">#0a1628</color>
     <color name="green">#39ff14</color>

@@ -6,6 +6,6 @@
         <item name="android:navigationBarColor">#080808</item>
         <item name="android:windowFullscreen">true</item>
         <!-- Ember accent so cursors / selection handles match the app instead of the light-theme teal. -->
-        <item name="android:colorAccent">#d99a4e</item>
+        <item name="android:colorAccent">#ff6a00</item>
     </style>
 </resources>
