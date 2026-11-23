@@ -718,7 +718,11 @@ class MainActivity : Activity() {
 
     /** Apply everything Settings can change, live — no restart needed. */
     private fun applySettings() {
-        binding.gauge.maxSpd = settings.gaugeMax.toDouble()
+        // NOTE (frame-11, Nov 23 01:26): the Reel dial scale is FIXED at
+        // 0–170 mph — settings.gaugeMax (100/140/180) does NOT rescale
+        // it. The setting is still stored and shown in Settings, but it
+        // is inert for this dial; changing it must not move the frame's
+        // numbers. (The old gauge-scale assignment was deleted here.)
         binding.diagRow.visibility = if (settings.showDiagnostics) View.VISIBLE else View.GONE
         if (settings.showDiagnostics) updateFixAge()
     }
@@ -729,7 +733,9 @@ class MainActivity : Activity() {
 
     private fun fromMps(mps: Double): Double = mps * 2.23694
 
-    private fun maxSpd(): Double = settings.gaugeMax.toDouble()
+    // (The old scale helper was removed Nov 23 01:26 — the Reel dial
+    // scale is fixed at 170 mph per frame-11; settings.gaugeMax no
+    // longer drives it.)
 
     private fun tgtVal(): Double =
         binding.tgtInp.text.toString().toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
