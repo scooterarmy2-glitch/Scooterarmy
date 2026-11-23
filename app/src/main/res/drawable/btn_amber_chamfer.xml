@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- START RIDE button (look-pro): chamfered bar, muted-amber gradient.
+     Vector so the chamfer scales with the button: the path is a rectangle
+     with the top-left and bottom-right corners cut at a diagonal. Works on
+     API 21+; minSdk is 26. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M8,0 L100,0 L100,16 L92,24 L0,24 L0,8 Z"
+        android:strokeColor="#8a6a3a"
+        android:strokeWidth="1">
+        <gradient
+            android:type="linear"
+            android:startX="0"
+            android:startY="0"
+            android:endX="0"
+            android:endY="24"
+            android:startColor="#d99a4e"
+            android:endColor="#a86f28" />
+    </path>
+</vector>

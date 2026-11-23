@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- STOP RIDE button (look-pro): same chamfered bar as btn_amber_chamfer, red. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M8,0 L100,0 L100,16 L92,24 L0,24 L0,8 Z"
+        android:strokeColor="#c62828"
+        android:strokeWidth="1">
+        <gradient
+            android:type="linear"
+            android:startX="0"
+            android:startY="0"
+            android:endX="0"
+            android:endY="24"
+            android:startColor="#e53935"
+            android:endColor="#b71c1c" />
+    </path>
+</vector>
