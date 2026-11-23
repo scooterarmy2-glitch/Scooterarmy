@@ -6,7 +6,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#080808">
+    android:background="@android:color/transparent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -72,6 +72,10 @@
                     android:fontFamily="@font/orbitron_900"
                     android:text="0 mph"
                     android:textColor="#ffffff"
+                    android:shadowColor="#33ffffff"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="6"
                     android:textSize="16sp" />
                 <TextView
                     android:layout_width="wrap_content"
@@ -101,6 +105,10 @@
                     android:fontFamily="@font/orbitron_900"
                     android:text="0.0 mi"
                     android:textColor="#ffffff"
+                    android:shadowColor="#33ffffff"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="6"
                     android:textSize="16sp" />
                 <TextView
                     android:layout_width="wrap_content"
@@ -130,6 +138,10 @@
                     android:fontFamily="@font/orbitron_900"
                     android:text="0:00"
                     android:textColor="#ffffff"
+                    android:shadowColor="#33ffffff"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="6"
                     android:textSize="16sp" />
                 <TextView
                     android:layout_width="wrap_content"
@@ -159,6 +171,10 @@
                 android:paddingBottom="6dp"
                 android:text="● LIVE"
                 android:textColor="#ffffff"
+                android:shadowColor="#59ffffff"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="4"
                 android:textSize="12sp"
                 android:visibility="gone" />
         </LinearLayout>
@@ -168,7 +184,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#0a0a0a" />
+            android:background="#0a1628" />
     </LinearLayout>
 
     <!-- Bottom status pill. -->

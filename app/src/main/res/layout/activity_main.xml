@@ -134,7 +134,7 @@
                 android:paddingLeft="14dp"
                 android:paddingTop="4dp"
                 android:paddingRight="14dp"
-                android:paddingBottom="60dp">
+                android:paddingBottom="12dp">
 
                 <!-- GAUGE -->
                 <LinearLayout
@@ -175,7 +175,7 @@
                             android:shadowColor="#d99a4e"
                             android:shadowDx="0"
                             android:shadowDy="0"
-                            android:shadowRadius="24"
+                            android:shadowRadius="32"
                             android:text="0"
                             android:textColor="#ffffff"
                             android:textSize="76sp"
@@ -217,7 +217,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
                             android:text="TOP SPEED"
-                            android:textColor="#8a6a3a"
+                            android:textColor="#c99a55"
                             android:textSize="7sp" />
 
                         <TextView
@@ -226,13 +226,13 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_900"
                             android:letterSpacing="0.02"
-                            android:shadowColor="#40d99a4e"
+                            android:shadowColor="#d99a4e"
                             android:shadowDx="0"
                             android:shadowDy="0"
-                            android:shadowRadius="8"
+                            android:shadowRadius="12"
                             android:text="0"
                             android:textColor="@color/amber"
-                            android:textSize="18sp" />
+                            android:textSize="22sp" />
 
                         <TextView
                             android:id="@+id/topSpdUnit"
@@ -240,7 +240,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
                             android:text="MPH"
-                            android:textColor="#8a6a3a"
+                            android:textColor="#c99a55"
                             android:textSize="7sp" />
                     </LinearLayout>
 
@@ -536,6 +536,10 @@
                             android:fontFamily="@font/orbitron_900"
                             android:text="—"
                             android:textColor="@color/chrome"
+                            android:shadowColor="#33ffffff"
+                            android:shadowDx="0"
+                            android:shadowDy="0"
+                            android:shadowRadius="6"
                             android:textSize="15sp" />
                     </LinearLayout>
 
@@ -568,6 +572,10 @@
                             android:fontFamily="@font/orbitron_900"
                             android:text="—"
                             android:textColor="@color/chrome"
+                            android:shadowColor="#33ffffff"
+                            android:shadowDx="0"
+                            android:shadowDy="0"
+                            android:shadowRadius="6"
                             android:textSize="15sp" />
 
                         <TextView
@@ -610,6 +618,10 @@
                             android:fontFamily="@font/orbitron_900"
                             android:text="—"
                             android:textColor="@color/chrome"
+                            android:shadowColor="#33ffffff"
+                            android:shadowDx="0"
+                            android:shadowDy="0"
+                            android:shadowRadius="6"
                             android:textSize="15sp" />
 
                         <TextView
@@ -706,6 +718,10 @@
                                 android:fontFamily="@font/orbitron_900"
                                 android:text="—"
                                 android:textColor="@color/green"
+                                android:shadowColor="#5939ff14"
+                                android:shadowDx="0"
+                                android:shadowDy="0"
+                                android:shadowRadius="6"
                                 android:textSize="15sp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -818,6 +834,10 @@
                         android:outlineAmbientShadowColor="#8a6a3a"
                         android:outlineSpotShadowColor="#8a6a3a"
                         android:text="START RIDE"
+                        android:shadowColor="#59ffffff"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="6"
                         android:textColor="#ffffff"
                         android:textSize="12sp" />
 
@@ -941,7 +961,7 @@
                         android:shadowColor="#40d99a4e"
                         android:shadowDx="0"
                         android:shadowDy="0"
-                        android:shadowRadius="12"
+                        android:shadowRadius="16"
                         android:text="0.000"
                         android:textColor="#d99a4e"
                         android:textSize="36sp" />
@@ -989,7 +1009,11 @@
                             android:outlineAmbientShadowColor="#8a6a3a"
                             android:outlineSpotShadowColor="#8a6a3a"
                             android:text="START TIMED RUN"
-                            android:textColor="#ffffff"
+                            android:shadowColor="#59ffffff"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="6"
+                        android:textColor="#ffffff"
                             android:textSize="11sp" />
 
                         <Button
@@ -1005,7 +1029,11 @@
                             android:letterSpacing="0.12"
                             android:maxLines="1"
                             android:text="RESET"
-                            android:textColor="#ffffff"
+                            android:shadowColor="#59ffffff"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="6"
+                        android:textColor="#ffffff"
                             android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>

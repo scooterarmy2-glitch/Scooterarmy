@@ -47,7 +47,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="SPEED RESPONSE"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <TextView
@@ -203,7 +207,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="GPS"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <TextView
@@ -309,7 +317,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="TIMER"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <LinearLayout
@@ -386,7 +398,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="RIDE"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <TextView
@@ -451,7 +467,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="ALERTS"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <Switch
@@ -477,7 +497,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="DISPLAY"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <TextView
@@ -534,7 +558,11 @@
                 android:fontFamily="@font/orbitron_700"
                 android:letterSpacing="0.2"
                 android:text="ADVANCED"
-                android:textColor="#ff6a00"
+                android:textColor="#d99a4e"
+                android:shadowColor="#59d99a4e"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
                 android:textSize="12sp" />
 
             <Switch
