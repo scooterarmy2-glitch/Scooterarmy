@@ -4,7 +4,11 @@
     <color name="red">#cc1a00</color>
     <color name="glow">#ff4400</color>
     <color name="ember">#ff6a00</color>
-    <color name="amber">#ffb347</color>
+    <!-- look-pro (Nov 23): muted amber — the bright #ffb347 is toned down
+         everywhere @color/amber is used (top speeds, status ambers). -->
+    <color name="amber">#d99a4e</color>
+    <color name="amberDeep">#a86f28</color>
+    <color name="amberBrick">#c65a2e</color>
     <color name="green">#39ff14</color>
     <color name="blue">#00b4ff</color>
     <color name="text">#f5f5f5</color>
