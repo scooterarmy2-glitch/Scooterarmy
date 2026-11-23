@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LIVE MAP page (look-pro) — page 1 of the main pager, swipe-right from
+     the speedometer. Dark Esri map, live chips on top (speed / distance /
+     ride time / red LIVE badge while recording), bottom status pill.
+     No toolbar: the back chevron at the top-left returns to the speedo. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080808">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Header: back chevron + title (real navigation, not decoration). -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="4dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/liveMapBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:fontFamily="sans-serif"
+                android:gravity="center"
+                android:text="‹"
+                android:textColor="#d99a4e"
+                android:textSize="28sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.25"
+                android:text="LIVE MAP"
+                android:textColor="#cccccc"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Live chips: speed / distance / ride time / LIVE badge. -->
+        <LinearLayout
+            android:id="@+id/liveChipsRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/chip_pill_amber"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingLeft="12dp"
+                android:paddingTop="6dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="6dp">
+                <TextView
+                    android:id="@+id/liveSpeedVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/orbitron_900"
+                    android:text="0 mph"
+                    android:textColor="#ffffff"
+                    android:textSize="16sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/orbitron_700"
+                    android:letterSpacing="0.2"
+                    android:text="SPEED"
+                    android:textColor="#888888"
+                    android:textSize="7sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:background="@drawable/chip_pill"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingLeft="12dp"
+                android:paddingTop="6dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="6dp">
+                <TextView
+                    android:id="@+id/liveDistVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/orbitron_900"
+                    android:text="0.0 mi"
+                    android:textColor="#ffffff"
+                    android:textSize="16sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/orbitron_700"
+                    android:letterSpacing="0.2"
+                    android:text="DISTANCE"
+                    android:textColor="#888888"
+                    android:textSize="7sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:background="@drawable/chip_pill"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingLeft="12dp"
+                android:paddingTop="6dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="6dp">
+                <TextView
+                    android:id="@+id/liveTimeVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/orbitron_900"
+                    android:text="0:00"
+                    android:textColor="#ffffff"
+                    android:textSize="16sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/orbitron_700"
+                    android:letterSpacing="0.2"
+                    android:text="RIDE TIME"
+                    android:textColor="#888888"
+                    android:textSize="7sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/liveBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/live_badge_bg"
+                android:fontFamily="@font/orbitron_900"
+                android:letterSpacing="0.1"
+                android:paddingLeft="10dp"
+                android:paddingTop="6dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="6dp"
+                android:text="● LIVE"
+                android:textColor="#ffffff"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/liveMap"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#0a0a0a" />
+    </LinearLayout>
+
+    <!-- Bottom status pill. -->
+    <TextView
+        android:id="@+id/liveStatusPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="18dp"
+        android:background="@drawable/status_pill_bg"
+        android:fontFamily="@font/share_tech_mono"
+        android:paddingLeft="16dp"
+        android:paddingTop="8dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="8dp"
+        android:text="Not recording"
+        android:textColor="#d99a4e"
+        android:textSize="12sp" />
+</FrameLayout>
