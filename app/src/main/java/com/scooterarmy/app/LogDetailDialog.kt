@@ -21,7 +21,9 @@ object LogDetailDialog {
         big: String,
         bigLbl: String,
         rows: List<Pair<String, String>>,
-        onViewRoute: (() -> Unit)? = null
+        onViewRoute: (() -> Unit)? = null,
+        onExportCsv: (() -> Unit)? = null,
+        onExportGpx: (() -> Unit)? = null
     ) {
         val binding = DialogLogDetailBinding.inflate(LayoutInflater.from(context))
         binding.logTitle.text = title
@@ -44,6 +46,16 @@ object LogDetailDialog {
         if (onViewRoute != null) {
             binding.viewRouteBtn.visibility = View.VISIBLE
             binding.viewRouteBtn.setOnClickListener { onViewRoute() }
+        }
+        // Per-entry export: CSV for rides and runs, GPX for rides (route).
+        // The caller owns the SAF picker; the dialog just fires the callback.
+        if (onExportCsv != null) {
+            binding.exportCsvBtn.visibility = View.VISIBLE
+            binding.exportCsvBtn.setOnClickListener { onExportCsv() }
+        }
+        if (onExportGpx != null) {
+            binding.exportGpxBtn.visibility = View.VISIBLE
+            binding.exportGpxBtn.setOnClickListener { onExportGpx() }
         }
         binding.logClose.setOnClickListener { dialog.dismiss() }
         dialog.show()

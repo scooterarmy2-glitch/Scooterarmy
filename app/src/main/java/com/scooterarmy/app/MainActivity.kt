@@ -23,7 +23,6 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.media.AudioManager
 import android.media.ToneGenerator
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -32,7 +31,6 @@ import android.os.SystemClock
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -49,8 +47,6 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.scooterarmy.app.databinding.ActivityMainBinding
-import com.scooterarmy.app.databinding.ItemRideBinding
-import com.scooterarmy.app.databinding.ItemRunBinding
 import java.util.Date
 import kotlin.math.abs
 import kotlin.math.max
@@ -158,6 +154,9 @@ class MainActivity : Activity() {
         override fun run() {
             if (state == RunState.RUNNING && runStartT != null) {
                 binding.timerBig.text = fmtTimer(max(0L, nowT() - runStartT!!))
+                if (binding.landPanel.visibility == View.VISIBLE) {
+                    binding.landRunTimer.text = binding.timerBig.text
+                }
                 setProg(min(currentSpd / tgtVal(), 1.0))
                 uiHandler.postDelayed(this, 50)
             }
@@ -194,18 +193,17 @@ class MainActivity : Activity() {
 
     private val idleStop = Runnable { if (sessionActive) stopSession() }
 
-    // SAF export: content waiting for the user to pick a file.
-    private var pendingExport: String? = null
-    // True while the export file picker is open — opening it pauses the
-    // activity, and a pause must not end a ride the way leaving the app does.
-    private var exporting = false
     // Same idea for the Settings screen: opening it pauses us, but the
     // run/ride continues and Settings applies live on return.
     private var openingSettings = false
+    // Same again for the Logs page: opening it pauses us, but the ride
+    // underneath keeps recording — the logs page holds no session state.
+    // (Export moved to the logs page with it, and LogsActivity carries
+    // its own exporting flag for the file picker.)
+    private var openingLogs = false
     // Diagnostics: fix timestamps in the last 5 s + last fix interval.
     private val fixTimes = ArrayDeque<Long>()
     private var lastFixIntervalMs = 0L
-    private var pendingExportMime = "text/csv"
 
     companion object {
         const val ACC_REJECT = 50.0      // reject fixes worse than this (metres)
@@ -214,7 +212,6 @@ class MainActivity : Activity() {
         // AppSettings (defaults 10.0 m / 1.0 m/s / on) — same values as
         // the old ACC_GOOD / SPD_ACC_REJECT constants.
         const val REQ_LOCATION = 1
-        const val REQ_EXPORT = 2
     }
 
     // ── Lifecycle ───────────────────────────────────────────────
@@ -237,8 +234,6 @@ class MainActivity : Activity() {
 
         applyChromeGradient(binding.brandText)
         applyEmberGradient(binding.brandHash)
-        applyChromeGradient(binding.rideLogTitle)
-        applyChromeGradient(binding.runLogTitle)
         applyTexturedBackground()
         // Ember glows (density-scaled so they render the same on every screen).
         val density = resources.displayMetrics.density
@@ -256,11 +251,12 @@ class MainActivity : Activity() {
         binding.sessBtn.setOnClickListener { toggleSession() }
         binding.armBtn.setOnClickListener { armRun() }
         binding.resetBtn.setOnClickListener { resetRun() }
-        binding.exportRidesCsv.setOnClickListener { exportRides("csv") }
-        binding.exportRidesGpx.setOnClickListener { exportRides("gpx") }
-        binding.exportRunsCsv.setOnClickListener { exportRuns() }
-        binding.clearSessions.setOnClickListener { clearSessions() }
-        binding.clearHistory.setOnClickListener { clearHistory() }
+        binding.logsBtn.setOnClickListener {
+            openingLogs = true
+            startActivity(Intent(this, LogsActivity::class.java))
+        }
+        // Landscape trip panel STOP — same action as the portrait STOP RIDE.
+        binding.landStopBtn.setOnClickListener { toggleSession() }
         binding.alertInp.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 saveAlert()
@@ -288,8 +284,6 @@ class MainActivity : Activity() {
             gesture.onTouchEvent(event)
         }
 
-        renderSessions()
-        renderHistory()
         renderBvL()
         updateSpeedDisplay()
         applySettings()
@@ -312,6 +306,7 @@ class MainActivity : Activity() {
         super.onResume()
         setImmersive()
         openingSettings = false
+        openingLogs = false
         applySettings()
         startLocation()
         imuBridge.start()
@@ -328,12 +323,12 @@ class MainActivity : Activity() {
             uiHandler.post(liveTick)
             resetIdleTimer()
         }
-        // Fresh read, exactly what is stored — the log always shows the truth.
+        // Fresh read, exactly what is stored — the Best-vs-Last card and
+        // the landscape panel's last-ride line always show the truth.
         rides = store.rides
         runs = store.runs
-        renderSessions()
-        renderHistory()
         renderBvL()
+        updateLandPanel()
     }
 
     override fun onPause() {
@@ -405,6 +400,9 @@ class MainActivity : Activity() {
 
     private fun applyChromeVisibility() {
         val speedoOnly = isLandscape() || fullscreen
+        // Landscape (not fullscreen): gauge on the LEFT, live trip panel
+        // on the RIGHT — Speedo-style. Fullscreen stays speedo-only.
+        val landscapePanel = isLandscape() && !fullscreen
         val gone = View.GONE
         val vis = View.VISIBLE
         binding.headerRow.visibility = if (speedoOnly) gone else vis
@@ -414,15 +412,20 @@ class MainActivity : Activity() {
         binding.runBox.visibility = if (speedoOnly) gone else vis
         binding.bvlCard.visibility =
             if (speedoOnly || runs.isEmpty()) gone else vis
-        binding.rideLogSection.visibility = if (speedoOnly) gone else vis
-        binding.runLogSection.visibility = if (speedoOnly) gone else vis
         binding.sessLive.visibility =
             if (speedoOnly) gone else if (sessionActive) vis else gone
         binding.fsHint.visibility = if (fullscreen) vis else gone
         binding.fsInfoRow.visibility = if (fullscreen) vis else gone
         binding.topSpdBox.visibility = if (fullscreen) gone else vis
+        binding.landPanel.visibility = if (landscapePanel) vis else gone
+        binding.gaugeRow.orientation =
+            if (landscapePanel) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        binding.gaugeRow.gravity =
+            if (landscapePanel) Gravity.CENTER_VERTICAL else Gravity.CENTER_HORIZONTAL
 
-        // Gauge size: full-screen in speedo-only mode, 320dp otherwise.
+        // Gauge size: full-screen in speedo-only mode, 320dp in portrait.
+        // In landscape-with-panel the gauge is a square sized to the
+        // (short) screen height, leaving the rest of the width for the panel.
         val dm = resources.displayMetrics
         val wPx = dm.widthPixels
         val hPx = dm.heightPixels
@@ -430,6 +433,10 @@ class MainActivity : Activity() {
             fullscreen && !isLandscape() ->
                 (min((wPx * 0.92).toInt(), (hPx * 0.62).toInt()) to
                     min((wPx * 0.92).toInt(), (hPx * 0.62).toInt()))
+            landscapePanel -> {
+                val sq = min(wPx, hPx) - (32 * dm.density).toInt()
+                sq to sq
+            }
             speedoOnly -> {
                 val s = min(wPx, hPx) - (16 * dm.density).toInt()
                 s to s
@@ -442,8 +449,17 @@ class MainActivity : Activity() {
         val lp = binding.gaugeWrap.layoutParams as LinearLayout.LayoutParams
         lp.width = gw
         lp.height = gh
-        lp.gravity = Gravity.CENTER_HORIZONTAL
+        lp.gravity =
+            if (landscapePanel) Gravity.CENTER_VERTICAL else Gravity.CENTER_HORIZONTAL
         binding.gaugeWrap.layoutParams = lp
+        val landLp = binding.landPanel.layoutParams as LinearLayout.LayoutParams
+        landLp.width =
+            if (landscapePanel) 0 else LinearLayout.LayoutParams.MATCH_PARENT
+        landLp.weight = if (landscapePanel) 1f else 0f
+        landLp.height =
+            if (landscapePanel) LinearLayout.LayoutParams.MATCH_PARENT
+            else LinearLayout.LayoutParams.WRAP_CONTENT
+        binding.landPanel.layoutParams = landLp
         binding.contentCol.gravity =
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
 
@@ -459,6 +475,79 @@ class MainActivity : Activity() {
             binding.spdOverlay.layoutParams = overlayLp
         }
         if (fullscreen) updateFsInfo()
+        updateLandPanel()
+    }
+
+    /** Landscape trip panel (Speedo-style): live ride numbers beside the
+     *  gauge while a ride runs; top speed + GPS status + last ride when
+     *  no ride is running; timed-run target + timer when one is armed or
+     *  running. No-op unless the panel is actually showing. */
+    private fun updateLandPanel() {
+        if (!::binding.isInitialized) return
+        if (binding.landPanel.visibility != View.VISIBLE) return
+        if (!isLandscape() || fullscreen) return
+        if (sessionActive) {
+            binding.landTitle.text = "RIDE LIVE"
+            binding.landTitle.setTextColor(Color.parseColor("#39ff14"))
+            val start = sessionStart
+            val durSec = if (start != null)
+                Math.round((Date().time - start.time) / 1000.0).toInt() else 0
+            val distMi = sessionDist / 1609.34
+            binding.landDist.text = String.format("%.2f mi", distMi)
+            binding.landTime.text = fmtDur(durSec)
+            binding.landTopSpd.text = "${sessionTopSpd.roundToInt()} mph"
+            val hrs = durSec / 3600.0
+            binding.landAvgSpd.text =
+                if (hrs > 0) String.format("%.1f mph", distMi / hrs) else "0.0 mph"
+            binding.landStopBtn.visibility = View.VISIBLE
+            binding.landLastRide.visibility = View.GONE
+        } else {
+            binding.landTitle.text = "TRIP"
+            binding.landTitle.setTextColor(Color.parseColor("#cccccc"))
+            binding.landDist.text = "—"
+            binding.landTime.text = "—"
+            binding.landTopSpd.text = "${allTimeTopSpd.roundToInt()} mph"
+            val last = rides.firstOrNull()
+            binding.landAvgSpd.text =
+                last?.let { rideAvgSpeedRow(it)?.second } ?: "—"
+            binding.landStopBtn.visibility = View.GONE
+            if (last != null) {
+                binding.landLastRide.visibility = View.VISIBLE
+                binding.landLastRide.text =
+                    "LAST RIDE — ${last.dist} · ${last.dur} · TOP ${last.topSpd}"
+            } else {
+                binding.landLastRide.visibility = View.GONE
+            }
+        }
+        // GPS line: fix quality + satellites + accuracy + quality label.
+        val quality = when {
+            !gpsReady -> "—"
+            lastAcc <= 5 -> "EXCELLENT"
+            lastAcc <= 10 -> "GOOD"
+            else -> "FAIR"
+        }
+        val status = when {
+            lastSig >= 3 -> "LOCKED"
+            lastSig >= 1 -> "WEAK"
+            else -> "POOR"
+        }
+        val sats = if (satUsed >= 0) "$satUsed SATS" else "— SATS"
+        val acc = if (lastAcc < 900) "±${lastAcc.roundToInt()}m" else "±—"
+        binding.landGps.text = "$status · $sats · $acc · $quality"
+        // Timed run: target + timer state when armed, running, or done.
+        if (state == RunState.IDLE) {
+            binding.landRunRow.visibility = View.GONE
+        } else {
+            binding.landRunRow.visibility = View.VISIBLE
+            binding.landRunLbl.text = "0 → ${trimNum(tgtVal())} mph"
+            binding.landRunTimer.text = when (state) {
+                RunState.ARMED -> "ARMED — WAITING"
+                RunState.RUNNING ->
+                    if (runStartT != null) fmtTimer(max(0L, nowT() - runStartT!!))
+                    else "0.000"
+                else -> binding.timerBig.text.toString()
+            }
+        }
     }
 
     private fun applyChromeGradient(tv: android.widget.TextView) {
@@ -579,9 +668,10 @@ class MainActivity : Activity() {
     private fun trimNum(v: Double): String =
         if (v == v.toLong().toDouble()) v.toLong().toString() else v.toString()
 
-    /** A pause ends a ride — unless the pause is the export picker or the
-     *  Settings screen, both of which return to the same run/ride. */
-    private fun pauseEndsRide(): Boolean = sessionActive && !exporting && !openingSettings
+    /** A pause ends a ride — unless the pause is the Settings screen or
+     *  the Logs page, both of which return to the same run/ride. */
+    private fun pauseEndsRide(): Boolean =
+        sessionActive && !openingSettings && !openingLogs
 
     /** Apply everything Settings can change, live — no restart needed. */
     private fun applySettings() {
@@ -995,6 +1085,7 @@ class MainActivity : Activity() {
             }
         )
         updateAccSub()
+        updateLandPanel()
     }
 
     /** Accuracy sub-label: fix quality, with the dual-band badge when L1+L5. */
@@ -1062,6 +1153,7 @@ class MainActivity : Activity() {
         binding.tgtInp.isEnabled = false
         binding.gauge.target = tgt
         binding.gauge.showTarget = true
+        updateLandPanel()
     }
 
     /** Amber flash on the timer while a run is ARMED and waiting to start. */
@@ -1083,6 +1175,7 @@ class MainActivity : Activity() {
         binding.timerBig.setTextColor(Color.parseColor("#ffb347"))
         binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ffb347"))
         uiHandler.post(timerTick)
+        updateLandPanel()
     }
 
     private fun finishRun(elapsedMs: Long) {
@@ -1099,8 +1192,8 @@ class MainActivity : Activity() {
         binding.gauge.showTarget = false
         val runLbl = "0 → ${trimNum(tgtVal())} mph"
         saveRecord(elapsedMs, runLbl)
-        renderHistory()
         renderBvL()
+        updateLandPanel()
     }
 
     private fun resetRun() {
@@ -1119,6 +1212,7 @@ class MainActivity : Activity() {
         setBtn(binding.resetBtn, false)
         binding.tgtInp.isEnabled = true
         binding.gauge.showTarget = false
+        updateLandPanel()
     }
 
     private fun setProg(ratio: Double) {
@@ -1229,18 +1323,12 @@ class MainActivity : Activity() {
             ts = isoNow(startSnap),
             route = sessionRoute.toList()
         )
-        // Save first, then re-read and render immediately — the log updates
-        // live the moment STOP is hit, no restart needed.
+        // Save first, then re-read immediately — the ride is in the store
+        // the moment STOP is hit, so the logs page shows it on open.
         rides.add(0, record)
         if (rides.size > 100) rides = rides.subList(0, 100)
         store.rides = rides
         rides = store.rides
-        renderSessions()
-        binding.scrollView.post {
-            binding.scrollView.scrollTo(
-                0, binding.rideLogSection.top + binding.innerCol.top
-            )
-        }
         Toast.makeText(
             this, "Ride saved ✓ — ${rides.size} ride${if (rides.size == 1) "" else "s"}",
             Toast.LENGTH_SHORT
@@ -1254,6 +1342,7 @@ class MainActivity : Activity() {
         binding.liveTopSpd.text = "${sessionTopSpd.roundToInt()} mph"
         binding.liveDist.text = dist
         binding.liveDur.text = fmtDur(durSec)
+        updateLandPanel()
     }
 
     private fun resetIdleTimer() {
@@ -1261,51 +1350,6 @@ class MainActivity : Activity() {
         // Idle auto-stop from Settings (1/5/10 min, or 0 = off).
         val mins = settings.idleMin
         if (mins > 0) uiHandler.postDelayed(idleStop, mins * 60 * 1000L)
-    }
-
-    // ── Logs ────────────────────────────────────────────────────
-    private fun renderSessions() {
-        binding.sessList.removeAllViews()
-        binding.noSess.visibility = if (rides.isEmpty()) View.VISIBLE else View.GONE
-        val inflater = LayoutInflater.from(this)
-        for (ride in rides) {
-            val row = ItemRideBinding.inflate(inflater, binding.sessList, false)
-            row.rideName.text = ride.name
-            row.rideMeta.text = "${ride.dur}   ${ride.dist}"
-            row.rideTopSpd.text = ride.topSpd
-            row.root.setOnClickListener { openRideDetail(ride) }
-            row.rideDel.setOnClickListener {
-                rides = rides.filter { it.id != ride.id }.toMutableList()
-                store.rides = rides
-                renderSessions()
-            }
-            binding.sessList.addView(row.root)
-        }
-    }
-
-    private fun renderHistory() {
-        binding.histList.removeAllViews()
-        binding.noHist.visibility = if (runs.isEmpty()) View.VISIBLE else View.GONE
-        val inflater = LayoutInflater.from(this)
-        for (run in runs) {
-            val row = ItemRunBinding.inflate(inflater, binding.histList, false)
-            row.runLbl.text = run.runLbl
-            row.runDate.text = run.date
-            row.runTime.text = "${run.time}s"
-            row.runBestBadge.visibility = if (run.isBest) View.VISIBLE else View.GONE
-            row.root.setBackgroundResource(if (run.isBest) R.drawable.log_item_best_bg else R.drawable.log_item_bg)
-            row.runTime.setTextColor(
-                if (run.isBest) Color.parseColor("#ffb347") else Color.parseColor("#f0f0f0")
-            )
-            row.root.setOnClickListener { openRunDetail(run) }
-            row.runDel.setOnClickListener {
-                runs = runs.filter { it.id != run.id }.toMutableList()
-                store.runs = runs
-                renderHistory()
-                renderBvL()
-            }
-            binding.histList.addView(row.root)
-        }
     }
 
     private fun renderBvL() {
@@ -1338,46 +1382,6 @@ class MainActivity : Activity() {
                 delta.setTextColor(Color.parseColor("#ff5533"))
             }
         }
-    }
-
-    private fun openRideDetail(ride: RideRecord) {
-        val rows = mutableListOf(
-            "Date" to ride.name,
-            "Duration" to ride.dur,
-            "Distance" to ride.dist,
-            "Top Speed" to ride.topSpd
-        )
-        rideAvgSpeedRow(ride)?.let { rows += it }
-        LogDetailDialog.show(
-            this, "RIDE LOG", ride.topSpd, "TOP SPEED", rows,
-            onViewRoute = if (ride.route.size > 1) {
-                { RouteMapDialog.show(this, ride) }
-            } else null
-        )
-    }
-
-    private fun openRunDetail(run: RunRecord) {
-        LogDetailDialog.show(
-            this, "TIMED RUN", "${run.time}s", "0 → TARGET TIME",
-            listOf(
-                "Run" to run.runLbl,
-                "Date" to run.date,
-                "Result" to if (run.isBest) "★ BEST" else "—"
-            )
-        )
-    }
-
-    private fun clearSessions() {
-        rides = mutableListOf()
-        store.rides = rides
-        renderSessions()
-    }
-
-    private fun clearHistory() {
-        runs = mutableListOf()
-        store.runs = runs
-        renderHistory()
-        renderBvL()
     }
 
     // ── Speed alert ─────────────────────────────────────────────
@@ -1432,103 +1436,4 @@ class MainActivity : Activity() {
         }
     }
 
-    // ── Export (Storage Access Framework — user picks where it lands) ──
-    private fun csvEscape(v: String): String =
-        "\"" + v.replace("\"", "\"\"") + "\""
-
-    private fun exportRides(format: String) {
-        if (rides.isEmpty()) {
-            Toast.makeText(this, "No rides to export", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(Date())
-        if (format == "csv") {
-            val rows = mutableListOf("Date,Duration,Distance,Top Speed")
-            for (s in rides) {
-                rows += listOf(s.name, s.dur, s.dist, s.topSpd)
-                    .joinToString(",") { csvEscape(it) }
-            }
-            launchExport("samo-ride-log-$date.csv", "text/csv", rows.joinToString("\n"))
-        } else {
-            val sb = StringBuilder()
-            sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-            sb.append("<gpx version=\"1.1\" creator=\"#SAMO GPS\" xmlns=\"http://www.topografix.com/GPX/1/1\">")
-            // One formatter for the whole export — building one per route
-            // point (up to 2000 per ride) was pure waste.
-            val gpxTimeFmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
-                timeZone = java.util.TimeZone.getTimeZone("UTC")
-            }
-            for (s in rides) {
-                if (s.route.isEmpty()) continue
-                sb.append("<trk><name>").append(escapeXml(s.name)).append("</name><trkseg>")
-                for (p in s.route) {
-                    sb.append("<trkpt lat=\"").append(p.lat).append("\" lon=\"").append(p.lon)
-                        .append("\"><time>")
-                        .append(gpxTimeFmt.format(Date(p.t)))
-                        .append("</time></trkpt>")
-                }
-                sb.append("</trkseg></trk>")
-            }
-            sb.append("</gpx>")
-            launchExport("samo-ride-log-$date.gpx", "application/gpx+xml", sb.toString())
-        }
-    }
-
-    private fun exportRuns() {
-        if (runs.isEmpty()) {
-            Toast.makeText(this, "No runs to export", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(Date())
-        val rows = mutableListOf("Date,Run,Time (s),Best")
-        for (r in runs) {
-            rows += listOf(r.date, r.runLbl, r.time, if (r.isBest) "YES" else "")
-                .joinToString(",") { csvEscape(it) }
-        }
-        launchExport("samo-timed-runs-$date.csv", "text/csv", rows.joinToString("\n"))
-    }
-
-    private fun escapeXml(s: String): String =
-        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-    private fun launchExport(fileName: String, mime: String, content: String) {
-        pendingExport = content
-        pendingExportMime = mime
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = mime
-            putExtra(Intent.EXTRA_TITLE, fileName)
-        }
-        try {
-            exporting = true
-            startActivityForResult(intent, REQ_EXPORT)
-        } catch (_: Exception) {
-            exporting = false
-            pendingExport = null
-            Toast.makeText(this, "No file app available to save with", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != REQ_EXPORT) return
-        exporting = false
-        if (resultCode != RESULT_OK) {
-            pendingExport = null
-            return
-        }
-        val uri: Uri? = data?.data
-        val content = pendingExport
-        pendingExport = null
-        if (uri != null && content != null) {
-            try {
-                contentResolver.openOutputStream(uri)?.use { out ->
-                    out.write(content.toByteArray(Charsets.UTF_8))
-                }
-                Toast.makeText(this, "Export saved", Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) {
-                Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 }

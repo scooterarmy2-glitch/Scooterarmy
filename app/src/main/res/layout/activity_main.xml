@@ -63,6 +63,23 @@
                 </LinearLayout>
 
                 <TextView
+                    android:id="@+id/logsBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginRight="8dp"
+                    android:background="@drawable/settings_btn_bg"
+                    android:contentDescription="Logs"
+                    android:fontFamily="@font/orbitron_700"
+                    android:gravity="center"
+                    android:letterSpacing="0.15"
+                    android:minWidth="56dp"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:text="LOGS"
+                    android:textColor="#ffcc88"
+                    android:textSize="12sp" />
+
+                <TextView
                     android:id="@+id/settingsBtn"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
@@ -117,6 +134,13 @@
                 android:paddingBottom="60dp">
 
                 <!-- GAUGE -->
+                <LinearLayout
+                    android:id="@+id/gaugeRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
                 <FrameLayout
                     android:id="@+id/gaugeWrap"
                     android:layout_width="320dp"
@@ -244,6 +268,241 @@
                             android:textSize="9sp" />
                     </LinearLayout>
                 </FrameLayout>
+
+                <!-- LANDSCAPE TRIP PANEL: gauge on the left, live trip info
+                     on the right (Speedo-style). Shown only in landscape,
+                     never in fullscreen. Portrait never sees it. -->
+                <LinearLayout
+                    android:id="@+id/landPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:background="@drawable/panel_bg"
+                    android:elevation="4dp"
+                    android:orientation="vertical"
+                    android:padding="14dp"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:layout_marginTop="-14dp"
+                        android:layout_marginBottom="11dp"
+                        android:background="@drawable/accent_top" />
+
+                    <TextView
+                        android:id="@+id/landTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/orbitron_700"
+                        android:gravity="center_horizontal"
+                        android:letterSpacing="0.25"
+                        android:text="TRIP"
+                        android:textColor="#cccccc"
+                        android:textSize="9sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/orbitron_700"
+                                android:letterSpacing="0.2"
+                                android:text="DISTANCE"
+                                android:textColor="#cccccc"
+                                android:textSize="8sp" />
+
+                            <TextView
+                                android:id="@+id/landDist"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="@font/orbitron_900"
+                                android:text="—"
+                                android:textColor="@color/chrome"
+                                android:textSize="18sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="#252525" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/orbitron_700"
+                                android:letterSpacing="0.2"
+                                android:text="ELAPSED"
+                                android:textColor="#cccccc"
+                                android:textSize="8sp" />
+
+                            <TextView
+                                android:id="@+id/landTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="@font/orbitron_900"
+                                android:text="—"
+                                android:textColor="@color/chrome"
+                                android:textSize="18sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/orbitron_700"
+                                android:letterSpacing="0.2"
+                                android:text="TOP SPEED"
+                                android:textColor="#cccccc"
+                                android:textSize="8sp" />
+
+                            <TextView
+                                android:id="@+id/landTopSpd"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="@font/orbitron_900"
+                                android:text="—"
+                                android:textColor="@color/amber"
+                                android:textSize="18sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="#252525" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/orbitron_700"
+                                android:letterSpacing="0.2"
+                                android:text="AVG SPEED"
+                                android:textColor="#cccccc"
+                                android:textSize="8sp" />
+
+                            <TextView
+                                android:id="@+id/landAvgSpd"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="@font/orbitron_900"
+                                android:text="—"
+                                android:textColor="@color/chrome"
+                                android:textSize="18sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/landGps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:fontFamily="@font/share_tech_mono"
+                        android:gravity="center_horizontal"
+                        android:letterSpacing="0.08"
+                        android:text="—"
+                        android:textColor="#aaaaaa"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:id="@+id/landRunRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/landRunLbl"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/share_tech_mono"
+                            android:text="0 → 45 mph"
+                            android:textColor="#dddddd"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/landRunTimer"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/orbitron_900"
+                            android:gravity="end"
+                            android:text="0.000"
+                            android:textColor="@color/amber"
+                            android:textSize="20sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/landLastRide"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:fontFamily="@font/share_tech_mono"
+                        android:gravity="center_horizontal"
+                        android:letterSpacing="0.05"
+                        android:text=""
+                        android:textColor="#aaaaaa"
+                        android:textSize="10sp"
+                        android:visibility="gone" />
+
+                    <Button
+                        android:id="@+id/landStopBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/btn_red"
+                        android:elevation="6dp"
+                        android:fontFamily="@font/orbitron_700"
+                        android:letterSpacing="0.2"
+                        android:text="STOP RIDE"
+                        android:textColor="#ffffff"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+                </LinearLayout>
 
                 <!-- GPS INFO PANEL -->
                 <LinearLayout
@@ -1001,181 +1260,6 @@
                         android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- RIDE LOG -->
-                <LinearLayout
-                    android:id="@+id/rideLogSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/orbitron_700"
-                            android:id="@+id/rideLogTitle"
-                            android:letterSpacing="0.3"
-                            android:text="RIDE LOG"
-                            android:textColor="#bbbbbb"
-                            android:textSize="9sp" />
-
-                        <Button
-                            android:id="@+id/exportRidesCsv"
-                            style="?android:attr/borderlessButtonStyle"
-                            android:background="@drawable/export_btn_bg"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:minHeight="0dp"
-                            android:minWidth="0dp"
-                            android:letterSpacing="0.1"
-                            android:paddingLeft="8dp"
-                            android:paddingRight="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingBottom="3dp"
-                            android:text="CSV"
-                            android:textColor="#aaaaaa"
-                            android:textSize="10sp" />
-
-                        <Button
-                            android:id="@+id/exportRidesGpx"
-                            style="?android:attr/borderlessButtonStyle"
-                            android:background="@drawable/export_btn_bg"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:minHeight="0dp"
-                            android:minWidth="0dp"
-                            android:letterSpacing="0.1"
-                            android:paddingLeft="8dp"
-                            android:paddingRight="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingBottom="3dp"
-                            android:text="GPX"
-                            android:textColor="#aaaaaa"
-                            android:textSize="10sp" />
-
-                        <Button
-                            android:id="@+id/clearSessions"
-                            style="?android:attr/borderlessButtonStyle"
-                            android:letterSpacing="0.1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:minHeight="0dp"
-                            android:minWidth="0dp"
-                            android:padding="3dp"
-                            android:text="CLEAR ALL"
-                            android:textColor="#888888"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/sessList"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:orientation="vertical" />
-
-                    <TextView
-                        android:id="@+id/noSess"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/share_tech_mono"
-                        android:gravity="center_horizontal"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="12dp"
-                        android:letterSpacing="0.2"
-                        android:text="— no rides recorded —"
-                        android:textColor="#888888"
-                        android:textSize="10sp" />
-                </LinearLayout>
-
-                <!-- TIMED RUN LOG -->
-                <LinearLayout
-                    android:id="@+id/runLogSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/orbitron_700"
-                            android:id="@+id/runLogTitle"
-                            android:letterSpacing="0.3"
-                            android:text="TIMED RUN LOG"
-                            android:textColor="#bbbbbb"
-                            android:textSize="9sp" />
-
-                        <Button
-                            android:id="@+id/exportRunsCsv"
-                            style="?android:attr/borderlessButtonStyle"
-                            android:background="@drawable/export_btn_bg"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:minHeight="0dp"
-                            android:minWidth="0dp"
-                            android:letterSpacing="0.1"
-                            android:paddingLeft="8dp"
-                            android:paddingRight="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingBottom="3dp"
-                            android:text="CSV"
-                            android:textColor="#aaaaaa"
-                            android:textSize="10sp" />
-
-                        <Button
-                            android:id="@+id/clearHistory"
-                            style="?android:attr/borderlessButtonStyle"
-                            android:letterSpacing="0.1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:minHeight="0dp"
-                            android:minWidth="0dp"
-                            android:padding="3dp"
-                            android:text="CLEAR ALL"
-                            android:textColor="#888888"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/histList"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:orientation="vertical" />
-
-                    <TextView
-                        android:id="@+id/noHist"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/share_tech_mono"
-                        android:gravity="center_horizontal"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="12dp"
-                        android:letterSpacing="0.2"
-                        android:text="— no runs recorded —"
-                        android:textColor="#888888"
-                        android:textSize="10sp" />
-                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

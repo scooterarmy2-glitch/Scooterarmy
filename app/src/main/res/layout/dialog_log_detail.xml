@@ -60,6 +60,32 @@
         android:visibility="gone" />
 
     <Button
+        android:id="@+id/exportCsvBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/dialog_btn_bg"
+        android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.25"
+        android:text="EXPORT CSV"
+        android:textColor="#ffffff"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/exportGpxBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/dialog_btn_bg"
+        android:fontFamily="@font/orbitron_700"
+        android:letterSpacing="0.25"
+        android:text="EXPORT GPX"
+        android:textColor="#ffffff"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <Button
         android:id="@+id/logClose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
