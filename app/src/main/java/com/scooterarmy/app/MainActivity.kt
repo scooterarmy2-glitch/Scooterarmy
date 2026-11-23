@@ -5,17 +5,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.Shader
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
 import android.location.GnssMeasurementsEvent
 import android.location.GnssStatus
 import android.location.Location
@@ -244,12 +236,14 @@ class MainActivity : Activity() {
 
         applyChromeGradient(binding.brandText)
         applyEmberGradient(binding.brandHash)
-        applyTexturedBackground()
+        // Shared LED background (Backgrounds.kt, Build #78) — diamond
+        // texture + ember glow behind everything.
+        applyLedBackground(binding.rootLayout)
         // Ember glows (density-scaled so they render the same on every screen).
         val density = resources.displayMetrics.density
         binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#d99a4e"))
-        binding.spdNum.setShadowLayer(12f * density, 0f, 0f, Color.parseColor("#d99a4e"))
-        binding.timerBig.setShadowLayer(12f * density, 0f, 0f, Color.parseColor("#40d99a4e"))
+        binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#d99a4e"))
+        binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#40d99a4e"))
         binding.spdUnit.text = "MPH"
         binding.tgtSuf.text = "MPH"
         binding.topSpdUnit.text = "MPH"
@@ -351,6 +345,16 @@ class MainActivity : Activity() {
         }
         binding.rootLayout.removeView(binding.scrollView)
         binding.rootLayout.addView(mainPager, 0)
+        // Build #78: when the live-map page is swiped into view, force
+        // the tiles to re-request + redraw. The map is created offscreen
+        // and its first draw happens only when visible — this makes sure
+        // the "Map data not yet available" placeholders never sit there
+        // while real tiles are one request away.
+        mainPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                if (position == 1) liveMap.refresh()
+            }
+        })
     }
 
     /** Seconds since the current ride started (0 when not recording). */
@@ -507,6 +511,49 @@ class MainActivity : Activity() {
                 s to s
             }
         }
+        layoutGaugeSize(gw, gh, speedoOnly)
+        // Build #78 one-screen fit (portrait only): after the first
+        // layout pass, if the column is taller than the viewport the
+        // timed box — START TIMED RUN + RESET — sits below the fold
+        // (Build #77 cut it off on Casey's phone). Shrink the gauge
+        // just enough to pull it on screen, one pass, via the pure
+        // fitGaugeSize() (Models.kt, harness-tested). Landscape and
+        // fullscreen are already speedo-only, nothing to fit.
+        if (!speedoOnly) {
+            binding.scrollView.post {
+                val contentH = binding.contentCol.height
+                val viewportH = binding.scrollView.height
+                if (contentH > viewportH) {
+                    val shrunk = fitGaugeSize(contentH, viewportH, gw)
+                    if (shrunk < gw) layoutGaugeSize(shrunk, shrunk, false)
+                }
+            }
+        }
+        // TOP SPEED chip hardening (Build #78): the chip is in the
+        // layout and VISIBLE in portrait, but it did not appear in
+        // Casey's Build #77 screenshot. No code path sets it GONE in
+        // portrait, and the installed APK contains it (verified via
+        // aapt2 dump xmltree). Bring it to the front of the gauge stack
+        // and force VISIBLE here; its value is updated on every fix in
+        // updateSpeedDisplay(). If it still does not show on-device,
+        // that points at the phone's renderer, not this code.
+        if (!speedoOnly) {
+            binding.topSpdBox.bringToFront()
+            binding.topSpdBox.visibility = View.VISIBLE
+        }
+        if (fullscreen) updateFsInfo()
+        updateLandPanel()
+    }
+
+    /** Gauge layout params + the speed-digit scale that tracks them.
+     * Split out of applyChromeVisibility so the Build #78 one-screen
+     * fit pass can re-apply a shrunk gauge without redoing the whole
+     * chrome pass. The digit keeps its exact relative spot on the dial
+     * at any gauge size (72sp and a 50dp bottom margin at the old
+     * 320dp gauge). */
+    private fun layoutGaugeSize(gw: Int, gh: Int, speedoOnly: Boolean) {
+        val dm = resources.displayMetrics
+        val landscapePanel = isLandscape() && !fullscreen
         val lp = binding.gaugeWrap.layoutParams as LinearLayout.LayoutParams
         lp.width = gw
         lp.height = gh
@@ -524,9 +571,7 @@ class MainActivity : Activity() {
         binding.contentCol.gravity =
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
 
-        // Speed number + overlay position scale with the gauge: the digit
-        // keeps its exact relative spot on the dial at any gauge size
-        // (72sp and a 50dp bottom margin at the old 320dp gauge).
+        // Speed number + overlay position scale with the gauge.
         val gaugeScale = gw / (320f * dm.density)
         binding.spdNum.setTextSize(
             TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f * gaugeScale
@@ -538,8 +583,6 @@ class MainActivity : Activity() {
                 else (50f * gaugeScale * dm.density).toInt()
             binding.spdOverlay.layoutParams = overlayLp
         }
-        if (fullscreen) updateFsInfo()
-        updateLandPanel()
     }
 
     /** Landscape trip panel (Speedo-style): live ride numbers beside the
@@ -648,80 +691,6 @@ class MainActivity : Activity() {
                 tv.invalidate()
             }
         }
-    }
-
-    /** Root background: ember glow + diamond-plate texture covering the WHOLE
-     *  screen, matching the old web app's body background. The web app's radial
-     *  glows are sized relative to the viewport (ellipse at 50% 100%, fading at
-     *  55% of the farthest-corner distance), so the native version sizes its
-     *  radii from the actual screen height instead of fixed dp values — the old
-     *  fixed 420dp/300dp radii died halfway up a ~900dp screen, which is why the
-     *  glow only showed at the bottom. The texture is also stronger (10% white
-     *  vs 4%) so the diamonds read everywhere, not just where the glow sits
-     *  behind them. Visual only. */
-    private fun applyTexturedBackground() {
-        val dm = resources.displayMetrics
-        val density = dm.density
-        val screenH = dm.heightPixels.toFloat()
-        // Diamond-plate texture tile (28x16dp, like the web app's 28px x 16px).
-        val w = (28f * density).toInt().coerceAtLeast(2)
-        val h = (16f * density).toInt().coerceAtLeast(2)
-        val tile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(tile)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = 0.8f * density
-            color = Color.parseColor("#1affffff")
-        }
-        val diamond = Path().apply {
-            moveTo(w / 2f, 0f)
-            lineTo(w.toFloat(), h / 2f)
-            lineTo(w / 2f, h.toFloat())
-            lineTo(0f, h / 2f)
-            close()
-        }
-        canvas.drawPath(diamond, paint)
-        val tiled = BitmapDrawable(resources, tile).apply {
-            tileModeX = Shader.TileMode.REPEAT
-            tileModeY = Shader.TileMode.REPEAT
-        }
-        // Wide ember glow, bottom center — reaches ~85% up the screen.
-        val wideGlow = GradientDrawable().apply {
-            gradientType = GradientDrawable.RADIAL_GRADIENT
-            setGradientCenter(0.5f, 1.0f)
-            gradientRadius = screenH * 0.85f
-            colors = intArrayOf(Color.parseColor("#28c83c00"), Color.TRANSPARENT)
-        }
-        // Hotter orange core, bottom center.
-        val coreGlow = GradientDrawable().apply {
-            gradientType = GradientDrawable.RADIAL_GRADIENT
-            setGradientCenter(0.5f, 1.0f)
-            gradientRadius = screenH * 0.52f
-            colors = intArrayOf(Color.parseColor("#18ff6400"), Color.TRANSPARENT)
-        }
-        // Dark vignette at the top (as in the web app).
-        val vignette = GradientDrawable().apply {
-            gradientType = GradientDrawable.RADIAL_GRADIENT
-            setGradientCenter(0.5f, 0.0f)
-            gradientRadius = screenH * 0.7f
-            colors = intArrayOf(Color.parseColor("#b3000000"), Color.TRANSPARENT)
-        }
-        // Bottom ember fade (web body::after, 160dp tall).
-        val fadeH = (160f * density).toInt()
-        val bottomFade = GradientDrawable(
-            GradientDrawable.Orientation.BOTTOM_TOP,
-            intArrayOf(
-                Color.parseColor("#1eb42800"),
-                Color.parseColor("#0dff5000"),
-                Color.TRANSPARENT
-            )
-        )
-        val base = ColorDrawable(Color.parseColor("#080808"))
-        val layers = LayerDrawable(arrayOf(base, wideGlow, coreGlow, vignette, bottomFade, tiled))
-        // Confine the bottom fade to the bottom 160dp of the screen.
-        val topInset = (screenH - fadeH).toInt().coerceAtLeast(0)
-        layers.setLayerInset(4, 0, topInset, 0, 0)
-        binding.rootLayout.background = layers
     }
 
     private fun setBtn(btn: Button, enabled: Boolean) {
@@ -1071,22 +1040,27 @@ class MainActivity : Activity() {
             }
         )
         // Ember glow follows the speed color — muted amber now (look-pro),
-        // smaller radius so it reads as a glow, not a halo.
+        // stronger radius in Build #78 so it reads as a glow, not a halo.
         val glowColor = when {
             ratio > 0.85 -> Color.parseColor("#c65a2e")
             ratio > 0.6 -> Color.parseColor("#d99a4e")
             else -> Color.parseColor("#d99a4e")
         }
-        binding.spdNum.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, glowColor)
+        binding.spdNum.setShadowLayer(16f * resources.displayMetrics.density, 0f, 0f, glowColor)
         binding.gauge.speed = disp
         // Dial heading below the 50 — live bearing while moving, "—" stopped.
         binding.gauge.heading = headingLabel(lastBearingDeg, currentSpd)
 
         if (gpsReady && currentSpd > allTimeTopSpd) {
             allTimeTopSpd = currentSpd
-            binding.topSpdVal.text = allTimeTopSpd.roundToInt().toString()
-            binding.topSpdUnit.text = "MPH"
         }
+        // TOP SPEED chip (Build #78): the ride's real top speed so far,
+        // updated on EVERY fix — not only when a new record is set — and
+        // 0 when no ride is running (topSpeedChipValue, Models.kt).
+        // Never a faked number.
+        binding.topSpdVal.text =
+            topSpeedChipValue(sessionActive, sessionTopSpd).roundToInt().toString()
+        binding.topSpdUnit.text = "MPH"
         binding.gpsWait.visibility = if (gpsReady) View.GONE else View.VISIBLE
 
         checkSpeedAlert(currentSpd)

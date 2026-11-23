@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.util.AttributeSet
@@ -60,14 +61,30 @@ class GaugeView @JvmOverloads constructor(
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
         color = Color.parseColor("#d99a4e")
     }
+    // Build #78 LED glow passes — wide translucent halo under the solid
+    // core, so the arc and needle read as lit, not painted.
+    private val arcGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = Color.parseColor("#40d99a4e")
+    }
+    private val rimHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = Color.parseColor("#f5f5f5"); alpha = 220
+    }
+    private val needleGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL; color = Color.parseColor("#40d99a4e")
+    }
+    private val hubGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
     private val targetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#39ff14")
     }
     private val tickMajorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#999999")
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#bbbbbb")
     }
     private val tickMinorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#2e2e2e")
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#3d3d3d")
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#cccccc"); textAlign = Paint.Align.CENTER
@@ -117,6 +134,14 @@ class GaugeView @JvmOverloads constructor(
         rimPaint.strokeWidth = 7f * scale
         canvas.drawArc(cx - r, cy - r, cx + r, cy + r,
             Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimPaint)
+        // Bright top highlight on the rim — machined metal catching the
+        // light from above, like the render (Build #78). 225°–315° is the
+        // top of the dial (12 o'clock = 270° in canvas degrees); the
+        // steel gradient already darkens the lower right.
+        rimHighlightPaint.strokeWidth = 2.5f * scale
+        rimHighlightPaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#ffffff"))
+        canvas.drawArc(cx - r, cy - r, cx + r, cy + r, 225f, 90f, false, rimHighlightPaint)
+        rimHighlightPaint.clearShadowLayer()
 
         // Fine muted-amber accent ring — the scale track the speed arc rides on.
         val arcR = r - 12f * scale
@@ -134,18 +159,28 @@ class GaugeView @JvmOverloads constructor(
             targetPaint.clearShadowLayer()
         }
 
-        // Speed arc — thin muted amber on the accent ring, one soft glow pass.
+        // Speed arc — thin muted amber on the accent ring. Build #78:
+        // a wide soft halo pass under the solid core, so the arc glows
+        // like the render instead of reading as one flat shadow pass.
         if (ratio > 0) {
+            arcGlowPaint.strokeWidth = 8f * scale
+            arcGlowPaint.setShadowLayer(12f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
+            canvas.drawArc(cx - arcR, cy - arcR, cx + arcR, cy + arcR,
+                Math.toDegrees(a0).toFloat(), (Math.toDegrees(sweep) * ratio).toFloat(), false, arcGlowPaint)
+            arcGlowPaint.clearShadowLayer()
             arcPaint.strokeWidth = 4f * scale
-            arcPaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
+            arcPaint.setShadowLayer(4f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
             canvas.drawArc(cx - arcR, cy - arcR, cx + arcR, cy + arcR,
                 Math.toDegrees(a0).toFloat(), (Math.toDegrees(sweep) * ratio).toFloat(), false, arcPaint)
             arcPaint.clearShadowLayer()
         }
 
         // Ticks + numbers. Wider dials label every 20 mph so they don't crowd.
+        // Build #78: numbers carry a soft white glow (the render's digits
+        // are lit, not flat grey).
         val minorStep = 5
         val majorStep = if (maxSpd > 100) 20 else 10
+        textPaint.setShadowLayer(5f * scale, 0f, 0f, Color.parseColor("#66ffffff"))
         var v = 0
         while (v <= maxSpd.toInt()) {
             val a = angleFor(v.toDouble())
@@ -170,8 +205,10 @@ class GaugeView @JvmOverloads constructor(
             }
             v += minorStep
         }
+        textPaint.clearShadowLayer()
 
-        // Needle.
+        // Needle — Build #78: wide soft halo pass, then the solid core,
+        // so the needle glows like the render's instead of sitting flat.
         val na = angleFor(speed)
         val nx = cos(na); val ny = sin(na)
         val px = -ny; val py = nx // perpendicular
@@ -184,11 +221,22 @@ class GaugeView @JvmOverloads constructor(
             lineTo((cx + nx * baseR - px * halfW).toFloat(), (cy + ny * baseR - py * halfW).toFloat())
             close()
         }
-        needlePaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
+        needleGlowPaint.setShadowLayer(14f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
+        canvas.drawPath(path, needleGlowPaint)
+        needleGlowPaint.clearShadowLayer()
+        needlePaint.setShadowLayer(4f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
         canvas.drawPath(path, needlePaint)
         needlePaint.clearShadowLayer()
 
-        // Hub.
+        // Hub — Build #78: a radial amber glow behind the hub so the
+        // center of the dial is lit, like the render's glowing hub.
+        hubGlowPaint.shader = RadialGradient(
+            cx, cy, 44f * scale,
+            intArrayOf(Color.parseColor("#33d99a4e"), Color.parseColor("#00000000")),
+            floatArrayOf(0f, 1f), Shader.TileMode.CLAMP
+        )
+        canvas.drawCircle(cx, cy, 44f * scale, hubGlowPaint)
+        hubGlowPaint.shader = null
         hubStrokePaint.strokeWidth = 2f * scale
         canvas.drawCircle(cx, cy, 12f * scale, hubPaint)
         canvas.drawCircle(cx, cy, 12f * scale, hubStrokePaint)
@@ -202,8 +250,10 @@ class GaugeView @JvmOverloads constructor(
         // sits just below its glyph.
         heading?.let {
             headingPaint.textSize = 13f * scale
+            headingPaint.setShadowLayer(4f * scale, 0f, 0f, Color.parseColor("#59d99a4e"))
             val numR = r - 36f * scale
             canvas.drawText(it, cx, cy - numR + 22f * scale, headingPaint)
+            headingPaint.clearShadowLayer()
         }
     }
 }

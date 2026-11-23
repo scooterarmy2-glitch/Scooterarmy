@@ -108,6 +108,35 @@ fun headingLabel(bearingDeg: Float?, speedMph: Double): String {
     return "${compassPoint(bearingDeg)} $deg°"
 }
 
+/**
+ * TOP SPEED chip value, Build #78: the ride's real top speed so far while a
+ * ride is active, 0 when no ride is running. The chip never shows a number
+ * the ride did not actually reach — no all-time carry-over, no faked value.
+ * Pure, harness-tested.
+ */
+fun topSpeedChipValue(sessionActive: Boolean, sessionTopSpd: Double): Double =
+    if (sessionActive) sessionTopSpd else 0.0
+
+/**
+ * One-screen gauge fit, Build #78: shrink the gauge just enough that the
+ * whole portrait column fits the viewport, so START TIMED RUN + RESET are
+ * visible without scrolling. `contentH` is the measured height of the full
+ * column (header + gauge + strip + ride box + timed box + padding) with the
+ * gauge at `gaugePx`; `viewportH` is the scroll area's height. Returns the
+ * gauge size to use. Never grows the gauge, never shrinks below `minGaugePx`
+ * (still a usable dial). Pure, harness-tested.
+ */
+fun fitGaugeSize(
+    contentH: Int,
+    viewportH: Int,
+    gaugePx: Int,
+    minGaugePx: Int = 320
+): Int {
+    if (contentH <= viewportH || gaugePx <= 0) return gaugePx
+    val overflow = contentH - viewportH
+    return maxOf(minGaugePx, gaugePx - overflow)
+}
+
 fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = Math.PI / 180.0
     val dLat = (lat2 - lat1) * r

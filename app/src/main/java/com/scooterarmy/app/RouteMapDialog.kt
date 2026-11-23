@@ -40,9 +40,73 @@ object EsriDarkTiles {
     private const val BASE =
         "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/"
 
+    /**
+     * Highest zoom with REAL tile data, Build #78. Esri serves genuine
+     * tiles only to z16 — z17/z18/z19 all return the same 2521-byte
+     * uniform (204,204,204) blank tile (verified by curl, Nov 23), so
+     * pinch-zooming past 16 used to show the grey "Map data not yet
+     * available" blanks. Capping the source AND each MapView at 16
+     * keeps the map on real data.
+     */
+    const val MAX_ZOOM = 16
+
+    /** Deep navy the loading map shows instead of light grey. */
+    const val NAVY_BG = "#0a1628"
+
+    /**
+     * Navy tint for the grey Esri tiles, Build #78 — shifts the dark
+     * grey base to the deep navy of the reference video frame while
+     * keeping streets and labels readable. ColorMatrix rows:
+     *   R' = 0.50R − 25, G' = 0.60G − 18, B' = 0.80B + 5, A' = A.
+     * Verified on the real z16 Glasgow tile (PIL/numpy, Nov 23):
+     *   base (71,71,73) → (10,24,63) deep navy
+     *   street grey (150,150,150) → (50,72,125) readable blue
+     *   white (255,255,255) → (102,135,209) light steel blue
+     * The route line (#00b4ff) and the Start/End pins are drawn ABOVE
+     * the tiles, so the tint never touches them.
+     */
+    val NAVY_MATRIX = floatArrayOf(
+        0.50f, 0f, 0f, 0f, -25f,
+        0f, 0.60f, 0f, 0f, -18f,
+        0f, 0f, 0.80f, 0f, 5f,
+        0f, 0f, 0f, 1f, 0f
+    )
+
+    /** Pure form of the matrix above, for the JVM harness. Truncates
+     * like the verified PIL math, so (71,71,73) → (10,24,63). */
+    fun navyTintRgb(r: Int, g: Int, b: Int): Triple<Int, Int, Int> =
+        Triple(
+            (0.50 * r - 25).toInt().coerceIn(0, 255),
+            (0.60 * g - 18).toInt().coerceIn(0, 255),
+            (0.80 * b + 5).toInt().coerceIn(0, 255)
+        )
+
+    /** One call that makes a MapView navy + zoom-capped: background,
+     * max zoom, and the tint on the tiles overlay. Call AFTER
+     * setTileSource(...), so the overlay exists. Shared by the route
+     * dialog and the live map — one definition, one matrix. */
+    fun applyNavy(map: MapView) {
+        map.setBackgroundColor(Color.parseColor(NAVY_BG))
+        map.maxZoomLevel = MAX_ZOOM.toDouble()
+        val tiles = map.overlayManager.tilesOverlay
+        tiles.setColorFilter(
+            android.graphics.ColorMatrixColorFilter(
+                android.graphics.ColorMatrix(NAVY_MATRIX)
+            )
+        )
+        // The overlay paints its OWN loading background over the
+        // MapView's while tiles are in flight — make that navy too,
+        // or the map still flashes light grey on first load. That grey
+        // is what sat behind the "Map data not yet available" text in
+        // Casey's screenshot. The loading line (the placeholder text)
+        // gets a muted steel blue so it stays readable on navy.
+        tiles.setLoadingBackgroundColor(Color.parseColor(NAVY_BG))
+        tiles.setLoadingLineColor(Color.parseColor("#5a7aa8"))
+    }
+
     /** Fresh source per map — osmdroid tile sources are cheap to build. */
     fun source(): OnlineTileSourceBase = object : OnlineTileSourceBase(
-        "EsriDarkGray", 0, 19, 256, ".jpg", arrayOf(BASE)
+        "EsriDarkGray", 0, MAX_ZOOM, 256, ".jpg", arrayOf(BASE)
     ) {
         override fun getTileURLString(pMapTileIndex: Long): String {
             val z = MapTileIndex.getZoom(pMapTileIndex)
@@ -96,6 +160,9 @@ object RouteMapDialog {
 
         val map: MapView = binding.routeMap
         map.setTileSource(EsriDarkTiles.source())
+        // Navy + zoom cap (Build #78) — after setTileSource, so the
+        // tiles overlay exists for the tint.
+        EsriDarkTiles.applyNavy(map)
         map.setMultiTouchControls(true)
         map.setUseDataConnection(true)
         map.controller.setZoom(15.0)
@@ -162,6 +229,11 @@ object RouteMapDialog {
             )
         } else {
             map.zoomToBoundingBox(box, false, 40)
+            // zoomToBoundingBox is unbounded — a small route can push
+            // past 16, where Esri serves only blank tiles (Build #78).
+            if (map.zoomLevelDouble > EsriDarkTiles.MAX_ZOOM.toDouble()) {
+                map.controller.setZoom(EsriDarkTiles.MAX_ZOOM.toDouble())
+            }
         }
         map.invalidate()
     }

@@ -28,6 +28,8 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // Same LED background as the main screen (Build #78).
+        applyLedBackground(binding.root)
         settings = AppSettings(this)
 
         // ── Speed response preset ──

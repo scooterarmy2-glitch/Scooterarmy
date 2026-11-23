@@ -64,6 +64,10 @@ class LiveMap(
 
     init {
         map.setTileSource(EsriDarkTiles.source())
+        // Navy + zoom cap (Build #78) — after setTileSource, so the
+        // tiles overlay exists for the tint. Same single call the route
+        // dialog uses; same matrix, same cap.
+        EsriDarkTiles.applyNavy(map)
         map.setMultiTouchControls(true)
         map.setUseDataConnection(true)
         map.controller.setZoom(16.0)
@@ -75,6 +79,20 @@ class LiveMap(
 
     fun onResume() = map.onResume()
     fun onPause() = map.onPause()
+
+    /**
+     * Re-request tiles + redraw, called when the live-map page is swiped
+     * into view (Build #78). The map is created offscreen (page 1 of the
+     * pager) and its first draw happens only when it becomes visible; a
+     * forced redraw here makes sure tiles are actually requested then,
+     * instead of leaving the "Map data not yet available" placeholders
+     * on screen. Cheap — a no-op redraw when tiles are already there.
+     * (TilesOverlay has no invalidate() of its own — MapView.invalidate()
+     * drives the overlay draw that requests missing tiles.)
+     */
+    fun refresh() {
+        map.invalidate()
+    }
     fun onDestroy() = map.onDetach()
 
     /** Called on every GPS fix from MainActivity.handleFix. */

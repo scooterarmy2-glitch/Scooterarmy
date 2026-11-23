@@ -47,6 +47,8 @@ class LogsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLogsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // Same LED background as the main screen (Build #78).
+        applyLedBackground(binding.root)
         store = LogStore(this)
         RouteMapDialog.configure(this)
 
