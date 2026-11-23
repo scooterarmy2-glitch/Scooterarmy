@@ -1,94 +1,103 @@
 package com.scooterarmy.app
 
+import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorFilter
+import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.graphics.Shader
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
+import android.graphics.drawable.Drawable
 import android.view.View
 
 /**
- * Shared LED / high-tech-device background (Build #78): ember glow +
- * diamond-plate texture covering the whole screen, matching the old web
- * app's body background. One definition used by MainActivity, the
- * Settings screen and the Logs page, so every screen has the same lit
- * carbon feel instead of flat black.
+ * Shared photographic background (Build #79): a real photo of dark carbon
+ * fiber weave (`res/drawable-nodpi/carbon_bg.jpg`, 720x1280 portrait crop,
+ * JPEG, ~151 KB) drawn cover-scale (center-crop via [coverTransform]) so it fills the
+ * whole screen with no stretching and no seams, plus a subtle dark scrim
+ * top and bottom so text stays readable. One definition used by
+ * MainActivity, the Settings screen and the Logs page, so every screen
+ * has the same photographic background instead of flat black.
  *
- * Build #78 strengthened it — the Build #77 texture was nearly
- * invisible on Casey's phone (background sampled ~(14,13,12) vs a
- * (8,8,8) base: the diamonds added only ~+6 grey levels, crushed to
- * black in the photo). Diamond stroke 10% → ~19% white, 0.8dp → 1.0dp;
- * wide ember glow 16% → 25%, core 9% → 19%, bottom fade roughly
- * doubled. The pattern is the same diamond lattice as before (tiled,
- * it reads as the diagonal grid in the render) — the problem was
- * visibility, not the pattern. Visual only.
+ * This REPLACES Build #78's `applyLedBackground`: its Canvas-drawn
+ * diamond-plate tile + ember glows were the thing that made the app read
+ * as a rendering rather than a photo. The diamond lattice, the wide ember
+ * glow, the hot core and the bottom ember fade are all gone — the only
+ * drawn element left is the legibility scrim (a photographic darkening,
+ * not a pattern). The dial face needs no separate work: GaugeView draws
+ * no face fill, so the photo shows straight through the dial.
+ *
+ * The bitmap is decoded once per process and cached; the shader matrix
+ * is rebuilt only when the bounds change, so redraws are cheap.
+ * Visual only — no behavior, layout or default changes.
  */
-fun applyLedBackground(root: View) {
-    val dm = root.context.resources.displayMetrics
-    val density = dm.density
-    val screenH = dm.heightPixels.toFloat()
-    // Diamond-plate texture tile (28x16dp, like the web app's 28px x 16px).
-    val w = (28f * density).toInt().coerceAtLeast(2)
-    val h = (16f * density).toInt().coerceAtLeast(2)
-    val tile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(tile)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 1.0f * density
-        color = Color.parseColor("#30ffffff")
+private object PhotoCache {
+    @Volatile
+    private var carbon: Bitmap? = null
+
+    fun carbon(resources: Resources): Bitmap {
+        return carbon ?: synchronized(this) {
+            carbon ?: BitmapFactory.decodeResource(resources, R.drawable.carbon_bg)
+                .also { carbon = it }
+        }
     }
-    val diamond = Path().apply {
-        moveTo(w / 2f, 0f)
-        lineTo(w.toFloat(), h / 2f)
-        lineTo(w / 2f, h.toFloat())
-        lineTo(0f, h / 2f)
-        close()
-    }
-    canvas.drawPath(diamond, paint)
-    val tiled = BitmapDrawable(root.context.resources, tile).apply {
-        tileModeX = Shader.TileMode.REPEAT
-        tileModeY = Shader.TileMode.REPEAT
-    }
-    // Wide ember glow, bottom center — reaches ~85% up the screen.
-    val wideGlow = GradientDrawable().apply {
-        gradientType = GradientDrawable.RADIAL_GRADIENT
-        setGradientCenter(0.5f, 1.0f)
-        gradientRadius = screenH * 0.85f
-        colors = intArrayOf(Color.parseColor("#40c83c00"), Color.TRANSPARENT)
-    }
-    // Hotter orange core, bottom center.
-    val coreGlow = GradientDrawable().apply {
-        gradientType = GradientDrawable.RADIAL_GRADIENT
-        setGradientCenter(0.5f, 1.0f)
-        gradientRadius = screenH * 0.52f
-        colors = intArrayOf(Color.parseColor("#30ff6400"), Color.TRANSPARENT)
-    }
-    // Dark vignette at the top (as in the web app).
-    val vignette = GradientDrawable().apply {
-        gradientType = GradientDrawable.RADIAL_GRADIENT
-        setGradientCenter(0.5f, 0.0f)
-        gradientRadius = screenH * 0.7f
-        colors = intArrayOf(Color.parseColor("#b3000000"), Color.TRANSPARENT)
-    }
-    // Bottom ember fade (web body::after, 160dp tall).
-    val fadeH = (160f * density).toInt()
-    val bottomFade = GradientDrawable(
-        GradientDrawable.Orientation.BOTTOM_TOP,
-        intArrayOf(
-            Color.parseColor("#30b42800"),
-            Color.parseColor("#1aff5000"),
-            Color.TRANSPARENT
+}
+
+/** Draws one bitmap cover-scale inside its bounds, then the legibility scrim. */
+private class PhotoBackgroundDrawable(private val bitmap: Bitmap) : Drawable() {
+    private val shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    private val matrix = Matrix()
+    private val photoPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader }
+    private val scrimPaint = Paint()
+
+    override fun onBoundsChange(bounds: Rect) {
+        super.onBoundsChange(bounds)
+        val (scale, dx, dy) = coverTransform(
+            bitmap.width, bitmap.height, bounds.width(), bounds.height()
         )
-    )
-    val base = ColorDrawable(Color.parseColor("#080808"))
-    val layers = LayerDrawable(arrayOf(base, wideGlow, coreGlow, vignette, bottomFade, tiled))
-    // Confine the bottom fade to the bottom 160dp of the screen.
-    val topInset = (screenH - fadeH).toInt().coerceAtLeast(0)
-    layers.setLayerInset(4, 0, topInset, 0, 0)
-    root.background = layers
+        matrix.setScale(scale.toFloat(), scale.toFloat())
+        matrix.postTranslate(bounds.left + dx.toFloat(), bounds.top + dy.toFloat())
+        shader.setLocalMatrix(matrix)
+        // Legibility scrim: 25% black at the very top (header), clear
+        // through the middle (dial), 40% black at the bottom (boxes).
+        scrimPaint.shader = LinearGradient(
+            0f, bounds.top.toFloat(), 0f, bounds.bottom.toFloat(),
+            intArrayOf(
+                Color.parseColor("#40000000"),
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
+                Color.parseColor("#66000000")
+            ),
+            floatArrayOf(0f, 0.22f, 0.72f, 1f),
+            Shader.TileMode.CLAMP
+        )
+    }
+
+    override fun draw(canvas: Canvas) {
+        canvas.drawRect(bounds, photoPaint)
+        canvas.drawRect(bounds, scrimPaint)
+    }
+
+    override fun setAlpha(alpha: Int) {
+        photoPaint.alpha = alpha
+        scrimPaint.alpha = alpha
+    }
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {
+        photoPaint.colorFilter = colorFilter
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
+/** Photographic carbon-fiber background for a screen root view. */
+fun applyPhotoBackground(root: View) {
+    root.background = PhotoBackgroundDrawable(PhotoCache.carbon(root.resources))
 }

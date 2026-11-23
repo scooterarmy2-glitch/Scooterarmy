@@ -137,6 +137,22 @@ fun fitGaugeSize(
     return maxOf(minGaugePx, gaugePx - overflow)
 }
 
+/**
+ * Cover-scale transform, Build #79: how a photographic texture of
+ * `srcW` x `srcH` is placed into a `dstW` x `dstH` view so it covers the
+ * whole view with no stretching and no seams (center-crop). Returns
+ * (scale, dx, dy): draw the bitmap scaled by `scale`, offset by (dx, dy)
+ * from the view's top-left. Degenerate inputs return the identity.
+ * Pure, harness-tested.
+ */
+fun coverTransform(srcW: Int, srcH: Int, dstW: Int, dstH: Int): Triple<Double, Double, Double> {
+    if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) return Triple(1.0, 0.0, 0.0)
+    val scale = maxOf(dstW.toDouble() / srcW, dstH.toDouble() / srcH)
+    val dx = (dstW - srcW * scale) / 2.0
+    val dy = (dstH - srcH * scale) / 2.0
+    return Triple(scale, dx, dy)
+}
+
 fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = Math.PI / 180.0
     val dLat = (lat2 - lat1) * r

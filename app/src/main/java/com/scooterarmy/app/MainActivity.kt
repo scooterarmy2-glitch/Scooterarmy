@@ -236,9 +236,9 @@ class MainActivity : Activity() {
 
         applyChromeGradient(binding.brandText)
         applyEmberGradient(binding.brandHash)
-        // Shared LED background (Backgrounds.kt, Build #78) — diamond
-        // texture + ember glow behind everything.
-        applyLedBackground(binding.rootLayout)
+        // Shared photographic background (Backgrounds.kt, Build #79) —
+        // real carbon-fiber photo behind everything.
+        applyPhotoBackground(binding.rootLayout)
         // Ember glows (density-scaled so they render the same on every screen).
         val density = resources.displayMetrics.density
         binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#d99a4e"))
