@@ -33,11 +33,15 @@ import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -78,6 +82,8 @@ class MainActivity : Activity() {
     private lateinit var store: LogStore
     private lateinit var settings: AppSettings
     private lateinit var imuBridge: ImuBridge
+    private lateinit var mainPager: ViewPager2
+    private lateinit var liveMap: LiveMap
 
     // ── GPS engine ──────────────────────────────────────────────
     private var locMgr: LocationManager? = null
@@ -126,6 +132,10 @@ class MainActivity : Activity() {
     private var satUsed = -1
     private var dualBand = false
     private var fullscreen = false
+    // Last GPS bearing, for the dial heading below the 50 (look-pro).
+    // Only set from a usable fix; cleared when the lock is lost, so a
+    // stale bearing never shows as a heading.
+    private var lastBearingDeg: Float? = null
 
     private data class PrevFix(val t: Long, val mps: Double, val lat: Double, val lon: Double)
 
@@ -237,9 +247,9 @@ class MainActivity : Activity() {
         applyTexturedBackground()
         // Ember glows (density-scaled so they render the same on every screen).
         val density = resources.displayMetrics.density
-        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff4400"))
-        binding.spdNum.setShadowLayer(20f * density, 0f, 0f, Color.parseColor("#ff4400"))
-        binding.timerBig.setShadowLayer(15f * density, 0f, 0f, Color.parseColor("#59ff6400"))
+        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#d99a4e"))
+        binding.spdNum.setShadowLayer(12f * density, 0f, 0f, Color.parseColor("#d99a4e"))
+        binding.timerBig.setShadowLayer(12f * density, 0f, 0f, Color.parseColor("#40d99a4e"))
         binding.spdUnit.text = "MPH"
         binding.tgtSuf.text = "MPH"
         binding.topSpdUnit.text = "MPH"
@@ -288,6 +298,7 @@ class MainActivity : Activity() {
         updateSpeedDisplay()
         applySettings()
         applyChromeVisibility()
+        setupMainPager()
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -302,6 +313,52 @@ class MainActivity : Activity() {
         setupFused()
     }
 
+    // ── Main pager: speedometer (page 0) + live map (page 1) ─────
+    // ViewPager2 handles the horizontal swipe; the speedo page keeps its
+    // own vertical scroll, so the two gestures never fight. The two pages
+    // are the pre-inflated views — with only two pages and
+    // offscreenPageLimit = 1 both stay attached, so the map is live the
+    // moment you swipe to it. (Trade-off, flagged: a horizontal drag on
+    // the map page is the swipe-back gesture, so map panning there is
+    // vertical-only while riding; follow-mode auto-centers anyway.)
+    private fun setupMainPager() {
+        val liveRoot = layoutInflater.inflate(R.layout.page_live_map, binding.rootLayout, false)
+        liveMap = LiveMap(liveRoot, onBack = { mainPager.setCurrentItem(0, true) }) {
+            settings.idleMin
+        }
+        val pages = listOf<View>(binding.scrollView, liveRoot)
+        mainPager = ViewPager2(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            offscreenPageLimit = 1
+            adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                override fun getItemCount() = pages.size
+                override fun getItemViewType(position: Int) = position
+                override fun onCreateViewHolder(
+                    parent: ViewGroup, viewType: Int
+                ): RecyclerView.ViewHolder {
+                    val v = pages[viewType]
+                    v.layoutParams = RecyclerView.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    return object : RecyclerView.ViewHolder(v) {}
+                }
+
+                override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {}
+            }
+        }
+        binding.rootLayout.removeView(binding.scrollView)
+        binding.rootLayout.addView(mainPager, 0)
+    }
+
+    /** Seconds since the current ride started (0 when not recording). */
+    private fun sessionSeconds(): Int {
+        val start = sessionStart ?: return 0
+        return Math.round((Date().time - start.time) / 1000.0).toInt()
+    }
+
     override fun onResume() {
         super.onResume()
         setImmersive()
@@ -310,6 +367,7 @@ class MainActivity : Activity() {
         applySettings()
         startLocation()
         imuBridge.start()
+        if (::liveMap.isInitialized) liveMap.onResume()
         uiHandler.post(fixAgeTick)
         uiHandler.post(displayTick)
         // Resume anything the pause interrupted: a run's timer, the armed
@@ -340,6 +398,7 @@ class MainActivity : Activity() {
         if (pauseEndsRide()) stopSession()
         stopLocation()
         imuBridge.stop()
+        if (::liveMap.isInitialized) liveMap.onPause()
         uiHandler.removeCallbacks(timerTick)
         uiHandler.removeCallbacks(fixAgeTick)
         uiHandler.removeCallbacks(liveTick)
@@ -359,6 +418,7 @@ class MainActivity : Activity() {
         stopPulseAnimator = null
         try { toneGen?.release() } catch (_: Exception) {}
         toneGen = null
+        if (::liveMap.isInitialized) liveMap.onDestroy()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -423,9 +483,10 @@ class MainActivity : Activity() {
         binding.gaugeRow.gravity =
             if (landscapePanel) Gravity.CENTER_VERTICAL else Gravity.CENTER_HORIZONTAL
 
-        // Gauge size: full-screen in speedo-only mode, 320dp in portrait.
-        // In landscape-with-panel the gauge is a square sized to the
-        // (short) screen height, leaving the rest of the width for the panel.
+        // Gauge size (look-pro): portrait fills side to side — the gauge
+        // is 4dp wider than the screen on each side, so it bleeds slightly
+        // off the left/right edges (clipChildren=false on the column lets
+        // it draw). Full-screen and landscape sizing unchanged.
         val dm = resources.displayMetrics
         val wPx = dm.widthPixels
         val hPx = dm.heightPixels
@@ -442,7 +503,7 @@ class MainActivity : Activity() {
                 s to s
             }
             else -> {
-                val s = (320 * dm.density).toInt()
+                val s = wPx + (8 * dm.density).toInt()
                 s to s
             }
         }
@@ -463,15 +524,18 @@ class MainActivity : Activity() {
         binding.contentCol.gravity =
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
 
-        // Speed number + overlay position scale with the gauge.
+        // Speed number + overlay position scale with the gauge: the digit
+        // keeps its exact relative spot on the dial at any gauge size
+        // (72sp and a 50dp bottom margin at the old 320dp gauge).
+        val gaugeScale = gw / (320f * dm.density)
         binding.spdNum.setTextSize(
-            TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f
+            TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f * gaugeScale
         )
         binding.gaugeWrap.post {
             val overlayLp = binding.spdOverlay.layoutParams as android.widget.FrameLayout.LayoutParams
             overlayLp.bottomMargin =
                 if (speedoOnly) (binding.gaugeWrap.height * 0.14).toInt()
-                else (50 * dm.density).toInt()
+                else (50f * gaugeScale * dm.density).toInt()
             binding.spdOverlay.layoutParams = overlayLp
         }
         if (fullscreen) updateFsInfo()
@@ -574,9 +638,9 @@ class MainActivity : Activity() {
                 tv.paint.shader = LinearGradient(
                     0f, 0f, 0f, tv.height.toFloat(),
                     intArrayOf(
-                        Color.parseColor("#ff6644"),
-                        Color.parseColor("#cc1a00"),
-                        Color.parseColor("#ff3300")
+                        Color.parseColor("#e8b06a"),
+                        Color.parseColor("#c98a3d"),
+                        Color.parseColor("#a86f28")
                     ),
                     floatArrayOf(0f, 0.5f, 1f),
                     Shader.TileMode.CLAMP
@@ -626,14 +690,14 @@ class MainActivity : Activity() {
             gradientType = GradientDrawable.RADIAL_GRADIENT
             setGradientCenter(0.5f, 1.0f)
             gradientRadius = screenH * 0.85f
-            colors = intArrayOf(Color.parseColor("#40c83c00"), Color.TRANSPARENT)
+            colors = intArrayOf(Color.parseColor("#28c83c00"), Color.TRANSPARENT)
         }
         // Hotter orange core, bottom center.
         val coreGlow = GradientDrawable().apply {
             gradientType = GradientDrawable.RADIAL_GRADIENT
             setGradientCenter(0.5f, 1.0f)
             gradientRadius = screenH * 0.52f
-            colors = intArrayOf(Color.parseColor("#26ff6400"), Color.TRANSPARENT)
+            colors = intArrayOf(Color.parseColor("#18ff6400"), Color.TRANSPARENT)
         }
         // Dark vignette at the top (as in the web app).
         val vignette = GradientDrawable().apply {
@@ -647,8 +711,8 @@ class MainActivity : Activity() {
         val bottomFade = GradientDrawable(
             GradientDrawable.Orientation.BOTTOM_TOP,
             intArrayOf(
-                Color.parseColor("#2eb42800"),
-                Color.parseColor("#14ff5000"),
+                Color.parseColor("#1eb42800"),
+                Color.parseColor("#0dff5000"),
                 Color.TRANSPARENT
             )
         )
@@ -846,7 +910,7 @@ class MainActivity : Activity() {
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
         binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#ffb347"))
+        binding.giAcc.setTextColor(Color.parseColor("#d99a4e"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
@@ -858,7 +922,7 @@ class MainActivity : Activity() {
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
         binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#ffb347"))
+        binding.giAcc.setTextColor(Color.parseColor("#d99a4e"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
@@ -914,11 +978,13 @@ class MainActivity : Activity() {
         if (gpsReady && usable) {
             rawMps = mps
             currentSpd = fromMps(mps)
+            lastBearingDeg = f.bearingDeg
             f.bearingDeg?.let { imuBridge.setBearingDeg(it) }
             imuBridge.onGpsFix() // truth wins: snap display, reset the bridge
         } else if (!gpsReady) {
             currentSpd = 0.0
             rawMps = 0.0
+            lastBearingDeg = null
         }
 
         // ── Run logic on fix time, with interpolation between fixes ──
@@ -961,6 +1027,14 @@ class MainActivity : Activity() {
         }
         sessionLastPos = f.lat to f.lon
 
+        // Live map page: current speed/distance/time + the route as it grows.
+        if (::liveMap.isInitialized) {
+            liveMap.onFix(
+                f, sessionActive, currentSpd, sessionDist / 1609.34,
+                sessionSeconds(), sessionRoute
+            )
+        }
+
         setSdot("active")
     }
 
@@ -991,19 +1065,22 @@ class MainActivity : Activity() {
         binding.spdNum.text = disp.roundToInt().toString()
         binding.spdNum.setTextColor(
             when {
-                ratio > 0.85 -> Color.parseColor("#ff5522")
-                ratio > 0.6 -> Color.parseColor("#ffb347")
+                ratio > 0.85 -> Color.parseColor("#c65a2e")
+                ratio > 0.6 -> Color.parseColor("#d99a4e")
                 else -> Color.WHITE
             }
         )
-        // Ember glow follows the speed color (web .spd-num text-shadow).
+        // Ember glow follows the speed color — muted amber now (look-pro),
+        // smaller radius so it reads as a glow, not a halo.
         val glowColor = when {
-            ratio > 0.85 -> Color.parseColor("#ff5522")
-            ratio > 0.6 -> Color.parseColor("#ffb347")
-            else -> Color.parseColor("#ff4400")
+            ratio > 0.85 -> Color.parseColor("#c65a2e")
+            ratio > 0.6 -> Color.parseColor("#d99a4e")
+            else -> Color.parseColor("#d99a4e")
         }
-        binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, glowColor)
+        binding.spdNum.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, glowColor)
         binding.gauge.speed = disp
+        // Dial heading below the 50 — live bearing while moving, "—" stopped.
+        binding.gauge.heading = headingLabel(lastBearingDeg, currentSpd)
 
         if (gpsReady && currentSpd > allTimeTopSpd) {
             allTimeTopSpd = currentSpd
@@ -1021,7 +1098,7 @@ class MainActivity : Activity() {
         val gpsEl = binding.fsGpsVal
         when {
             lastSig >= 3 -> { gpsEl.text = "LOCKED"; gpsEl.setTextColor(Color.parseColor("#39ff14")) }
-            lastSig >= 1 -> { gpsEl.text = "WEAK"; gpsEl.setTextColor(Color.parseColor("#ffb347")) }
+            lastSig >= 1 -> { gpsEl.text = "WEAK"; gpsEl.setTextColor(Color.parseColor("#d99a4e")) }
             else -> { gpsEl.text = "POOR"; gpsEl.setTextColor(Color.parseColor("#ff5533")) }
         }
         val accEl = binding.fsAccVal
@@ -1029,7 +1106,7 @@ class MainActivity : Activity() {
         accEl.setTextColor(
             when {
                 lastAcc < 5 -> Color.parseColor("#39ff14")
-                lastAcc < 20 -> Color.parseColor("#ffb347")
+                lastAcc < 20 -> Color.parseColor("#d99a4e")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1068,7 +1145,7 @@ class MainActivity : Activity() {
             }
             sig >= 1 -> {
                 statusEl.text = "WEAK"
-                statusEl.setTextColor(Color.parseColor("#ffb347"))
+                statusEl.setTextColor(Color.parseColor("#d99a4e"))
             }
             else -> {
                 statusEl.text = "POOR"
@@ -1080,7 +1157,7 @@ class MainActivity : Activity() {
         accEl.setTextColor(
             when {
                 acc < 5 -> Color.parseColor("#39ff14")
-                acc < 20 -> Color.parseColor("#ffb347")
+                acc < 20 -> Color.parseColor("#d99a4e")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1111,7 +1188,7 @@ class MainActivity : Activity() {
         el.setTextColor(
             when {
                 age < 1.5 -> Color.parseColor("#39ff14")
-                age < 3 -> Color.parseColor("#ffb347")
+                age < 3 -> Color.parseColor("#d99a4e")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1142,8 +1219,8 @@ class MainActivity : Activity() {
         }
         state = RunState.ARMED
         binding.timerBig.text = "0.000"
-        binding.timerBig.setTextColor(Color.parseColor("#ffb347"))
-        binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ffb347"))
+        binding.timerBig.setTextColor(Color.parseColor("#d99a4e"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#d99a4e"))
         startArmFlash()
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
@@ -1172,8 +1249,8 @@ class MainActivity : Activity() {
         state = RunState.RUNNING
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
-        binding.timerBig.setTextColor(Color.parseColor("#ffb347"))
-        binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ffb347"))
+        binding.timerBig.setTextColor(Color.parseColor("#d99a4e"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#d99a4e"))
         uiHandler.post(timerTick)
         updateLandPanel()
     }
@@ -1183,7 +1260,7 @@ class MainActivity : Activity() {
         uiHandler.removeCallbacks(timerTick)
         binding.timerBig.text = fmtTimer(elapsedMs)
         binding.timerBig.setTextColor(Color.parseColor("#39ff14"))
-        binding.timerBig.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#39ff14"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#39ff14"))
         binding.progFill.setBackgroundResource(R.drawable.prog_fill_done)
         setProg(1.0)
         binding.armBtn.text = "START TIMED RUN"
@@ -1203,8 +1280,8 @@ class MainActivity : Activity() {
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
         binding.timerBig.text = "0.000"
-        binding.timerBig.setTextColor(Color.WHITE)
-        binding.timerBig.setShadowLayer(15f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#59ff6400"))
+        binding.timerBig.setTextColor(Color.parseColor("#d99a4e"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#40d99a4e"))
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
         binding.armBtn.text = "START TIMED RUN"
@@ -1267,7 +1344,7 @@ class MainActivity : Activity() {
         sessionRoute = mutableListOf()
 
         binding.sessBtn.text = "STOP RIDE"
-        binding.sessBtn.setBackgroundResource(R.drawable.btn_red)
+        binding.sessBtn.setBackgroundResource(R.drawable.btn_red_chamfer)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#e53935")
             binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#e53935")
@@ -1283,6 +1360,7 @@ class MainActivity : Activity() {
         applyChromeVisibility()
         uiHandler.post(liveTick)
         resetIdleTimer()
+        if (::liveMap.isInitialized) liveMap.onSessionStart()
     }
 
     private fun stopSession() {
@@ -1296,13 +1374,14 @@ class MainActivity : Activity() {
         sessionActive = false
         uiHandler.removeCallbacks(liveTick)
         uiHandler.removeCallbacks(idleStop)
+        if (::liveMap.isInitialized) liveMap.onSessionStop()
         stopPulseAnimator?.cancel()
         binding.sessBtn.alpha = 1f
         binding.sessBtn.text = "START RIDE"
-        binding.sessBtn.setBackgroundResource(R.drawable.btn_green)
+        binding.sessBtn.setBackgroundResource(R.drawable.btn_amber_chamfer)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#00c853")
-            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#00c853")
+            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#8a6a3a")
+            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#8a6a3a")
         }
         binding.sessLive.visibility = View.GONE
         applyChromeVisibility()
@@ -1342,6 +1421,7 @@ class MainActivity : Activity() {
         binding.liveTopSpd.text = "${sessionTopSpd.roundToInt()} mph"
         binding.liveDist.text = dist
         binding.liveDur.text = fmtDur(durSec)
+        if (::liveMap.isInitialized) liveMap.tick(durSec)
         updateLandPanel()
     }
 

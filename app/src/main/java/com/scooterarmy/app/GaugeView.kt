@@ -3,7 +3,9 @@ package com.scooterarmy.app
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
@@ -37,14 +39,26 @@ class GaugeView @JvmOverloads constructor(
     var maxSpd: Double = 100.0
         set(value) { field = value.coerceIn(100.0, 180.0); invalidate() }
 
+    /** Live heading label below the 50, e.g. "NW 315°" (or "—" when stopped).
+     *  Set by MainActivity from the GPS fix; null hides it. */
+    var heading: String? = null
+        set(value) { if (field != value) { field = value; invalidate() } }
+
     private val orbitron700: Typeface by lazy { resources.getFont(R.font.orbitron_700) }
     private val orbitron900: Typeface by lazy { resources.getFont(R.font.orbitron_900) }
 
-    private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#757575")
+    // look-pro (Nov 23): muted amber, thin steel rim + fine accent ring.
+    // The old hot-orange (#ff3c00/#ff6a00) arc, needle and hub are gone.
+    private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+    }
+    private val accentRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = Color.parseColor("#b5762f")
     }
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = Color.parseColor("#d99a4e")
     }
     private val targetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#39ff14")
@@ -60,7 +74,7 @@ class GaugeView @JvmOverloads constructor(
         typeface = orbitron900; isFakeBoldText = true
     }
     private val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#ff3c00")
+        style = Paint.Style.FILL; color = Color.parseColor("#d99a4e")
     }
     private val hubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL; color = Color.parseColor("#141414")
@@ -69,7 +83,11 @@ class GaugeView @JvmOverloads constructor(
         style = Paint.Style.STROKE; color = Color.parseColor("#3a3a3a")
     }
     private val hubDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#ff3c00")
+        style = Paint.Style.FILL; color = Color.parseColor("#d99a4e")
+    }
+    private val headingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#e8e8e8"); textAlign = Paint.Align.CENTER
+        typeface = orbitron700
     }
 
     private val a0 = Math.PI * 0.75
@@ -86,30 +104,41 @@ class GaugeView @JvmOverloads constructor(
         val r = min(w, h) / 2f - 18f * scale
         val ratio = min(speed / maxSpd, 1.0)
 
-        trackPaint.strokeWidth = 9f * scale
+        // Steel rim: brushed-metal diagonal gradient, thin (look-pro).
+        rimPaint.shader = LinearGradient(
+            cx - r, cy - r, cx + r, cy + r,
+            intArrayOf(
+                Color.parseColor("#d8d8d8"), Color.parseColor("#7a7a7a"),
+                Color.parseColor("#e8e8e8"), Color.parseColor("#5a5a5a")
+            ),
+            floatArrayOf(0f, 0.35f, 0.65f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        rimPaint.strokeWidth = 7f * scale
         canvas.drawArc(cx - r, cy - r, cx + r, cy + r,
-            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, trackPaint)
+            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimPaint)
+
+        // Fine muted-amber accent ring — the scale track the speed arc rides on.
+        val arcR = r - 12f * scale
+        accentRingPaint.strokeWidth = 1.5f * scale
+        accentRingPaint.alpha = 200
+        canvas.drawArc(cx - arcR, cy - arcR, cx + arcR, cy + arcR,
+            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, accentRingPaint)
 
         // Target marker (green tick) while a run is armed/running.
         if (showTarget && target > 0 && target <= maxSpd) {
             val ta = Math.toDegrees(angleFor(target)).toFloat()
-            targetPaint.strokeWidth = 12f * scale
-            targetPaint.setShadowLayer(12f * scale, 0f, 0f, Color.parseColor("#39ff14"))
-            canvas.drawArc(cx - r, cy - r, cx + r, cy + r, ta - 1.5f, 3f, false, targetPaint)
+            targetPaint.strokeWidth = 5f * scale
+            targetPaint.setShadowLayer(8f * scale, 0f, 0f, Color.parseColor("#39ff14"))
+            canvas.drawArc(cx - arcR, cy - arcR, cx + arcR, cy + arcR, ta - 1.5f, 3f, false, targetPaint)
             targetPaint.clearShadowLayer()
         }
 
-        // Speed arc.
+        // Speed arc — thin muted amber on the accent ring, one soft glow pass.
         if (ratio > 0) {
-            val col = when {
-                ratio > 0.85 -> "#ff3c00"
-                ratio > 0.6 -> "#ffb347"
-                else -> "#ff6a00"
-            }
-            arcPaint.color = Color.parseColor(col)
-            arcPaint.strokeWidth = 18f * scale
-            arcPaint.setShadowLayer(18f * scale, 0f, 0f, Color.parseColor(col))
-            canvas.drawArc(cx - r, cy - r, cx + r, cy + r,
+            arcPaint.strokeWidth = 4f * scale
+            arcPaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
+            canvas.drawArc(cx - arcR, cy - arcR, cx + arcR, cy + arcR,
                 Math.toDegrees(a0).toFloat(), (Math.toDegrees(sweep) * ratio).toFloat(), false, arcPaint)
             arcPaint.clearShadowLayer()
         }
@@ -155,7 +184,7 @@ class GaugeView @JvmOverloads constructor(
             lineTo((cx + nx * baseR - px * halfW).toFloat(), (cy + ny * baseR - py * halfW).toFloat())
             close()
         }
-        needlePaint.setShadowLayer(10f * scale, 0f, 0f, Color.parseColor("#ff3c00"))
+        needlePaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
         canvas.drawPath(path, needlePaint)
         needlePaint.clearShadowLayer()
 
@@ -163,8 +192,18 @@ class GaugeView @JvmOverloads constructor(
         hubStrokePaint.strokeWidth = 2f * scale
         canvas.drawCircle(cx, cy, 12f * scale, hubPaint)
         canvas.drawCircle(cx, cy, 12f * scale, hubStrokePaint)
-        hubDotPaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#ff6a00"))
+        hubDotPaint.setShadowLayer(6f * scale, 0f, 0f, Color.parseColor("#d99a4e"))
         canvas.drawCircle(cx, cy, 5f * scale, hubDotPaint)
         hubDotPaint.clearShadowLayer()
+
+        // Live heading below the 50 (look-pro) — drawn last so it paints
+        // over the needle when the needle points straight up at 50 mph.
+        // The 50 number sits at radius r-36*scale straight up; the heading
+        // sits just below its glyph.
+        heading?.let {
+            headingPaint.textSize = 13f * scale
+            val numR = r - 36f * scale
+            canvas.drawText(it, cx, cy - numR + 22f * scale, headingPaint)
+        }
     }
 }

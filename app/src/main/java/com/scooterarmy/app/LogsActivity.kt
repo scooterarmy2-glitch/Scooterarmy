@@ -122,7 +122,7 @@ class LogsActivity : Activity() {
             row.runBestBadge.visibility = if (run.isBest) View.VISIBLE else View.GONE
             row.root.setBackgroundResource(if (run.isBest) R.drawable.log_item_best_bg else R.drawable.log_item_bg)
             row.runTime.setTextColor(
-                if (run.isBest) Color.parseColor("#ffb347") else Color.parseColor("#f0f0f0")
+                if (run.isBest) Color.parseColor("#d99a4e") else Color.parseColor("#f0f0f0")
             )
             row.root.setOnClickListener { openRunDetail(run) }
             row.runDel.setOnClickListener {
@@ -145,7 +145,13 @@ class LogsActivity : Activity() {
         LogDetailDialog.show(
             this, "RIDE LOG", ride.topSpd, "TOP SPEED", rows,
             onViewRoute = if (ride.route.size > 1) {
-                { RouteMapDialog.show(this, ride) }
+                {
+                    RouteMapDialog.show(
+                        this, ride,
+                        onExportGpx = { exportSingleRide(ride, "gpx") },
+                        onExportCsv = { exportSingleRide(ride, "csv") }
+                    )
+                }
             } else null,
             onExportCsv = { exportSingleRide(ride, "csv") },
             onExportGpx = { exportSingleRide(ride, "gpx") }

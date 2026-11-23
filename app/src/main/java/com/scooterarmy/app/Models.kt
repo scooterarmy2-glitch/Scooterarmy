@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.roundToInt
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {
@@ -83,6 +84,29 @@ data class FixData(
     val t: Long,               // fix time on the elapsed-realtime clock (ms)
     val bearingDeg: Float?     // direction of travel, when the chip reports one
 )
+
+/** 16-point compass: 0° = N, 90° = E, 180° = S, 270° = W. Pure, harness-tested. */
+fun compassPoint(deg: Float?): String {
+    if (deg == null || deg.isNaN()) return "—"
+    val points = arrayOf(
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+    )
+    val norm = ((deg % 360f) + 360f) % 360f
+    return points[((norm + 11.25f) / 22.5f).toInt() % 16]
+}
+
+/**
+ * Dial heading label, look-pro: "NW 315°" while moving with a real bearing,
+ * "—" when stopped or when the chip reports no bearing — never a faked
+ * heading. The speed gate matters: a stopped chip can keep reporting its
+ * last bearing, so bearing alone is not proof of travel.
+ */
+fun headingLabel(bearingDeg: Float?, speedMph: Double): String {
+    if (bearingDeg == null || speedMph < 1.0) return "—"
+    val deg = ((bearingDeg.roundToInt() % 360) + 360) % 360
+    return "${compassPoint(bearingDeg)} $deg°"
+}
 
 fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = Math.PI / 180.0
