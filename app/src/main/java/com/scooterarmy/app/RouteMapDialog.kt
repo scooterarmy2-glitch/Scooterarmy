@@ -11,7 +11,8 @@ import android.view.LayoutInflater
 import android.view.View
 import com.scooterarmy.app.databinding.DialogRouteBinding
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -20,12 +21,25 @@ import org.osmdroid.views.overlay.Polyline
 import java.io.File
 
 /**
- * VIEW ROUTE: an OpenStreetMap map (no API key) with the recorded ride as an
- * orange line, green start dot, red end dot. Tiles need internet to view;
- * recording itself is fully offline. Tile cache lives in the app's private
- * files dir so no storage permission is needed.
+ * VIEW ROUTE: a dark OpenStreetMap map (no API key) with the recorded ride
+ * as a bright blue line, green start dot, red end dot — the reel frame
+ * (frame-map-dark.jpg). Tiles need internet to view; recording itself is
+ * fully offline. Tile cache lives in the app's private files dir so no
+ * storage permission is needed.
  */
 object RouteMapDialog {
+
+    /** CARTO dark_matter tiles: same OSM data, dark style. Free with
+     *  attribution (the copyright string shows in osmdroid's overlay). */
+    fun darkTiles(): OnlineTileSourceBase = XYTileSource(
+        "CartoDark", 0, 19, 256, ".png",
+        arrayOf(
+            "https://a.basemaps.cartocdn.com/dark_all/",
+            "https://b.basemaps.cartocdn.com/dark_all/",
+            "https://c.basemaps.cartocdn.com/dark_all/"
+        ),
+        "© OpenStreetMap contributors © CARTO"
+    )
 
     fun configure(context: Context) {
         val config = Configuration.getInstance()
@@ -45,7 +59,7 @@ object RouteMapDialog {
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         val map: MapView = binding.routeMap
-        map.setTileSource(TileSourceFactory.MAPNIK)
+        map.setTileSource(darkTiles())
         map.setMultiTouchControls(true)
         map.setUseDataConnection(true)
         map.controller.setZoom(15.0)
@@ -53,7 +67,7 @@ object RouteMapDialog {
         val points = ride.route.map { GeoPoint(it.lat, it.lon) }
         val line = Polyline().apply {
             setPoints(points)
-            color = Color.parseColor("#ff6600")
+            color = Color.parseColor("#2f8bff")
             width = 4f * context.resources.displayMetrics.density
         }
         map.overlays.add(line)

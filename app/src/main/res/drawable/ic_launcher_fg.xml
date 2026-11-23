@@ -28,4 +28,18 @@
         android:strokeColor="#FF4400"
         android:strokeWidth="1.5"
         android:pathData="M72,18 L70,26 M76,18 L74,26 M69,21 L77,21 M68,24 L76,24"/>
+
+    <!-- REEL badge (variant only): orange pill under the hub, in the dial's
+         open gap, with REEL in white. Sits inside the adaptive-icon safe
+         zone (text centred, y 72.5-81.5) so it survives circle masks. -->
+    <path
+        android:fillColor="#FF6A00"
+        android:pathData="M40.5,70 H67.5 Q72,70 72,74.5 V79.5 Q72,84 67.5,84 H40.5 Q36,84 36,79.5 V74.5 Q36,70 40.5,70 Z"/>
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="butt"
+        android:pathData="M38,81.5 L38,72.5 L44.5,72.5 L44.5,77 L38,77 M41,77 L44.5,81.5 M53,72.5 H46.5 V81.5 H53 M46.5,77 H52 M61.5,72.5 H55 V81.5 H61.5 M55,77 H60.5 M63.5,72.5 V81.5 H70"/>
 </vector>

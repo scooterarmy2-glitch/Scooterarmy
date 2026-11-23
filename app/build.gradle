@@ -8,7 +8,9 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.scooterarmy.app"
+        // REEL-LOOK VARIANT (branch look-reel): same app, different
+        // applicationId so it installs side by side with the main build.
+        applicationId "com.scooterarmy.app.reel"
         minSdk 26
         targetSdk 36
         versionCode 4

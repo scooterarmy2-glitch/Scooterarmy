@@ -81,8 +81,16 @@ data class FixData(
     val acc: Float,            // horizontal accuracy, metres
     val speedAcc: Float?,      // speed accuracy estimate, m/s (null = unknown)
     val t: Long,               // fix time on the elapsed-realtime clock (ms)
-    val bearingDeg: Float?     // direction of travel, when the chip reports one
+    val bearingDeg: Float?,    // direction of travel, when the chip reports one
+    val alt: Double? = null    // altitude above sea level, metres (null = unknown)
 )
+
+/** GPS bearing (degrees, 0 = North) → 8-point compass label ("NW"). */
+fun compassPoint(deg: Float): String {
+    val pts = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+    val norm = ((deg % 360f) + 360f) % 360f
+    return pts[((norm + 22.5f) / 45f).toInt() % 8]
+}
 
 fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = Math.PI / 180.0

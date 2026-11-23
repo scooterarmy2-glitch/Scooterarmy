@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">#scooterarmy</string>
+    <!-- REEL-LOOK VARIANT: the main build shows as "#scooterarmy" on the
+         phone, so "#SAMO GPS" already sets this build apart. The orange
+         REEL badge on the icon is what tells the two icons apart. -->
+    <string name="app_name">#SAMO GPS</string>
 </resources>

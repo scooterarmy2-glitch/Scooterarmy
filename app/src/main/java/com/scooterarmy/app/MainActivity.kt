@@ -52,6 +52,10 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 
 /**
  * #SAMO GPS — fully native (v1.1.0).
@@ -96,8 +100,8 @@ class MainActivity : Activity() {
         override fun onProviderDisabled(p: String) {
             gpsReady = false
             setSdot("error")
-            binding.giStatus.text = "ERROR"
-            binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+            binding.acctxt.text = "ERROR"
+            binding.acctxt.setTextColor(Color.parseColor("#ff5533"))
         }
         override fun onStatusChanged(p: String?, status: Int, extras: Bundle?) {}
     }
@@ -126,6 +130,19 @@ class MainActivity : Activity() {
     private var satUsed = -1
     private var dualBand = false
     private var fullscreen = false
+
+    // ── Reel look: heading / altitude + swipeable cards ──────────
+    private var lastBearingDeg: Float? = null
+    private var lastAltM: Double? = null
+    private var lastHeadingShown = ""
+    private var cardsPage = 0              // 0 = stats, 1 = live map
+    private var liveMapReady = false
+    private var liveLine: Polyline? = null
+    private var liveStartMarker: Marker? = null
+    private var liveEndMarker: Marker? = null
+    private var livePosMarker: Marker? = null
+    private var lastFittedRideId: Long = -1L
+    private lateinit var cardsFling: GestureDetector
 
     private data class PrevFix(val t: Long, val mps: Double, val lat: Double, val lon: Double)
 
@@ -271,6 +288,29 @@ class MainActivity : Activity() {
             openingSettings = true
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        // Reel look: swipeable cards (STATS | live MAP) + live map setup.
+        cardsFling = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
+                if (e1 == null) return false
+                val dx = e2.x - e1.x
+                val dy = e2.y - e1.y
+                if (abs(dx) > 120 && abs(vx) > 200 && abs(dx) > abs(dy)) {
+                    if (dx < 0 && cardsPage == 0) { showCardsPage(1); return true }
+                    if (dx > 0 && cardsPage == 1) { showCardsPage(0); return true }
+                }
+                return false
+            }
+        })
+        binding.cardTabStats.setOnClickListener { showCardsPage(0) }
+        binding.cardTabMap.setOnClickListener { showCardsPage(1) }
+        binding.mapBackBtn.setOnClickListener { showCardsPage(0) }
+        binding.cardsPager.setOnTouchListener { _, event ->
+            cardsFling.onTouchEvent(event)
+            false
+        }
+        setupLiveMap()
+        showCardsPage(0)
         // Timed-run target starts at the Settings default (45 mph out of the box).
         binding.tgtInp.setText(trimNum(settings.defaultTarget))
 
@@ -329,6 +369,9 @@ class MainActivity : Activity() {
         runs = store.runs
         renderBvL()
         updateLandPanel()
+        if (liveMapReady) binding.liveMap.onResume()
+        updateStatsPage()
+        updateLiveMap()
     }
 
     override fun onPause() {
@@ -339,6 +382,7 @@ class MainActivity : Activity() {
         // never ended a ride; Settings returns to the same run/ride.
         if (pauseEndsRide()) stopSession()
         stopLocation()
+        if (liveMapReady) binding.liveMap.onPause()
         imuBridge.stop()
         uiHandler.removeCallbacks(timerTick)
         uiHandler.removeCallbacks(fixAgeTick)
@@ -359,6 +403,9 @@ class MainActivity : Activity() {
         stopPulseAnimator = null
         try { toneGen?.release() } catch (_: Exception) {}
         toneGen = null
+        if (liveMapReady) {
+            try { binding.liveMap.onDetach() } catch (_: Exception) {}
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -374,8 +421,8 @@ class MainActivity : Activity() {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startLocation()
             } else {
-                binding.giStatus.text = "ERROR"
-                binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+                binding.acctxt.text = "ERROR"
+                binding.acctxt.setTextColor(Color.parseColor("#ff5533"))
                 setSdot("error")
                 Toast.makeText(this, "Location permission denied — GPS won't work", Toast.LENGTH_LONG).show()
             }
@@ -414,6 +461,9 @@ class MainActivity : Activity() {
             if (speedoOnly || runs.isEmpty()) gone else vis
         binding.sessLive.visibility =
             if (speedoOnly) gone else if (sessionActive) vis else gone
+        // Reel look: the swipeable cards pager is portrait-only, like the
+        // ride/run boxes — landscape has its own trip panel instead.
+        binding.cardsPager.visibility = if (speedoOnly) gone else vis
         binding.fsHint.visibility = if (fullscreen) vis else gone
         binding.fsInfoRow.visibility = if (fullscreen) vis else gone
         binding.topSpdBox.visibility = if (fullscreen) gone else vis
@@ -464,16 +514,11 @@ class MainActivity : Activity() {
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
 
         // Speed number + overlay position scale with the gauge.
+        // Reel look: the number is bigger (88sp portrait, 120sp speedo-only)
+        // and centred in the dial, so there is no bottom-margin math left.
         binding.spdNum.setTextSize(
-            TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f
+            TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 120f else 88f
         )
-        binding.gaugeWrap.post {
-            val overlayLp = binding.spdOverlay.layoutParams as android.widget.FrameLayout.LayoutParams
-            overlayLp.bottomMargin =
-                if (speedoOnly) (binding.gaugeWrap.height * 0.14).toInt()
-                else (50 * dm.density).toInt()
-            binding.spdOverlay.layoutParams = overlayLp
-        }
         if (fullscreen) updateFsInfo()
         updateLandPanel()
     }
@@ -779,8 +824,8 @@ class MainActivity : Activity() {
             if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 gpsReady = false
                 setSdot("error")
-                binding.giStatus.text = "ERROR"
-                binding.giStatus.setTextColor(Color.parseColor("#ff5533"))
+                binding.acctxt.text = "ERROR"
+                binding.acctxt.setTextColor(Color.parseColor("#ff5533"))
                 Toast.makeText(this, "Location is off — turn on GPS", Toast.LENGTH_LONG).show()
             }
         } catch (_: SecurityException) {
@@ -834,7 +879,8 @@ class MainActivity : Activity() {
                 acc = if (l.hasAccuracy()) l.accuracy else 999f,
                 speedAcc = if (l.hasSpeedAccuracy()) l.speedAccuracyMetersPerSecond else null,
                 t = l.elapsedRealtimeNanos / 1_000_000L,
-                bearingDeg = if (l.hasBearing()) l.bearing else null
+                bearingDeg = if (l.hasBearing()) l.bearing else null,
+                alt = if (l.hasAltitude()) l.altitude else null
             )
         )
     }
@@ -843,11 +889,10 @@ class MainActivity : Activity() {
     private fun onNetworkFix(l: Location) {
         if (gpsReady) return
         val acc = if (l.hasAccuracy()) l.accuracy else 999f
-        binding.giStatus.text = "ASSISTED"
-        binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
-        binding.giAcc.text = acc.roundToInt().toString()
+        binding.acctxt.text = "ASSISTED"
+        binding.acctxt.setTextColor(Color.parseColor("#cccccc"))
+        binding.giAcc.text = "${acc.roundToInt()}m"
         binding.giAcc.setTextColor(Color.parseColor("#ffb347"))
-        binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
 
@@ -855,11 +900,10 @@ class MainActivity : Activity() {
     private fun onFusedFix(l: Location) {
         if (gpsReady) return
         val acc = if (l.hasAccuracy()) l.accuracy else 999f
-        binding.giStatus.text = "ASSISTED"
-        binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
-        binding.giAcc.text = acc.roundToInt().toString()
+        binding.acctxt.text = "ASSISTED"
+        binding.acctxt.setTextColor(Color.parseColor("#cccccc"))
+        binding.giAcc.text = "${acc.roundToInt()}m"
         binding.giAcc.setTextColor(Color.parseColor("#ffb347"))
-        binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
 
@@ -914,7 +958,8 @@ class MainActivity : Activity() {
         if (gpsReady && usable) {
             rawMps = mps
             currentSpd = fromMps(mps)
-            f.bearingDeg?.let { imuBridge.setBearingDeg(it) }
+            f.bearingDeg?.let { lastBearingDeg = it; imuBridge.setBearingDeg(it) }
+            f.alt?.let { lastAltM = it }
             imuBridge.onGpsFix() // truth wins: snap display, reset the bridge
         } else if (!gpsReady) {
             currentSpd = 0.0
@@ -960,6 +1005,7 @@ class MainActivity : Activity() {
             if (rawMps > 0.5) resetIdleTimer()
         }
         sessionLastPos = f.lat to f.lon
+        updateLiveMap()
 
         setSdot("active")
     }
@@ -986,24 +1032,14 @@ class MainActivity : Activity() {
         else SystemClock.elapsedRealtime() - lastFixPerf
         val dispMps = imuBridge.displayMps(rawMps, fixAgeMs)
         val disp = fromMps(dispMps)
-        val ratio = disp / maxSpd()
 
         binding.spdNum.text = disp.roundToInt().toString()
-        binding.spdNum.setTextColor(
-            when {
-                ratio > 0.85 -> Color.parseColor("#ff5522")
-                ratio > 0.6 -> Color.parseColor("#ffb347")
-                else -> Color.WHITE
-            }
-        )
-        // Ember glow follows the speed color (web .spd-num text-shadow).
-        val glowColor = when {
-            ratio > 0.85 -> Color.parseColor("#ff5522")
-            ratio > 0.6 -> Color.parseColor("#ffb347")
-            else -> Color.parseColor("#ff4400")
-        }
-        binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, glowColor)
+        // Reel look: the speed number is always ember orange (ad frames),
+        // never white — the ratio still drives the gauge arc + needle.
+        binding.spdNum.setTextColor(Color.parseColor("#ff6a00"))
+        binding.spdNum.setShadowLayer(20f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ff6a00"))
         binding.gauge.speed = disp
+        updateHeading()
 
         if (gpsReady && currentSpd > allTimeTopSpd) {
             allTimeTopSpd = currentSpd
@@ -1055,12 +1091,13 @@ class MainActivity : Activity() {
                 if (i < sig) Color.parseColor("#39ff14") else Color.parseColor("#333333")
             )
         }
-        binding.acctxt.text = "±${acc.roundToInt()}m"
         updateGpsPanel(acc, sig)
     }
 
     private fun updateGpsPanel(acc: Double, sig: Int) {
-        val statusEl = binding.giStatus
+        // Reel look: the status word (LOCKED / WEAK / POOR) lives in the
+        // header under the dot; accuracy shows as "3m" in the chips row.
+        val statusEl = binding.acctxt
         when {
             sig >= 3 -> {
                 statusEl.text = "LOCKED"
@@ -1076,7 +1113,7 @@ class MainActivity : Activity() {
             }
         }
         val accEl = binding.giAcc
-        accEl.text = acc.roundToInt().toString()
+        accEl.text = "${acc.roundToInt()}m"
         accEl.setTextColor(
             when {
                 acc < 5 -> Color.parseColor("#39ff14")
@@ -1107,7 +1144,7 @@ class MainActivity : Activity() {
             return
         }
         val age = (SystemClock.elapsedRealtime() - lastFixPerf) / 1000.0
-        el.text = String.format("%.1f", age)
+        el.text = String.format("FIX %.1fs", age)
         el.setTextColor(
             when {
                 age < 1.5 -> Color.parseColor("#39ff14")
@@ -1342,6 +1379,7 @@ class MainActivity : Activity() {
         binding.liveTopSpd.text = "${sessionTopSpd.roundToInt()} mph"
         binding.liveDist.text = dist
         binding.liveDur.text = fmtDur(durSec)
+        updateStatsPage()
         updateLandPanel()
     }
 
@@ -1433,6 +1471,170 @@ class MainActivity : Activity() {
             }
             toneGen?.startTone(ToneGenerator.TONE_PROP_BEEP, 250)
         } catch (_: Exception) {
+        }
+    }
+
+    // ── Reel look: heading + swipeable cards + live map ─────────
+
+    /** Compass heading: live GPS bearing as N/NE/E/…, in the chips row,
+     *  the stats card, and at the top inside the dial (reel frames).
+     *  Writes only when the value changes, so the 10 Hz display tick
+     *  doesn't invalidate the gauge for nothing. */
+    private fun updateHeading() {
+        val hdg = lastBearingDeg?.let { compassPoint(it) } ?: "—"
+        if (hdg != lastHeadingShown) {
+            lastHeadingShown = hdg
+            binding.giHeading.text = hdg
+            binding.gauge.heading = hdg
+            binding.statHeading.text = hdg
+        }
+    }
+
+    /** Stats card: live ride numbers while riding, last ride when not. */
+    private fun updateStatsPage() {
+        if (!::binding.isInitialized) return
+        if (sessionActive) {
+            binding.statTitle.text = "RIDE LIVE"
+            val start = sessionStart
+            val durSec = if (start != null)
+                Math.round((Date().time - start.time) / 1000.0).toInt() else 0
+            val distMi = sessionDist / 1609.34
+            binding.statDist.text = String.format("%.2f mi", distMi)
+            binding.statDur.text = fmtDur(durSec)
+            binding.statTop.text = "${sessionTopSpd.roundToInt()} mph"
+            val hrs = durSec / 3600.0
+            binding.statAvg.text =
+                if (hrs > 0) String.format("%.1f mph", distMi / hrs) else "0.0 mph"
+        } else {
+            binding.statTitle.text = "LAST RIDE"
+            val last = rides.firstOrNull()
+            binding.statDist.text = last?.dist ?: "—"
+            binding.statDur.text = last?.dur ?: "—"
+            binding.statTop.text = last?.topSpd ?: "—"
+            binding.statAvg.text = last?.let { rideAvgSpeedRow(it)?.second } ?: "—"
+        }
+        // Altitude is new on screen (reel frames show it in metres; the
+        // app is mph/miles, so feet). "—" until the first fix with one.
+        binding.statAlt.text =
+            lastAltM?.let { "${(it * 3.28084).roundToInt()} ft" } ?: "—"
+        updateHeading()
+    }
+
+    /** Switch the cards pager between STATS (0) and the live MAP (1). */
+    private fun showCardsPage(page: Int) {
+        cardsPage = page.coerceIn(0, 1)
+        val stats = cardsPage == 0
+        binding.statsPage.visibility = if (stats) View.VISIBLE else View.GONE
+        binding.mapPage.visibility = if (stats) View.GONE else View.VISIBLE
+        binding.cardTabStatsTxt.setTextColor(
+            if (stats) Color.parseColor("#ff6a00") else Color.parseColor("#888888"))
+        binding.cardTabMapTxt.setTextColor(
+            if (stats) Color.parseColor("#888888") else Color.parseColor("#ff6a00"))
+        binding.cardTabStatsUl.visibility = if (stats) View.VISIBLE else View.INVISIBLE
+        binding.cardTabMapUl.visibility = if (stats) View.INVISIBLE else View.VISIBLE
+        if (stats) updateStatsPage() else updateLiveMap()
+    }
+
+    private fun setupLiveMap() {
+        val map = binding.liveMap
+        map.setTileSource(RouteMapDialog.darkTiles())
+        map.setMultiTouchControls(true)
+        map.setUseDataConnection(true)
+        map.controller.setZoom(16.0)
+        // Let the map pan/zoom inside the vertical ScrollView.
+        map.setOnTouchListener { _, _ ->
+            binding.scrollView.requestDisallowInterceptTouchEvent(true)
+            false
+        }
+        liveMapReady = true
+    }
+
+    private fun dotMarker(color: Int, sizeDp: Int = 14): Marker {
+        val size = (sizeDp * resources.displayMetrics.density).toInt()
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = Paint.Style.FILL
+        }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 1, paint)
+        return Marker(binding.liveMap).apply {
+            icon = BitmapDrawable(resources, bmp)
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        }
+    }
+
+    private fun ensureLiveOverlays(pts: List<GeoPoint>) {
+        val map = binding.liveMap
+        if (liveLine == null) {
+            liveLine = Polyline().apply {
+                color = Color.parseColor("#2f8bff")
+                width = 4f * resources.displayMetrics.density
+            }
+            map.overlays.add(liveLine)
+        }
+        if (liveStartMarker == null) {
+            liveStartMarker = dotMarker(Color.parseColor("#39ff14")).apply { title = "Start" }
+            map.overlays.add(liveStartMarker)
+        }
+        if (liveEndMarker == null) {
+            liveEndMarker = dotMarker(Color.parseColor("#ff2200")).apply { title = "End" }
+            map.overlays.add(liveEndMarker)
+        }
+        if (livePosMarker == null) {
+            livePosMarker = dotMarker(Color.parseColor("#ff6a00"), 10).apply { title = "You" }
+            map.overlays.add(livePosMarker)
+        }
+        liveStartMarker?.position = pts.first()
+        liveEndMarker?.position = pts.last()
+        livePosMarker?.position = pts.last()
+    }
+
+    /** Live route map (reel look): bright blue route drawn in real time
+     *  while a ride runs, with the current speed on it; the last saved
+     *  ride's route when not riding. No-op unless the map page is showing.
+     *  Follow mode only recentres when the rider leaves the visible box,
+     *  so panning the map by hand isn't yanked back on every fix. */
+    private fun updateLiveMap() {
+        if (!liveMapReady || cardsPage != 1 || !::binding.isInitialized) return
+        val map = binding.liveMap
+        if (sessionActive) {
+            val pts = sessionRoute.map { GeoPoint(it.lat, it.lon) }
+            lastFittedRideId = -1L // a live ride refits once it is saved
+            if (pts.size >= 2) {
+                ensureLiveOverlays(pts)
+                liveLine?.setPoints(pts)
+                val last = pts.last()
+                val bb = map.boundingBox
+                val inside = last.latitude in bb.latSouth..bb.latNorth &&
+                    last.longitude in bb.lonWest..bb.lonEast
+                if (!inside) map.controller.animateTo(last)
+                binding.liveMapHint.visibility = View.GONE
+            } else {
+                binding.liveMapHint.visibility = View.VISIBLE
+                binding.liveMapHint.text = "RECORDING — ROUTE APPEARS AS YOU RIDE"
+                sessionLastPos?.let { map.controller.setCenter(GeoPoint(it.first, it.second)) }
+            }
+            binding.liveMapSpeed.text = "${currentSpd.roundToInt()} mph"
+            map.invalidate()
+        } else {
+            val last = rides.firstOrNull()
+            val pts = last?.route?.map { GeoPoint(it.lat, it.lon) } ?: emptyList()
+            if (pts.size >= 2 && last != null) {
+                ensureLiveOverlays(pts)
+                liveLine?.setPoints(pts)
+                if (lastFittedRideId != last.id) {
+                    lastFittedRideId = last.id
+                    map.zoomToBoundingBox(BoundingBox.fromGeoPoints(pts), false, 40)
+                }
+                binding.liveMapHint.visibility = View.VISIBLE
+                binding.liveMapHint.text = "LAST RIDE — ${last.name}"
+            } else {
+                binding.liveMapHint.visibility = View.VISIBLE
+                binding.liveMapHint.text = "START A RIDE TO DRAW YOUR ROUTE"
+                sessionLastPos?.let { map.controller.setCenter(GeoPoint(it.first, it.second)) }
+            }
+            binding.liveMapSpeed.text = "—"
+            map.invalidate()
         }
     }
 

@@ -152,7 +152,7 @@
                             android:layout_marginTop="3dp"
                             android:fontFamily="@font/orbitron_900"
                             android:text="0.00 mi"
-                            android:textColor="@color/chrome"
+                            android:textColor="@color/ember"
                             android:textSize="28sp" />
 
                         <TextView
@@ -194,7 +194,7 @@
                             android:layout_marginTop="3dp"
                             android:fontFamily="@font/orbitron_900"
                             android:text="0:00"
-                            android:textColor="@color/chrome"
+                            android:textColor="@color/ember"
                             android:textSize="28sp" />
 
                         <TextView
