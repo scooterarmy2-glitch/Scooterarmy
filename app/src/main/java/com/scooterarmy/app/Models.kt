@@ -138,6 +138,59 @@ fun fitGaugeSize(
 }
 
 /**
+ * One-screen gauge fit, Build #80 (replaces the Build #78 posted fit
+ * as the size the activity actually uses): the gauge size that makes
+ * the whole portrait column fit the viewport, computed from heights
+ * measured AFTER a layout pass. `contentH` is the measured height of
+ * the full column with the gauge at `gaugePx`; `viewportH` is the
+ * scroll area's height; `fullGaugePx` is the un-shrunk portrait gauge
+ * (screen width + 8dp). Returns `gaugePx` unchanged when either
+ * height is not yet laid out (<= 0) — the caller must NEVER shrink on
+ * unlaid-out heights: that is what clamped the gauge to the 320px
+ * floor in Build #79. Never grows above `fullGaugePx`, never shrinks
+ * below `minGaugePx`. Idempotent: calling it again with the resized
+ * content returns the same size, and it restores the gauge when boxes
+ * are hidden and room opens up. Pure, harness-tested.
+ */
+fun fitGaugeForViewport(
+    contentH: Int,
+    viewportH: Int,
+    gaugePx: Int,
+    fullGaugePx: Int,
+    minGaugePx: Int = 320
+): Int {
+    if (contentH <= 0 || viewportH <= 0 || gaugePx <= 0 || fullGaugePx <= 0) return gaugePx
+    // Height the column WOULD have with the gauge at full size.
+    val contentAtFull = contentH + (fullGaugePx - gaugePx)
+    val overflow = contentAtFull - viewportH
+    if (overflow <= 0) return fullGaugePx
+    return maxOf(minGaugePx, fullGaugePx - overflow)
+}
+
+/** Integer rect, pure-Kotlin (no android.graphics.Rect, so the JVM
+ * harness can test the cover math without Android stubs). */
+data class CoverRect(val left: Int, val top: Int, val right: Int, val bottom: Int)
+
+/**
+ * Cover-scale source rect, Build #80: the centered rect of a
+ * `srcW` x `srcH` bitmap that, drawn into a `dstW` x `dstH` view with
+ * canvas.drawBitmap(srcRect, dstRect), covers the whole view with no
+ * stretching and no seams — the same center-crop coverTransform()
+ * computes, but as a source rect for the plain drawBitmap path that
+ * replaced the BitmapShader + local-matrix path in Backgrounds.kt.
+ * Returns null for degenerate inputs. Pure, harness-tested.
+ */
+fun coverSrcRect(srcW: Int, srcH: Int, dstW: Int, dstH: Int): CoverRect? {
+    if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) return null
+    val scale = maxOf(dstW.toDouble() / srcW, dstH.toDouble() / srcH)
+    val w = (dstW / scale).toInt()
+    val h = (dstH / scale).toInt()
+    val x = (srcW - w) / 2
+    val y = (srcH - h) / 2
+    return CoverRect(x, y, x + w, y + h)
+}
+
+/**
  * Cover-scale transform, Build #79: how a photographic texture of
  * `srcW` x `srcH` is placed into a `dstW` x `dstH` view so it covers the
  * whole view with no stretching and no seams (center-crop). Returns

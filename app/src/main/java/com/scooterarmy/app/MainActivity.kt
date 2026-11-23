@@ -291,8 +291,17 @@ class MainActivity : Activity() {
         renderBvL()
         updateSpeedDisplay()
         applySettings()
-        applyChromeVisibility()
+        // Build #80: the pager MUST be set up before any chrome/layout
+        // logic runs. setupMainPager reparents the ScrollView into the
+        // ViewPager2 page — in Build #79 applyChromeVisibility ran first
+        // and its posted one-screen fit measured the ScrollView before
+        // the reparent (and before the first layout), read a ~0 viewport,
+        // computed a phantom overflow and clamped the gauge to the
+        // 320px floor, leaving the column vertically centred with the
+        // RIDE / TIMED boxes off-screen on Casey's phone.
         setupMainPager()
+        applyChromeVisibility()
+        setupGaugeFitListener()
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -369,6 +378,15 @@ class MainActivity : Activity() {
         openingSettings = false
         openingLogs = false
         applySettings()
+        // Build #80: re-assert the chrome state on every resume — the
+        // header must be top-anchored and the boxes visible in portrait,
+        // and a stale layout state (from a rotation, a fullscreen
+        // double-tap or a backgrounded transient) is healed here instead
+        // of surviving until the next ride start/stop. The background
+        // photo is re-applied too, so a Background change made in
+        // Settings shows live on return (no restart).
+        applyChromeVisibility()
+        applyPhotoBackground(binding.rootLayout)
         startLocation()
         imuBridge.start()
         if (::liveMap.isInitialized) liveMap.onResume()
@@ -487,6 +505,14 @@ class MainActivity : Activity() {
         binding.gaugeRow.gravity =
             if (landscapePanel) Gravity.CENTER_VERTICAL else Gravity.CENTER_HORIZONTAL
 
+        // Build #80: reset the column gravity directly, here, in
+        // portrait — layoutGaugeSize does it too, but Build #79 left
+        // the column vertically centred on Casey's phone (header ~21%
+        // down the screen) with no code path in portrait that sets
+        // CENTER_VERTICAL, so the reset is stated twice on purpose:
+        // whatever transient state the column is in, portrait is TOP.
+        if (!speedoOnly) binding.contentCol.gravity = Gravity.TOP
+
         // Gauge size (look-pro): portrait fills side to side — the gauge
         // is 4dp wider than the screen on each side, so it bleeds slightly
         // off the left/right edges (clipChildren=false on the column lets
@@ -512,23 +538,21 @@ class MainActivity : Activity() {
             }
         }
         layoutGaugeSize(gw, gh, speedoOnly)
-        // Build #78 one-screen fit (portrait only): after the first
-        // layout pass, if the column is taller than the viewport the
-        // timed box — START TIMED RUN + RESET — sits below the fold
-        // (Build #77 cut it off on Casey's phone). Shrink the gauge
-        // just enough to pull it on screen, one pass, via the pure
-        // fitGaugeSize() (Models.kt, harness-tested). Landscape and
-        // fullscreen are already speedo-only, nothing to fit.
-        if (!speedoOnly) {
-            binding.scrollView.post {
-                val contentH = binding.contentCol.height
-                val viewportH = binding.scrollView.height
-                if (contentH > viewportH) {
-                    val shrunk = fitGaugeSize(contentH, viewportH, gw)
-                    if (shrunk < gw) layoutGaugeSize(shrunk, shrunk, false)
-                }
-            }
-        }
+        // Build #80 one-screen fit (portrait only): the fit now lives in
+        // setupGaugeFitListener() — a layout listener registered once in
+        // onCreate AFTER setupMainPager. The Build #78 version posted a
+        // runnable from here that read contentCol/scrollView heights
+        // before the ScrollView had been reparented into the ViewPager2
+        // page and laid out; on Casey's phone it read a ~0 viewport,
+        // computed a phantom overflow and clamped the gauge to the
+        // 320px floor (fitGaugeSize's min), and the column ended up
+        // vertically centred with the RIDE / TIMED boxes off-screen.
+        // The listener runs AFTER a layout pass, so the heights it reads
+        // are real, it refuses unlaid-out (<= 0) heights, and
+        // fitGaugeForViewport() (Models.kt) is idempotent and restores
+        // the gauge when there is room — repeated layouts converge
+        // instead of ratcheting down. Landscape and fullscreen are
+        // already speedo-only, nothing to fit.
         // TOP SPEED chip hardening (Build #78): the chip is in the
         // layout and VISIBLE in portrait, but it did not appear in
         // Casey's Build #77 screenshot. No code path sets it GONE in
@@ -543,6 +567,48 @@ class MainActivity : Activity() {
         }
         if (fullscreen) updateFsInfo()
         updateLandPanel()
+    }
+
+    /** One-screen gauge fit, Build #80 (replaces the Build #78 posted
+     *  fit): a layout listener on the ScrollView, registered once in
+     *  onCreate AFTER setupMainPager. It fires after a layout pass, so
+     *  the heights it reads are the real ones — never the 0 / stale
+     *  heights the old posted runnable read before the ScrollView had
+     *  been reparented into the ViewPager2 page. Guards: portrait
+     *  non-fullscreen only, both heights > 0, and it does nothing when
+     *  the heights are unchanged since the last run (the listener also
+     *  fires on every speed-digit update). fitGaugeForViewport is
+     *  idempotent and restores the gauge when room opens up (a box
+     *  hidden, a session ended), so a bad shrink heals itself on the
+     *  next layout instead of sticking until the next chrome pass. */
+    private var gaugeFitListenerRegistered = false
+    private var lastFitViewportH = -1
+    private var lastFitContentH = -1
+    private var lastFitGaugePx = -1
+
+    private fun setupGaugeFitListener() {
+        if (gaugeFitListenerRegistered) return
+        gaugeFitListenerRegistered = true
+        binding.scrollView.viewTreeObserver.addOnGlobalLayoutListener {
+            if (isLandscape() || fullscreen) return@addOnGlobalLayoutListener
+            val viewportH = binding.scrollView.height
+            val contentH = binding.contentCol.height
+            if (viewportH <= 0 || contentH <= 0) return@addOnGlobalLayoutListener
+            val current =
+                (binding.gaugeWrap.layoutParams as LinearLayout.LayoutParams).height
+            if (viewportH == lastFitViewportH && contentH == lastFitContentH &&
+                current == lastFitGaugePx
+            ) return@addOnGlobalLayoutListener
+            lastFitViewportH = viewportH
+            lastFitContentH = contentH
+            lastFitGaugePx = current
+            val dm = resources.displayMetrics
+            val fullGauge = dm.widthPixels + (8 * dm.density).toInt()
+            val target = fitGaugeForViewport(contentH, viewportH, current, fullGauge)
+            if (target != current) {
+                layoutGaugeSize(target, target, false)
+            }
+        }
     }
 
     /** Gauge layout params + the speed-digit scale that tracks them.
@@ -576,13 +642,21 @@ class MainActivity : Activity() {
         binding.spdNum.setTextSize(
             TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f * gaugeScale
         )
-        binding.gaugeWrap.post {
-            val overlayLp = binding.spdOverlay.layoutParams as android.widget.FrameLayout.LayoutParams
-            overlayLp.bottomMargin =
-                if (speedoOnly) (binding.gaugeWrap.height * 0.14).toInt()
-                else (50f * gaugeScale * dm.density).toInt()
-            binding.spdOverlay.layoutParams = overlayLp
-        }
+        // Build #80: set the overlay margin SYNCHRONOUSLY. The old code
+        // posted it (binding.gaugeWrap.post { ... }), and like the old
+        // posted fit it could land after a reparent/re-layout and leave
+        // the speed digit misplaced or invisible — Casey's Build #79
+        // screenshot shows no speed digit at all, though the digit is a
+        // plain TextView set to 27sp at the 320px floor and should have
+        // been plainly visible. The portrait margin is a pure function
+        // of gaugeScale; the speedo-only margin uses the intended height
+        // gh, not the currently-measured height (which may still be the
+        // old size when this runs).
+        val overlayLp = binding.spdOverlay.layoutParams as android.widget.FrameLayout.LayoutParams
+        overlayLp.bottomMargin =
+            if (speedoOnly) (gh * 0.14).toInt()
+            else (50f * gaugeScale * dm.density).toInt()
+        binding.spdOverlay.layoutParams = overlayLp
     }
 
     /** Landscape trip panel (Speedo-style): live ride numbers beside the

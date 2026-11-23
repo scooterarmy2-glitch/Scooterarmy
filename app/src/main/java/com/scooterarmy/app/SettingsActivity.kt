@@ -124,6 +124,18 @@ class SettingsActivity : Activity() {
                 else -> 100
             }
         }
+        // Background photo (Build #80): carbon weave (Casey's photo,
+        // default) or brushed steel. The Settings screen itself
+        // re-applies its background right away so the choice is visible
+        // immediately; Main picks it up live on return (onResume).
+        binding.bgGroup.setOnCheckedChangeListener { _, checkedId ->
+            if (updatingUi) return@setOnCheckedChangeListener
+            settings.background = when (checkedId) {
+                R.id.bgBrushed -> AppSettings.BG_BRUSHED
+                else -> AppSettings.BG_CARBON
+            }
+            applyPhotoBackground(binding.root)
+        }
 
         // ── Advanced ──
         binding.diagSwitch.setOnCheckedChangeListener { _, checked ->
@@ -184,6 +196,11 @@ class SettingsActivity : Activity() {
             140 -> binding.gaugeGroup.check(R.id.gauge140)
             180 -> binding.gaugeGroup.check(R.id.gauge180)
             else -> binding.gaugeGroup.check(R.id.gauge100)
+        }
+
+        when (settings.background) {
+            AppSettings.BG_BRUSHED -> binding.bgGroup.check(R.id.bgBrushed)
+            else -> binding.bgGroup.check(R.id.bgCarbon)
         }
 
         binding.diagSwitch.isChecked = settings.showDiagnostics
