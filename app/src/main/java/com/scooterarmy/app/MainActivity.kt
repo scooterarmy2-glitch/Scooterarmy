@@ -311,7 +311,7 @@ class MainActivity : Activity() {
         // Build tag in the header (Build #81): the build number is visible
         // on the main screen itself, so any screenshot proves which build
         // is actually running — no more "is it installed?" guessing.
-        binding.buildTag.text = "Build ${BuildConfig.VERSION_CODE}"
+        binding.buildTag.text = "Build $BUILD_NUMBER"
         setupLiveMapPage()
         applyChromeVisibility()
 
@@ -558,6 +558,18 @@ class MainActivity : Activity() {
         // CENTER_VERTICAL, so the reset is stated twice on purpose:
         // whatever transient state the column is in, portrait is TOP.
         if (!speedoOnly) binding.contentCol.gravity = Gravity.TOP
+        // Build #83: fillViewport stretches contentCol to the full viewport
+        // height, creating slack that the column gravity can mis-distribute
+        // (Builds #79–#82 show the whole main screen displaced downward as
+        // if centred, header ~410px down, despite gravity=TOP being set
+        // twice per pass). In portrait there is no centering to do, so the
+        // content must be exactly its natural height — no slack, no
+        // displacement possible. fillViewport stays ON only for speedo-only
+        // (landscape/fullscreen), where CENTER_VERTICAL genuinely needs the
+        // stretch to centre the dial.
+        binding.scrollView.isFillViewport = speedoOnly
+        // Build #83: guarantee the ScrollView itself is at the top.
+        binding.scrollView.scrollTo(0, 0)
 
         // Gauge size (Build #81): a pure function of the window metrics
         // (gaugeSizeForScreen, Models.kt) — never of a measured view
@@ -570,8 +582,16 @@ class MainActivity : Activity() {
         // displayMetrics and stays put until the next chrome pass
         // (rotation, fullscreen toggle, resume).
         val dm = resources.displayMetrics
+        // Build #83: prefer the ScrollView's ACTUALLY MEASURED height (the
+        // real window) over displayMetrics.heightPixels, which is the display
+        // height as seen at onCreate and can be stale (Build #82's gauge
+        // measured 996px on-device vs the 1091px displayMetrics dictates).
+        // Before the first layout pass the ScrollView is 0 tall, so fall
+        // back to displayMetrics then; onResume re-asserts with the real
+        // height, so the final size is always from the real window.
+        val winH = if (binding.scrollView.height > 0) binding.scrollView.height else dm.heightPixels
         val (gw, gh) = gaugeSizeForScreen(
-            dm.widthPixels, dm.heightPixels, dm.density,
+            dm.widthPixels, winH, dm.density,
             isLandscape(), fullscreen
         )
         layoutGaugeSize(gw, gh, speedoOnly)
