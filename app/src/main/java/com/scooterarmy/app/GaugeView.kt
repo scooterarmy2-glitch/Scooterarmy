@@ -33,7 +33,9 @@ class GaugeView @JvmOverloads constructor(
     var showTarget: Boolean = false
         set(value) { field = value; invalidate() }
 
-    private val maxSpd: Double get() = 100.0
+    /** Dial max, mph — from Settings (100/140/180). Redraws + relabels. */
+    var maxSpd: Double = 100.0
+        set(value) { field = value.coerceIn(100.0, 180.0); invalidate() }
 
     private val orbitron700: Typeface by lazy { resources.getFont(R.font.orbitron_700) }
     private val orbitron900: Typeface by lazy { resources.getFont(R.font.orbitron_900) }
@@ -112,9 +114,9 @@ class GaugeView @JvmOverloads constructor(
             arcPaint.clearShadowLayer()
         }
 
-        // Ticks + numbers.
+        // Ticks + numbers. Wider dials label every 20 mph so they don't crowd.
         val minorStep = 5
-        val majorStep = 10
+        val majorStep = if (maxSpd > 100) 20 else 10
         var v = 0
         while (v <= maxSpd.toInt()) {
             val a = angleFor(v.toDouble())

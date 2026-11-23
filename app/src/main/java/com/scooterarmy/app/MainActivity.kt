@@ -80,6 +80,7 @@ class MainActivity : Activity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var store: LogStore
+    private lateinit var settings: AppSettings
     private lateinit var imuBridge: ImuBridge
 
     // ── GPS engine ──────────────────────────────────────────────
@@ -198,13 +199,20 @@ class MainActivity : Activity() {
     // True while the export file picker is open — opening it pauses the
     // activity, and a pause must not end a ride the way leaving the app does.
     private var exporting = false
+    // Same idea for the Settings screen: opening it pauses us, but the
+    // run/ride continues and Settings applies live on return.
+    private var openingSettings = false
+    // Diagnostics: fix timestamps in the last 5 s + last fix interval.
+    private val fixTimes = ArrayDeque<Long>()
+    private var lastFixIntervalMs = 0L
     private var pendingExportMime = "text/csv"
 
     companion object {
         const val ACC_REJECT = 50.0      // reject fixes worse than this (metres)
-        const val ACC_GOOD = 10.0        // must beat this before speedo unlocks
         const val SIG_GOOD = 3           // minimum signal bars (of 6) before unlock
-        const val SPD_ACC_REJECT = 1.0   // m/s — reject fixes with worse speed accuracy
+        // Lock gate + speed-accuracy reject + spike guard now live in
+        // AppSettings (defaults 10.0 m / 1.0 m/s / on) — same values as
+        // the old ACC_GOOD / SPD_ACC_REJECT constants.
         const val REQ_LOCATION = 1
         const val REQ_EXPORT = 2
     }
@@ -218,7 +226,9 @@ class MainActivity : Activity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         store = LogStore(this)
+        settings = AppSettings(this)
         imuBridge = ImuBridge(this)
+        imuBridge.paramsProvider = { settings.bridgeParams }
         RouteMapDialog.configure(this)
 
         alertMph = store.alertMph
@@ -261,6 +271,12 @@ class MainActivity : Activity() {
         binding.alertInp.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) saveAlert()
         }
+        binding.settingsBtn.setOnClickListener {
+            openingSettings = true
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        // Timed-run target starts at the Settings default (45 mph out of the box).
+        binding.tgtInp.setText(trimNum(settings.defaultTarget))
 
         val gesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -276,6 +292,7 @@ class MainActivity : Activity() {
         renderHistory()
         renderBvL()
         updateSpeedDisplay()
+        applySettings()
         applyChromeVisibility()
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -294,6 +311,8 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         setImmersive()
+        openingSettings = false
+        applySettings()
         startLocation()
         imuBridge.start()
         uiHandler.post(fixAgeTick)
@@ -320,9 +339,10 @@ class MainActivity : Activity() {
     override fun onPause() {
         super.onPause()
         // Same as the web app hiding: a ride ends when the app leaves the screen.
-        // Except the export file picker — that also pauses us, and in the web
-        // app exporting was a plain download that never ended a ride.
-        if (sessionActive && !exporting) stopSession()
+        // Except the export file picker and the Settings screen — those also
+        // pause us, and in the web app exporting was a plain download that
+        // never ended a ride; Settings returns to the same run/ride.
+        if (pauseEndsRide()) stopSession()
         stopLocation()
         imuBridge.stop()
         uiHandler.removeCallbacks(timerTick)
@@ -559,13 +579,24 @@ class MainActivity : Activity() {
     private fun trimNum(v: Double): String =
         if (v == v.toLong().toDouble()) v.toLong().toString() else v.toString()
 
+    /** A pause ends a ride — unless the pause is the export picker or the
+     *  Settings screen, both of which return to the same run/ride. */
+    private fun pauseEndsRide(): Boolean = sessionActive && !exporting && !openingSettings
+
+    /** Apply everything Settings can change, live — no restart needed. */
+    private fun applySettings() {
+        binding.gauge.maxSpd = settings.gaugeMax.toDouble()
+        binding.diagRow.visibility = if (settings.showDiagnostics) View.VISIBLE else View.GONE
+        if (settings.showDiagnostics) updateFixAge()
+    }
+
     // ── Unit conversion: mph only ───────────────────────────────
     // GPS works in m/s internally; everything the user sees is mph.
     private fun toMps(mph: Double): Double = mph / 2.23694
 
     private fun fromMps(mps: Double): Double = mps * 2.23694
 
-    private fun maxSpd(): Double = 100.0
+    private fun maxSpd(): Double = settings.gaugeMax.toDouble()
 
     private fun tgtVal(): Double =
         binding.tgtInp.text.toString().toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
@@ -747,6 +778,11 @@ class MainActivity : Activity() {
         val acc = f.acc.toDouble()
         if (fixPrev != null && f.t <= fixPrev!!.t) return // duplicate / out-of-order
 
+        // Diagnostics: fix rate + last interval (shown when enabled in Settings).
+        if (fixPrev != null) lastFixIntervalMs = f.t - fixPrev!!.t
+        fixTimes.addLast(perf)
+        while (fixTimes.isNotEmpty() && fixTimes.first() < perf - 5000L) fixTimes.removeFirst()
+
         val sig = when {
             acc < 3 -> 6
             acc < 5 -> 5
@@ -768,9 +804,10 @@ class MainActivity : Activity() {
                 mps = haversineM(fixPrev!!.lat, fixPrev!!.lon, f.lat, f.lon) / dt
             }
         }
-        val badSpd = f.speedAcc != null && f.speedAcc > SPD_ACC_REJECT
+        val badSpd = f.speedAcc != null && f.speedAcc > settings.spdReject
         // Spike guard: >12 m/s (~27 mph) in <1.5 s is implausible — GPS glitch.
-        val spike = fixPrev != null && mps >= 0 &&
+        // Can be switched off in Settings; on is the default.
+        val spike = settings.spikeGuard && fixPrev != null && mps >= 0 &&
             abs(mps - fixPrev!!.mps) > 12 && (f.t - fixPrev!!.t) < 1500
         val usable = mps >= 0 && acc <= ACC_REJECT && !badSpd && !spike
 
@@ -783,7 +820,7 @@ class MainActivity : Activity() {
         lastFixPerf = perf
         lastFixT = f.t
 
-        if (acc <= ACC_GOOD && sig >= SIG_GOOD) gpsReady = true
+        if (acc <= settings.lockGate && sig >= SIG_GOOD) gpsReady = true
         if (gpsReady && usable) {
             rawMps = mps
             currentSpd = fromMps(mps)
@@ -800,7 +837,7 @@ class MainActivity : Activity() {
             fixClockT = f.t
             fixClockPerf = perf
 
-            if (state == RunState.ARMED && mps > toMps(4.0)) {
+            if (state == RunState.ARMED && mps > toMps(settings.armMph)) {
                 runStartT = estimateStart(prev, mps, f.t)
                 startRun()
             }
@@ -987,6 +1024,11 @@ class MainActivity : Activity() {
                 else -> Color.parseColor("#ff5533")
             }
         )
+        // Diagnostics row (Settings → Advanced): fix rate + last interval.
+        if (settings.showDiagnostics) {
+            binding.diagRate.text = String.format("%.1f/s", fixTimes.size / 5.0)
+            binding.diagInterval.text = String.format("%.2f s", lastFixIntervalMs / 1000.0)
+        }
     }
 
     private fun setSdot(cls: String) {
@@ -1216,7 +1258,9 @@ class MainActivity : Activity() {
 
     private fun resetIdleTimer() {
         uiHandler.removeCallbacks(idleStop)
-        uiHandler.postDelayed(idleStop, 5 * 60 * 1000L)
+        // Idle auto-stop from Settings (1/5/10 min, or 0 = off).
+        val mins = settings.idleMin
+        if (mins > 0) uiHandler.postDelayed(idleStop, mins * 60 * 1000L)
     }
 
     // ── Logs ────────────────────────────────────────────────────
@@ -1378,6 +1422,7 @@ class MainActivity : Activity() {
     }
 
     private fun beep() {
+        if (!settings.alertBeep) return // beep can be switched off in Settings
         try {
             if (toneGen == null) {
                 toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 80)

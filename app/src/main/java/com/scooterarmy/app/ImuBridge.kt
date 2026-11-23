@@ -22,14 +22,22 @@ import kotlin.math.sin
  *  - It only runs while the GPS says the vehicle is already moving
  *    (last GPS speed >= 1 m/s). Stopped means stopped: the display is
  *    exactly the GPS speed, never a prediction.
- *  - The integrated delta is clamped to +/-2.5 m/s and dies if the GPS fix
- *    goes stale (> 2 s) — the display then holds the last true GPS speed.
+ *  - The integrated delta is clamped (default ±2.5 m/s, adjustable in
+ *    Settings) and dies if the GPS fix goes stale (> 2 s) — the display
+ *    then holds the last true GPS speed.
  *  - EVERY accepted GPS fix snaps the display back to the true GPS speed
  *    and zeroes the integrator. GPS is truth; the IMU only interpolates.
  *
  * Degrades gracefully: if the phone has no linear-acceleration or rotation
  * sensor, the bridge stays off and the display is pure GPS (Build #48
  * behaviour).
+ *
+ * Responsiveness is settings-driven (see AppSettings): deadband, filter
+ * alpha and clamp come from `paramsProvider` on every sensor event, so
+ * changing Speed Response in Settings applies live with no restart. The
+ * hard rules never change whatever the settings say: stopped means
+ * stopped, a stale fix holds GPS speed, and every accepted fix snaps the
+ * display to truth and zeroes the integrator.
  */
 class ImuBridge(context: Context) : SensorEventListener {
 
@@ -41,6 +49,12 @@ class ImuBridge(context: Context) : SensorEventListener {
         sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
     val available: Boolean get() = linearAccel != null && rotationVec != null
+
+    /** Settings-driven parameters. Null = the original bike-tuned defaults. */
+    var paramsProvider: (() -> BridgeParams)? = null
+
+    private fun params(): BridgeParams =
+        paramsProvider?.invoke() ?: BridgeParams(true, 0.30, 0.25, 2.5)
 
     /** Integrated speed delta (m/s) since the last GPS fix. */
     var deltaMps: Double = 0.0
@@ -83,6 +97,8 @@ class ImuBridge(context: Context) : SensorEventListener {
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     override fun onSensorChanged(event: SensorEvent) {
+        val p = params()
+        if (!p.enabled) return // "Off" preset: pure GPS, bridge does nothing
         when (event.sensor.type) {
             Sensor.TYPE_ROTATION_VECTOR -> {
                 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
@@ -101,14 +117,15 @@ class ImuBridge(context: Context) : SensorEventListener {
                 val parallel = (wx * ux + wy * uy).toDouble()
 
                 // Low-pass the (noisy, vibration-heavy) bike signal.
-                filteredParallel = 0.25 * parallel + 0.75 * filteredParallel
+                // Alpha comes from Settings: higher = faster response.
+                filteredParallel = p.alpha * parallel + (1 - p.alpha) * filteredParallel
 
                 if (lastAccelEventNs != 0L) {
                     val dt = (event.timestamp - lastAccelEventNs) / 1e9
                     if (dt > 0 && dt < 0.5) {
                         // Deadband: ignore engine vibration and sensor noise.
-                        val a = if (abs(filteredParallel) < 0.30) 0.0 else filteredParallel
-                        deltaMps = (deltaMps + a * dt).coerceIn(-MAX_DELTA, MAX_DELTA)
+                        val a = if (abs(filteredParallel) < p.deadband) 0.0 else filteredParallel
+                        deltaMps = (deltaMps + a * dt).coerceIn(-p.clamp, p.clamp)
                     }
                 }
                 lastAccelEventNs = event.timestamp
@@ -123,13 +140,13 @@ class ImuBridge(context: Context) : SensorEventListener {
      */
     fun displayMps(gpsMps: Double, fixAgeMs: Long): Double {
         if (!available) return gpsMps
+        if (!params().enabled) return gpsMps // "Off" preset: pure GPS
         if (gpsMps < 1.0) return gpsMps          // stopped: no prediction, ever
         if (fixAgeMs > STALE_MS) return gpsMps  // stale fix: hold last truth
         return (gpsMps + deltaMps).coerceAtLeast(0.0)
     }
 
     companion object {
-        const val MAX_DELTA = 2.5   // m/s — the most the IMU may add between fixes
         const val STALE_MS = 2000L  // fix older than this: bridge off, hold GPS speed
     }
 }

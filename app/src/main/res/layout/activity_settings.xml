@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings — Speed Response, GPS, Timer, Ride, Alerts, Display, Advanced.
+     Plain Material widgets on the dark theme; ember accent from AppTheme.
+     Everything saves the moment it changes; nothing here needs a restart. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080808">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="18dp"
+            android:paddingTop="16dp"
+            android:paddingRight="18dp"
+            android:paddingBottom="60dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/orbitron_900"
+                android:letterSpacing="0.06"
+                android:text="SETTINGS"
+                android:textColor="#ffffff"
+                android:textSize="20sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/share_tech_mono"
+                android:text="Changes apply right away — no restart needed."
+                android:textColor="#888888"
+                android:textSize="11sp" />
+
+            <!-- SPEED RESPONSE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="SPEED RESPONSE"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/share_tech_mono"
+                android:text="How fast the speedo follows between GPS fixes. GPS is still the truth every second — this only fills the gaps."
+                android:textColor="#888888"
+                android:textSize="11sp" />
+
+            <RadioGroup
+                android:id="@+id/presetGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/presetBike"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Bike — steady, vibration-proof (default)"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/presetResponsive"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Responsive — quicker, for the car"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/presetOff"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Off — pure GPS, no motion help"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/presetCustom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Custom — your sliders below"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Ignore tiny motion"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/deadbandVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/share_tech_mono"
+                    android:text="0.30 m/s²"
+                    android:textColor="#ffb347"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/deadbandSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="45" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Response speed"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/alphaVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/share_tech_mono"
+                    android:text="0.25"
+                    android:textColor="#ffb347"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/alphaSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="45" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Max fill-in between fixes"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/clampVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/share_tech_mono"
+                    android:text="±2.5 m/s"
+                    android:textColor="#ffb347"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/clampSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="8" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#2a2a2a" />
+
+            <!-- GPS -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="GPS"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Lock gate — accuracy needed before the speedo unlocks"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <RadioGroup
+                android:id="@+id/lockGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/lock5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5 m"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/lock10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10 m"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/lock20"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="20 m"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+            </RadioGroup>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Speed accuracy — reject fixes with worse speed accuracy"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <RadioGroup
+                android:id="@+id/rejectGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/reject05"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.5 m/s"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/reject10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1.0 m/s"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/reject20"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2.0 m/s"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+            </RadioGroup>
+
+            <Switch
+                android:id="@+id/spikeSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Spike guard — ignore impossible speed jumps"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#2a2a2a" />
+
+            <!-- TIMER -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="TIMER"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Arm threshold — speed that starts the run"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/armVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/share_tech_mono"
+                    android:text="4 mph"
+                    android:textColor="#ffb347"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/armSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="16" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Default target speed"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/targetVal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/share_tech_mono"
+                    android:text="45 mph"
+                    android:textColor="#ffb347"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/targetSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="22" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#2a2a2a" />
+
+            <!-- RIDE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="RIDE"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Auto-stop ride after no movement"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <RadioGroup
+                android:id="@+id/idleGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/idle1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1 min"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/idle5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5 min"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/idle10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10 min"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/idleOff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Off"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#2a2a2a" />
+
+            <!-- ALERTS -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="ALERTS"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <Switch
+                android:id="@+id/beepSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Alert beep — sound when over the speed limit"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#2a2a2a" />
+
+            <!-- DISPLAY -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="DISPLAY"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Gauge max speed — also lets the target marker show past 100 mph"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <RadioGroup
+                android:id="@+id/gaugeGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/gauge100"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="100 mph"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/gauge140"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="140 mph"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/gauge180"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="180 mph"
+                    android:textColor="#f0f0f0"
+                    android:textSize="13sp" />
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#2a2a2a" />
+
+            <!-- ADVANCED -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/orbitron_700"
+                android:letterSpacing="0.2"
+                android:text="ADVANCED"
+                android:textColor="#ff6a00"
+                android:textSize="12sp" />
+
+            <Switch
+                android:id="@+id/diagSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Show GPS diagnostics — fix rate + last fix interval"
+                android:textColor="#f0f0f0"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/share_tech_mono"
+                android:text="Adds a row under the GPS panel so you can see on the road whether the phone is really delivering ~1 fix per second."
+                android:textColor="#888888"
+                android:textSize="11sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="24dp"
+                android:background="#2a2a2a" />
+
+            <Button
+                android:id="@+id/resetBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/btn_gray"
+                android:text="RESET ALL TO DEFAULTS"
+                android:textColor="#ffffff"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/doneBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_green"
+                android:text="DONE"
+                android:textColor="#ffffff"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

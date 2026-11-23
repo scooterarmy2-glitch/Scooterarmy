@@ -62,9 +62,22 @@
                         android:textSize="18sp" />
                 </LinearLayout>
 
+                <TextView
+                    android:id="@+id/settingsBtn"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/settings_btn_bg"
+                    android:contentDescription="Settings"
+                    android:fontFamily="@font/share_tech_mono"
+                    android:gravity="center"
+                    android:text="⚙"
+                    android:textColor="#cccccc"
+                    android:textSize="20sp" />
+
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
                     android:gravity="end"
                     android:orientation="vertical">
 
@@ -439,6 +452,80 @@
                                 android:textColor="@color/green"
                                 android:textSize="15sp" />
                         </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- DIAGNOSTICS ROW (Settings → Advanced) — fix rate + last fix
+                     interval, so the road test can show whether the phone is
+                     really delivering ~1 Hz fixes. Hidden by default. -->
+                <LinearLayout
+                    android:id="@+id/diagRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/gps_info_bg"
+                    android:elevation="4dp"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
+                            android:text="FIX RATE"
+                            android:textColor="#cccccc"
+                            android:textSize="8sp" />
+
+                        <TextView
+                            android:id="@+id/diagRate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/orbitron_900"
+                            android:text="—"
+                            android:textColor="@color/chrome"
+                            android:textSize="15sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="#2a2a2a" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
+                            android:text="LAST FIX"
+                            android:textColor="#cccccc"
+                            android:textSize="8sp" />
+
+                        <TextView
+                            android:id="@+id/diagInterval"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/orbitron_900"
+                            android:text="—"
+                            android:textColor="@color/chrome"
+                            android:textSize="15sp" />
                     </LinearLayout>
                 </LinearLayout>
 
