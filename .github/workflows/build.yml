@@ -20,13 +20,13 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-                - name: Cache Gradle dependencies
-                        uses: actions/cache@v4
-                                with:
-                                          path: ~/.gradle/caches
-                                                    key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-                                                              restore-keys: |
-                                                                          gradle-
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-
       - name: Install Gradle 8.11.1 (AGP 8.9.1 needs Gradle 8.11.1+)
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.11.1-bin.zip
