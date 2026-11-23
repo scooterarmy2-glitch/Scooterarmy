@@ -8,7 +8,6 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
 import android.graphics.drawable.BitmapDrawable
@@ -481,8 +480,19 @@ class MainActivity : Activity() {
                 s to s
             }
             else -> {
-                val s = min((wPx * 0.94).toInt(), (hPx * 0.58).toInt())
-                s to s
+                // Portrait: the dial is an ELLIPSE (frame-11's perspective
+                // rim is ~1.12x taller than wide), nearly full width, so
+                // it fills the tall screen instead of floating in dead
+                // carbon like Build #75. Height is capped so the chips
+                // and bottom cards still fit.
+                var gw = (wPx * 0.98).toInt()
+                var gh = (gw * ReelGaugeView.ELLIPSE_Y).toInt()
+                val maxGh = (hPx * 0.72).toInt()
+                if (gh > maxGh) {
+                    gh = maxGh
+                    gw = (gh / ReelGaugeView.ELLIPSE_Y).toInt()
+                }
+                gw to gh
             }
         }
         val lp = binding.gaugeWrap.layoutParams as LinearLayout.LayoutParams
@@ -516,6 +526,16 @@ class MainActivity : Activity() {
                     binding.dialHeading.layoutParams as android.widget.FrameLayout.LayoutParams
                 headLp.topMargin = (h * 0.165).toInt()
                 binding.dialHeading.layoutParams = headLp
+                // Left-edge side panels (frame-11): GPS panel high on the
+                // dial's left edge, dish panel low — clear of the numbers.
+                val topLp =
+                    binding.sidePanelTop.layoutParams as android.widget.FrameLayout.LayoutParams
+                topLp.topMargin = (h * 0.08).toInt()
+                binding.sidePanelTop.layoutParams = topLp
+                val dishLp =
+                    binding.sidePanelDish.layoutParams as android.widget.FrameLayout.LayoutParams
+                dishLp.topMargin = (h * 0.70).toInt()
+                binding.sidePanelDish.layoutParams = dishLp
                 positionUnit()
             }
         }
@@ -632,34 +652,31 @@ class MainActivity : Activity() {
         val dm = resources.displayMetrics
         val density = dm.density
         val screenH = dm.heightPixels.toFloat()
-        // Carbon-fiber weave tile (12x12dp, 2x2 twill like the mockup):
-        // alternating horizontal- and vertical-sheen cells, dark gaps.
-        // The mockup's weave is fine — 24dp cells read too coarse.
-        val w = (12f * density).toInt().coerceAtLeast(2)
-        val h = (12f * density).toInt().coerceAtLeast(2)
+        // Carbon-fiber weave tile (16x16dp, DIAGONAL twill like frame-11):
+        // two sets of 45° strips crossing at 90°, subtle contrast. The
+        // old 2x2 square twill read as a checkerboard grid on device
+        // (Build #75 screenshot); the frame's weave is diagonal. Square
+        // tile + 45° lines + step dividing the tile = seamless repeat.
+        val w = (16f * density).toInt().coerceAtLeast(2)
+        val h = (16f * density).toInt().coerceAtLeast(2)
         val tile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(tile)
-        val cell = w / 2f
-        val horiz = LinearGradient(
-            0f, 0f, 0f, cell,
-            Color.parseColor("#191919"), Color.parseColor("#0b0b0b"),
-            Shader.TileMode.CLAMP
-        )
-        val vert = LinearGradient(
-            0f, 0f, cell, 0f,
-            Color.parseColor("#191919"), Color.parseColor("#0b0b0b"),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, cell, cell, Paint().apply { shader = horiz })
-        canvas.drawRect(cell, 0f, w.toFloat(), cell, Paint().apply { shader = vert })
-        canvas.drawRect(0f, cell, cell, h.toFloat(), Paint().apply { shader = vert })
-        canvas.drawRect(cell, cell, w.toFloat(), h.toFloat(), Paint().apply { shader = horiz })
-        val gridPaint = Paint().apply {
-            color = Color.parseColor("#050505")
-            strokeWidth = 1f * density
+        canvas.drawColor(Color.parseColor("#0e0e0e"))
+        val step = 8f * density
+        val diagA = Paint().apply {
+            color = Color.parseColor("#1b1b1b")
+            strokeWidth = 3.5f * density
         }
-        canvas.drawLine(cell, 0f, cell, h.toFloat(), gridPaint)
-        canvas.drawLine(0f, cell, w.toFloat(), cell, gridPaint)
+        val diagB = Paint().apply {
+            color = Color.parseColor("#131313")
+            strokeWidth = 3.5f * density
+        }
+        var x = -h.toFloat()
+        while (x < w + h) {
+            canvas.drawLine(x, 0f, x + h, h.toFloat(), diagA)
+            canvas.drawLine(x + step / 2f, 0f, x + step / 2f - h, h.toFloat(), diagB)
+            x += step
+        }
         val tiled = BitmapDrawable(resources, tile).apply {
             tileModeX = Shader.TileMode.REPEAT
             tileModeY = Shader.TileMode.REPEAT
@@ -960,7 +977,13 @@ class MainActivity : Activity() {
                 imuBridge.setBearingDeg(it)
                 lastBearingDeg = it
             }
-            f.alt?.let { lastAlt = it }
+            f.alt?.let {
+                lastAlt = it
+                // Altitude chip must refresh on the fix itself — it used
+                // to update only at startup / ride save / during a ride,
+                // so it sat on "—" after lock (Build #75 screenshot).
+                binding.statAlt.text = "${it.roundToInt()}m"
+            }
             imuBridge.onGpsFix() // truth wins: snap display, reset the bridge
         } else if (!gpsReady) {
             currentSpd = 0.0
@@ -1097,6 +1120,17 @@ class MainActivity : Activity() {
             )
         }
         binding.chipAcc.text = "Accuracy ${acc.roundToInt()}m"
+        // Left-edge GPS panel (frame-11): live bars + accuracy, the same
+        // signal value as the top GPS bars, drawn on the dial's edge.
+        val sideLit = (sig * 4 + 5) / 6
+        listOf(binding.sideBar1, binding.sideBar2, binding.sideBar3, binding.sideBar4)
+            .forEachIndexed { i, bar ->
+                bar.setBackgroundColor(
+                    if (i < sideLit) Color.parseColor("#ff6a00")
+                    else Color.parseColor("#333333")
+                )
+            }
+        binding.sideAcc.text = "${acc.roundToInt()}m"
         updateGpsPanel(acc, sig)
     }
 
@@ -1137,11 +1171,13 @@ class MainActivity : Activity() {
         binding.diagStatus.setTextColor(Color.parseColor(colorHex))
     }
 
-    /** Compass heading in the dial top — the ONLY compass on the main
-     *  screen (mockup v4 dedupe: no heading chip, no heading card). */
+    /** Compass heading in the dial top + the bottom Heading chip.
+     *  Frame-11 shows NW in both places, so it appears twice — exactly
+     *  like the photo, per Casey's "exactly like photo" call. */
     private fun updateHeading() {
         val pt = compassPoint(lastBearingDeg)
         binding.dialHeading.text = pt
+        binding.statHead.text = pt
     }
 
     /** Stat cards under the dial: the live ride while recording, else the
