@@ -21,4 +21,8 @@
             android:startColor="#d99a4e"
             android:endColor="#a86f28" />
     </path>
+    <!-- Build #78: bright top edge so the button reads as lit metal. -->
+    <path
+        android:pathData="M10,0 L100,0 L100,2 L10,2 Z"
+        android:fillColor="#59ffffff" />
 </vector>

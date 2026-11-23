@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient android:startColor="#17130c" android:endColor="#0d0b08" android:angle="270" />
-    <stroke android:width="1dp" android:color="#4a3a24" />
-    <corners android:radius="4dp" />
-</shape>
+<!-- TOP SPEED chip (Build #78): glassy amber-edged chip — brighter border
+     and a top inner highlight so it reads as lit glass, not a flat box. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#241c10" android:endColor="#120e07" android:angle="270" />
+            <stroke android:width="1dp" android:color="#b3d99a4e" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <item android:left="4dp" android:right="4dp" android:top="0dp" android:height="1dp" android:gravity="top">
+        <shape android:shape="rectangle">
+            <solid android:color="#2effffff" />
+        </shape>
+    </item>
+</layer-list>

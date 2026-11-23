@@ -9,7 +9,7 @@
     </item>
     <item android:left="4dp" android:right="4dp" android:top="0dp" android:height="1dp" android:gravity="top">
         <shape android:shape="rectangle">
-            <solid android:color="#40ffffff" />
+            <solid android:color="#59ffffff" />
         </shape>
     </item>
 </layer-list>

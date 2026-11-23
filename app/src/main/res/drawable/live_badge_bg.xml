@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Red LIVE badge pill (live map). -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#c62828" />
-    <corners android:radius="12dp" />
-</shape>
+<!-- Red LIVE badge pill (live map). Build #78: gradient + top highlight. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#e53935" android:endColor="#b71c1c" android:angle="270" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item android:left="6dp" android:right="6dp" android:top="0dp" android:height="1dp" android:gravity="top">
+        <shape android:shape="rectangle">
+            <solid android:color="#59ffffff" />
+        </shape>
+    </item>
+</layer-list>

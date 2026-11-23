@@ -2,14 +2,14 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <gradient android:startColor="#141414" android:endColor="#0d0d0d" android:angle="270" />
-            <stroke android:width="1dp" android:color="#333333" />
+            <gradient android:startColor="#1a1815" android:endColor="#0d0c0a" android:angle="270" />
+            <stroke android:width="1dp" android:color="#3d3d3d" />
             <corners android:radius="6dp" />
         </shape>
     </item>
     <item android:left="6dp" android:right="6dp" android:top="0dp" android:height="1dp" android:gravity="top">
         <shape android:shape="rectangle">
-            <solid android:color="#08ffffff" />
+            <solid android:color="#1affffff" />
         </shape>
     </item>
 </layer-list>
