@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Build #79: photographic brushed-metal photo under a translucent dark
-     tint. Amber top strip, border and radius unchanged from Build #78. -->
+     tint. LED-orange top strip, border and radius (Build #81). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
@@ -14,13 +14,13 @@
     <item>
         <shape android:shape="rectangle">
             <gradient android:startColor="#80000000" android:endColor="#b3000000" android:angle="270" />
-            <stroke android:width="1dp" android:color="#4a3a24" />
+            <stroke android:width="1dp" android:color="#ff6a00" />
             <corners android:radius="8dp" />
         </shape>
     </item>
     <item android:left="12dp" android:right="12dp" android:top="0dp" android:height="2dp" android:gravity="top">
         <shape android:shape="rectangle">
-            <solid android:color="#d99a4e" />
+            <solid android:color="#ff6a00" />
         </shape>
     </item>
 </layer-list>

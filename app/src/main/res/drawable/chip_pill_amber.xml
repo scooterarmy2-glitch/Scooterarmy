@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Speed chip pill (live map): muted-amber border, the active chip.
+<!-- Speed chip pill (live map): LED-orange border, the active chip (Build #81).
      Build #79: photographic brushed-metal photo under a translucent dark
      tint. Border, radius and top highlight unchanged. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -15,7 +15,7 @@
     <item>
         <shape android:shape="rectangle">
             <gradient android:startColor="#80000000" android:endColor="#b3000000" android:angle="270" />
-            <stroke android:width="1dp" android:color="#8a6a3a" />
+            <stroke android:width="1dp" android:color="#ff6a00" />
             <corners android:radius="16dp" />
         </shape>
     </item>

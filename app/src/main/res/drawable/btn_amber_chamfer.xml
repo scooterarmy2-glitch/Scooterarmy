@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- START RIDE button (look-pro): chamfered bar, muted-amber gradient.
+<!-- START RIDE button (Build #81 LED): chamfered bar, dark glass fill
+     with a bright LED-orange edge — a lit button, not a solid pastel
+     fill. (Was a muted-amber gradient.)
      Vector so the chamfer scales with the button: the path is a rectangle
      with the top-left and bottom-right corners cut at a diagonal. Works on
      API 21+; minSdk is 26. -->
@@ -10,16 +12,16 @@
     android:viewportHeight="24">
     <path
         android:pathData="M8,0 L100,0 L100,16 L92,24 L0,24 L0,8 Z"
-        android:strokeColor="#8a6a3a"
-        android:strokeWidth="1">
+        android:strokeColor="#ff6a00"
+        android:strokeWidth="2">
         <gradient
             android:type="linear"
             android:startX="0"
             android:startY="0"
             android:endX="0"
             android:endY="24"
-            android:startColor="#d99a4e"
-            android:endColor="#a86f28" />
+            android:startColor="#2a2a2a"
+            android:endColor="#141414" />
     </path>
     <!-- Build #78: bright top edge so the button reads as lit metal. -->
     <path
