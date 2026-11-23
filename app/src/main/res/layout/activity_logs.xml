@@ -1,83 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Trips page — fresh from the Trips frame (6591_28_o9mx.jpg):
+     "Every trip saved on your phone." + summary card (distance / moving
+     time / trip count) + ride list + timed-run list + bottom tabs.
+     Same LogStore, same exports, same detail dialogs as main. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_weight="1"
         android:orientation="vertical">
-
-        <!-- HEADER -->
-        <LinearLayout
-            android:id="@+id/headerRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/header_bg"
-            android:elevation="6dp"
-            android:gravity="center_vertical"
-            android:paddingLeft="18dp"
-            android:paddingTop="12dp"
-            android:paddingRight="18dp"
-            android:paddingBottom="10dp">
-
-            <TextView
-                android:id="@+id/backBtn"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/settings_btn_bg"
-                android:contentDescription="Back"
-                android:fontFamily="@font/orbitron_900"
-                android:gravity="center"
-                android:text="‹"
-                android:textColor="#cccccc"
-                android:textSize="22sp" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginLeft="12dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/orbitron_900"
-                    android:letterSpacing="0.06"
-                    android:text="#"
-                    android:textColor="#ff3300"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/orbitron_900"
-                    android:letterSpacing="0.06"
-                    android:text="SAMO GPS"
-                    android:textColor="@color/chrome"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/settingsBtn"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/settings_btn_bg"
-                android:contentDescription="Settings"
-                android:fontFamily="@font/share_tech_mono"
-                android:gravity="center"
-                android:text="⚙"
-                android:textColor="#cccccc"
-                android:textSize="20sp" />
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:background="@drawable/header_divider" />
 
         <ScrollView
             android:id="@+id/scrollView"
@@ -99,12 +36,12 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/orbitron_700"
+                    android:fontFamily="@font/orbitron_900"
                     android:gravity="center_horizontal"
-                    android:letterSpacing="0.3"
-                    android:text="LOGS"
-                    android:textColor="#bbbbbb"
-                    android:textSize="12sp" />
+                    android:letterSpacing="0.04"
+                    android:text="Every trip saved on your phone."
+                    android:textColor="#ffffff"
+                    android:textSize="16sp" />
 
                 <!-- SUMMARY CARD -->
                 <LinearLayout
@@ -208,6 +145,17 @@
                             android:textSize="10sp" />
                     </LinearLayout>
                     </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/sumTrips"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/share_tech_mono"
+                        android:gravity="center_horizontal"
+                        android:text="0 trips"
+                        android:textColor="#aaaaaa"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <!-- RIDES -->
@@ -384,4 +332,88 @@
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
-</FrameLayout>
+
+    <!-- BOTTOM TABS — Speed / Trips / Settings. -->
+    <LinearLayout
+        android:id="@+id/tabBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#0d0d0d"
+        android:orientation="horizontal"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <LinearLayout
+            android:id="@+id/tabSpeed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_tab_speed" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/orbitron_700"
+                android:text="Speed"
+                android:textColor="#bbbbbb"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabTrips"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/tab_active_bg"
+            android:clickable="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_tab_trips" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/orbitron_700"
+                android:text="Trips"
+                android:textColor="#ffffff"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabSettings"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_tab_settings" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/orbitron_700"
+                android:text="Settings"
+                android:textColor="#bbbbbb"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
