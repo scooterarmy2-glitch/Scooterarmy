@@ -167,6 +167,86 @@ fun fitGaugeForViewport(
     return maxOf(minGaugePx, fullGaugePx - overflow)
 }
 
+/**
+ * Gauge size from the WINDOW metrics only, Build #81 (replaces the
+ * Build #80 layout-listener fit as the size the activity actually
+ * uses): the portrait gauge is the smaller of (screen width + 8dp,
+ * so it bleeds slightly off the left/right edges) and (screen height
+ * minus the fixed design height of the rest of the portrait column —
+ * header, status strip, RIDE box, TIMED box, paddings — 451dp, measured
+ * from the Build #80 layout simulator: non-gauge column 1184px at
+ * density 2.625 = 451dp). It NEVER comes from a measured view height:
+ * measured heights are transient while the hierarchy settles (the
+ * ViewPager2 reparent in Builds #78–#80), and a transient shrink once
+ * stuck the gauge at the 320px floor on Casey's phone. The 320px floor
+ * survives only as a safety net for very short screens, where the
+ * ScrollView scrolls the overflow instead of shrinking the dial to
+ * nothing. Fullscreen / landscape branches are the pre-#81 formulas,
+ * unchanged. Pure, harness-tested.
+ */
+fun gaugeSizeForScreen(
+    wPx: Int,
+    hPx: Int,
+    density: Float,
+    landscape: Boolean,
+    fullscreen: Boolean
+): Pair<Int, Int> {
+    val reservedPx = (451f * density).toInt()
+    val full = wPx + (8 * density).toInt()
+    return when {
+        fullscreen && !landscape -> {
+            val s = minOf((wPx * 0.92).toInt(), (hPx * 0.62).toInt())
+            s to s
+        }
+        landscape && !fullscreen -> {
+            val sq = minOf(wPx, hPx) - (32 * density).toInt()
+            sq to sq
+        }
+        landscape || fullscreen -> {
+            val s = minOf(wPx, hPx) - (16 * density).toInt()
+            s to s
+        }
+        else -> {
+            val s = maxOf(320, minOf(full, hPx - reservedPx))
+            s to s
+        }
+    }
+}
+
+/** Which way a fling goes, for the swipe navigation (Build #81). */
+enum class FlingDir { NONE, RIGHT, LEFT }
+
+/**
+ * Swipe classifier for the main screen ↔ live map navigation (Build #81):
+ * a deliberate horizontal fling, not a vertical scroll and not a tap.
+ * `dx`/`dy` are the fling's total displacement in px, `vx` its horizontal
+ * velocity in px/s. Thresholds: at least 100px horizontally, at least
+ * twice as far horizontally as vertically, and at least 800 px/s
+ * horizontally. Pure, harness-tested — the gesture detector in
+ * MainActivity only calls showLiveMapPage/showMainPage when this
+ * returns RIGHT/LEFT.
+ */
+fun classifyFling(dx: Float, dy: Float, vx: Float): FlingDir {
+    val adx = kotlin.math.abs(dx)
+    val ady = kotlin.math.abs(dy)
+    if (adx < 100f) return FlingDir.NONE
+    if (adx < 2f * ady) return FlingDir.NONE
+    if (kotlin.math.abs(vx) < 800f) return FlingDir.NONE
+    return if (dx > 0) FlingDir.RIGHT else FlingDir.LEFT
+}
+
+/**
+ * One channel of a pixel under the readability scrim (Build #81):
+ * a black overlay of `dimAlpha` (0–255) over a base value 0–255.
+ * The Settings/Logs scrim uses dimAlpha 170 (≈67% black) so the carbon
+ * weave still shows through dimmed while text reads. Pure,
+ * harness-tested (the contrast check uses it).
+ */
+fun dimmedValue(v: Int, dimAlpha: Int): Int {
+    val a = dimAlpha.coerceIn(0, 255)
+    return (v * (255 - a)) / 255
+}
+
 /** Integer rect, pure-Kotlin (no android.graphics.Rect, so the JVM
  * harness can test the cover math without Android stubs). */
 data class CoverRect(val left: Int, val top: Int, val right: Int, val bottom: Int)

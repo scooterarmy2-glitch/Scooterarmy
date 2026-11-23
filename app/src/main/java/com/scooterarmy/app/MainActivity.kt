@@ -25,15 +25,11 @@ import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -74,8 +70,12 @@ class MainActivity : Activity() {
     private lateinit var store: LogStore
     private lateinit var settings: AppSettings
     private lateinit var imuBridge: ImuBridge
-    private lateinit var mainPager: ViewPager2
     private lateinit var liveMap: LiveMap
+    /** Live-map page root (page_live_map inflated as a direct child of
+     *  rootLayout, Build #81) — GONE while the speedometer shows. */
+    private lateinit var liveRoot: View
+    /** True while the live map is the visible page. */
+    private var liveMapVisible = false
 
     // ── GPS engine ──────────────────────────────────────────────
     private var locMgr: LocationManager? = null
@@ -240,10 +240,12 @@ class MainActivity : Activity() {
         // real carbon-fiber photo behind everything.
         applyPhotoBackground(binding.rootLayout)
         // Ember glows (density-scaled so they render the same on every screen).
+        // Build #81: vivid LED orange, not the muted amber — the brand hash,
+        // the speed digit and the timer all glow LED orange.
         val density = resources.displayMetrics.density
-        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#d99a4e"))
-        binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#d99a4e"))
-        binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#40d99a4e"))
+        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff6a00"))
+        binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#ff6a00"))
+        binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#40ff6a00"))
         binding.spdUnit.text = "MPH"
         binding.tgtSuf.text = "MPH"
         binding.topSpdUnit.text = "MPH"
@@ -291,17 +293,27 @@ class MainActivity : Activity() {
         renderBvL()
         updateSpeedDisplay()
         applySettings()
-        // Build #80: the pager MUST be set up before any chrome/layout
-        // logic runs. setupMainPager reparents the ScrollView into the
-        // ViewPager2 page — in Build #79 applyChromeVisibility ran first
-        // and its posted one-screen fit measured the ScrollView before
-        // the reparent (and before the first layout), read a ~0 viewport,
-        // computed a phantom overflow and clamped the gauge to the
-        // 320px floor, leaving the column vertically centred with the
-        // RIDE / TIMED boxes off-screen on Casey's phone.
-        setupMainPager()
+        // Build #81: NO ViewPager2, NO fit listener. Builds #78–#80 put
+        // the ScrollView inside a ViewPager2 page (RecyclerView) and sized
+        // the gauge from measured heights — and on Casey's phone the main
+        // screen still showed Build #79's broken layout (header centred,
+        // gauge at the 320px floor, boxes missing, weave only in a band)
+        // even though Build #80's code was installed (Settings proved it:
+        // the Background row was there and the weave rendered full-screen
+        // behind Settings, which has NO pager). The pager + measured-height
+        // fit are the only Main-specific layers over the root background,
+        // and no static analysis of the #80 code can produce that screen —
+        // so both mechanisms are removed instead of reordered again. The
+        // ScrollView stays a direct child of rootLayout (as before #77);
+        // the live map is a second direct child, GONE until swiped to;
+        // the gauge size is a pure function of the window metrics
+        // (gaugeSizeForScreen, Models.kt) and is never re-measured.
+        // Build tag in the header (Build #81): the build number is visible
+        // on the main screen itself, so any screenshot proves which build
+        // is actually running — no more "is it installed?" guessing.
+        binding.buildTag.text = "Build ${BuildConfig.VERSION_CODE}"
+        setupLiveMapPage()
         applyChromeVisibility()
-        setupGaugeFitListener()
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -316,54 +328,81 @@ class MainActivity : Activity() {
         setupFused()
     }
 
-    // ── Main pager: speedometer (page 0) + live map (page 1) ─────
-    // ViewPager2 handles the horizontal swipe; the speedo page keeps its
-    // own vertical scroll, so the two gestures never fight. The two pages
-    // are the pre-inflated views — with only two pages and
-    // offscreenPageLimit = 1 both stay attached, so the map is live the
-    // moment you swipe to it. (Trade-off, flagged: a horizontal drag on
-    // the map page is the swipe-back gesture, so map panning there is
-    // vertical-only while riding; follow-mode auto-centers anyway.)
-    private fun setupMainPager() {
-        val liveRoot = layoutInflater.inflate(R.layout.page_live_map, binding.rootLayout, false)
-        liveMap = LiveMap(liveRoot, onBack = { mainPager.setCurrentItem(0, true) }) {
+    // ── Live map page (Build #81 — replaces the ViewPager2) ─────
+    // The live map is a second direct child of rootLayout, GONE until
+    // shown. The ScrollView is never reparented (it stays a direct child,
+    // as before Build #77), so there is no RecyclerView measuring the
+    // speedo page and no pager state to restore. Swipe-right on the
+    // speedo shows the map; swipe-left on the map (or the back chevron)
+    // returns. The map is created once and stays live, so it is ready
+    // the moment you swipe to it — same as the pager's
+    // offscreenPageLimit = 1, without the pager.
+    private fun setupLiveMapPage() {
+        liveRoot = layoutInflater.inflate(R.layout.page_live_map, binding.rootLayout, false)
+        liveRoot.visibility = View.GONE
+        liveMap = LiveMap(liveRoot, onBack = { showMainPage() }) {
             settings.idleMin
         }
-        val pages = listOf<View>(binding.scrollView, liveRoot)
-        mainPager = ViewPager2(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            offscreenPageLimit = 1
-            adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-                override fun getItemCount() = pages.size
-                override fun getItemViewType(position: Int) = position
-                override fun onCreateViewHolder(
-                    parent: ViewGroup, viewType: Int
-                ): RecyclerView.ViewHolder {
-                    val v = pages[viewType]
-                    v.layoutParams = RecyclerView.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    return object : RecyclerView.ViewHolder(v) {}
-                }
+        binding.rootLayout.addView(liveRoot)
+    }
 
-                override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {}
+    /** Show the live map (swipe-right from the speedo). */
+    private fun showLiveMapPage() {
+        if (liveMapVisible) return
+        liveMapVisible = true
+        binding.scrollView.visibility = View.GONE
+        liveRoot.visibility = View.VISIBLE
+        // Same refresh the pager did when page 1 was swiped into view:
+        // force the tiles to re-request + redraw so the "Map data not yet
+        // available" placeholders never sit there while real tiles are
+        // one request away.
+        liveMap.refresh()
+    }
+
+    /** Show the speedometer (swipe-left from the map, or back chevron). */
+    private fun showMainPage() {
+        if (!liveMapVisible) return
+        liveMapVisible = false
+        liveRoot.visibility = View.GONE
+        binding.scrollView.visibility = View.VISIBLE
+        // The chrome pass re-asserts the portrait layout on return, so a
+        // rotation or fullscreen toggle while the map was up cannot leave
+        // the speedo in a stale state.
+        applyChromeVisibility()
+    }
+
+    // Swipe navigation (Build #81): a deliberate horizontal fling moves
+    // between the speedo and the live map. The detector runs here, in
+    // dispatchTouchEvent, so it sees the gesture before any child — the
+    // gauge double-tap listener and the ScrollView's vertical scroll are
+    // untouched, and the event always flows on to the children (the
+    // return value is super's, never the detector's). classifyFling
+    // (Models.kt) is the gate: vertical scrolls and taps return NONE.
+    private val navGesture = GestureDetector(
+        this,
+        object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                return when (classifyFling(e2.x - e1.x, e2.y - e1.y, velocityX)) {
+                    FlingDir.RIGHT -> {
+                        if (!liveMapVisible) showLiveMapPage()
+                        true
+                    }
+                    FlingDir.LEFT -> {
+                        if (liveMapVisible) showMainPage()
+                        true
+                    }
+                    FlingDir.NONE -> false
+                }
             }
         }
-        binding.rootLayout.removeView(binding.scrollView)
-        binding.rootLayout.addView(mainPager, 0)
-        // Build #78: when the live-map page is swiped into view, force
-        // the tiles to re-request + redraw. The map is created offscreen
-        // and its first draw happens only when visible — this makes sure
-        // the "Map data not yet available" placeholders never sit there
-        // while real tiles are one request away.
-        mainPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                if (position == 1) liveMap.refresh()
-            }
-        })
+    )
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        navGesture.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
     }
 
     /** Seconds since the current ride started (0 when not recording). */
@@ -513,46 +552,22 @@ class MainActivity : Activity() {
         // whatever transient state the column is in, portrait is TOP.
         if (!speedoOnly) binding.contentCol.gravity = Gravity.TOP
 
-        // Gauge size (look-pro): portrait fills side to side — the gauge
-        // is 4dp wider than the screen on each side, so it bleeds slightly
-        // off the left/right edges (clipChildren=false on the column lets
-        // it draw). Full-screen and landscape sizing unchanged.
+        // Gauge size (Build #81): a pure function of the window metrics
+        // (gaugeSizeForScreen, Models.kt) — never of a measured view
+        // height, and never re-measured by a layout listener. The
+        // Build #78 posted fit and the Build #80 layout listener both
+        // sized the gauge from heights read during layout passes, and on
+        // Casey's phone the gauge still ended up at the 320px floor with
+        // the column centred and the boxes missing — even with Build #80
+        // installed. The size is now computed once per chrome pass from
+        // displayMetrics and stays put until the next chrome pass
+        // (rotation, fullscreen toggle, resume).
         val dm = resources.displayMetrics
-        val wPx = dm.widthPixels
-        val hPx = dm.heightPixels
-        val (gw, gh) = when {
-            fullscreen && !isLandscape() ->
-                (min((wPx * 0.92).toInt(), (hPx * 0.62).toInt()) to
-                    min((wPx * 0.92).toInt(), (hPx * 0.62).toInt()))
-            landscapePanel -> {
-                val sq = min(wPx, hPx) - (32 * dm.density).toInt()
-                sq to sq
-            }
-            speedoOnly -> {
-                val s = min(wPx, hPx) - (16 * dm.density).toInt()
-                s to s
-            }
-            else -> {
-                val s = wPx + (8 * dm.density).toInt()
-                s to s
-            }
-        }
+        val (gw, gh) = gaugeSizeForScreen(
+            dm.widthPixels, dm.heightPixels, dm.density,
+            isLandscape(), fullscreen
+        )
         layoutGaugeSize(gw, gh, speedoOnly)
-        // Build #80 one-screen fit (portrait only): the fit now lives in
-        // setupGaugeFitListener() — a layout listener registered once in
-        // onCreate AFTER setupMainPager. The Build #78 version posted a
-        // runnable from here that read contentCol/scrollView heights
-        // before the ScrollView had been reparented into the ViewPager2
-        // page and laid out; on Casey's phone it read a ~0 viewport,
-        // computed a phantom overflow and clamped the gauge to the
-        // 320px floor (fitGaugeSize's min), and the column ended up
-        // vertically centred with the RIDE / TIMED boxes off-screen.
-        // The listener runs AFTER a layout pass, so the heights it reads
-        // are real, it refuses unlaid-out (<= 0) heights, and
-        // fitGaugeForViewport() (Models.kt) is idempotent and restores
-        // the gauge when there is room — repeated layouts converge
-        // instead of ratcheting down. Landscape and fullscreen are
-        // already speedo-only, nothing to fit.
         // TOP SPEED chip hardening (Build #78): the chip is in the
         // layout and VISIBLE in portrait, but it did not appear in
         // Casey's Build #77 screenshot. No code path sets it GONE in
@@ -569,54 +584,16 @@ class MainActivity : Activity() {
         updateLandPanel()
     }
 
-    /** One-screen gauge fit, Build #80 (replaces the Build #78 posted
-     *  fit): a layout listener on the ScrollView, registered once in
-     *  onCreate AFTER setupMainPager. It fires after a layout pass, so
-     *  the heights it reads are the real ones — never the 0 / stale
-     *  heights the old posted runnable read before the ScrollView had
-     *  been reparented into the ViewPager2 page. Guards: portrait
-     *  non-fullscreen only, both heights > 0, and it does nothing when
-     *  the heights are unchanged since the last run (the listener also
-     *  fires on every speed-digit update). fitGaugeForViewport is
-     *  idempotent and restores the gauge when room opens up (a box
-     *  hidden, a session ended), so a bad shrink heals itself on the
-     *  next layout instead of sticking until the next chrome pass. */
-    private var gaugeFitListenerRegistered = false
-    private var lastFitViewportH = -1
-    private var lastFitContentH = -1
-    private var lastFitGaugePx = -1
-
-    private fun setupGaugeFitListener() {
-        if (gaugeFitListenerRegistered) return
-        gaugeFitListenerRegistered = true
-        binding.scrollView.viewTreeObserver.addOnGlobalLayoutListener {
-            if (isLandscape() || fullscreen) return@addOnGlobalLayoutListener
-            val viewportH = binding.scrollView.height
-            val contentH = binding.contentCol.height
-            if (viewportH <= 0 || contentH <= 0) return@addOnGlobalLayoutListener
-            val current =
-                (binding.gaugeWrap.layoutParams as LinearLayout.LayoutParams).height
-            if (viewportH == lastFitViewportH && contentH == lastFitContentH &&
-                current == lastFitGaugePx
-            ) return@addOnGlobalLayoutListener
-            lastFitViewportH = viewportH
-            lastFitContentH = contentH
-            lastFitGaugePx = current
-            val dm = resources.displayMetrics
-            val fullGauge = dm.widthPixels + (8 * dm.density).toInt()
-            val target = fitGaugeForViewport(contentH, viewportH, current, fullGauge)
-            if (target != current) {
-                layoutGaugeSize(target, target, false)
-            }
-        }
-    }
-
     /** Gauge layout params + the speed-digit scale that tracks them.
-     * Split out of applyChromeVisibility so the Build #78 one-screen
-     * fit pass can re-apply a shrunk gauge without redoing the whole
-     * chrome pass. The digit keeps its exact relative spot on the dial
-     * at any gauge size (72sp and a 50dp bottom margin at the old
-     * 320dp gauge). */
+     * The digit keeps its exact relative spot on the dial at any gauge
+     * size (72sp and a 50dp bottom margin at the old 320dp gauge).
+     * Build #81: the Build #80 layout-listener fit is DELETED (the
+     * listener + its fields are gone, not just uncalled) — the gauge
+     * size now comes only from gaugeSizeForScreen() in
+     * applyChromeVisibility, a pure function of the window metrics.
+     * fitGaugeForViewport() stays in Models.kt (pure, harness-tested)
+     * as the documented one-screen-fit math, but nothing in the
+     * activity calls it anymore. */
     private fun layoutGaugeSize(gw: Int, gh: Int, speedoOnly: Boolean) {
         val dm = resources.displayMetrics
         val landscapePanel = isLandscape() && !fullscreen
@@ -755,9 +732,9 @@ class MainActivity : Activity() {
                 tv.paint.shader = LinearGradient(
                     0f, 0f, 0f, tv.height.toFloat(),
                     intArrayOf(
-                        Color.parseColor("#e8b06a"),
-                        Color.parseColor("#c98a3d"),
-                        Color.parseColor("#a86f28")
+                        Color.parseColor("#ffb347"),
+                        Color.parseColor("#ff8c1a"),
+                        Color.parseColor("#ff6a00")
                     ),
                     floatArrayOf(0f, 0.5f, 1f),
                     Shader.TileMode.CLAMP
@@ -953,7 +930,7 @@ class MainActivity : Activity() {
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
         binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#d99a4e"))
+        binding.giAcc.setTextColor(Color.parseColor("#ff8c1a"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
@@ -965,7 +942,7 @@ class MainActivity : Activity() {
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
         binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#d99a4e"))
+        binding.giAcc.setTextColor(Color.parseColor("#ff8c1a"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
@@ -1106,19 +1083,22 @@ class MainActivity : Activity() {
         val ratio = disp / maxSpd()
 
         binding.spdNum.text = disp.roundToInt().toString()
+        // Build #81 LED: the speed digit is white at normal speeds and
+        // turns LED orange, then LED red, as it nears the gauge max —
+        // glowing lines, never a pale pastel fill. (The muted amber
+        // (the muted-amber thresholds are gone.)
         binding.spdNum.setTextColor(
             when {
-                ratio > 0.85 -> Color.parseColor("#c65a2e")
-                ratio > 0.6 -> Color.parseColor("#d99a4e")
+                ratio > 0.85 -> Color.parseColor("#ff2d1a")
+                ratio > 0.6 -> Color.parseColor("#ff8c1a")
                 else -> Color.WHITE
             }
         )
-        // Ember glow follows the speed color — muted amber now (look-pro),
-        // stronger radius in Build #78 so it reads as a glow, not a halo.
+        // LED glow follows the speed color — vivid orange, red at the top.
         val glowColor = when {
-            ratio > 0.85 -> Color.parseColor("#c65a2e")
-            ratio > 0.6 -> Color.parseColor("#d99a4e")
-            else -> Color.parseColor("#d99a4e")
+            ratio > 0.85 -> Color.parseColor("#ff2d1a")
+            ratio > 0.6 -> Color.parseColor("#ff6a00")
+            else -> Color.parseColor("#ff6a00")
         }
         binding.spdNum.setShadowLayer(16f * resources.displayMetrics.density, 0f, 0f, glowColor)
         binding.gauge.speed = disp
@@ -1146,7 +1126,7 @@ class MainActivity : Activity() {
         val gpsEl = binding.fsGpsVal
         when {
             lastSig >= 3 -> { gpsEl.text = "LOCKED"; gpsEl.setTextColor(Color.parseColor("#39ff14")) }
-            lastSig >= 1 -> { gpsEl.text = "WEAK"; gpsEl.setTextColor(Color.parseColor("#d99a4e")) }
+            lastSig >= 1 -> { gpsEl.text = "WEAK"; gpsEl.setTextColor(Color.parseColor("#ff8c1a")) }
             else -> { gpsEl.text = "POOR"; gpsEl.setTextColor(Color.parseColor("#ff5533")) }
         }
         val accEl = binding.fsAccVal
@@ -1154,7 +1134,7 @@ class MainActivity : Activity() {
         accEl.setTextColor(
             when {
                 lastAcc < 5 -> Color.parseColor("#39ff14")
-                lastAcc < 20 -> Color.parseColor("#d99a4e")
+                lastAcc < 20 -> Color.parseColor("#ff8c1a")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1193,7 +1173,7 @@ class MainActivity : Activity() {
             }
             sig >= 1 -> {
                 statusEl.text = "WEAK"
-                statusEl.setTextColor(Color.parseColor("#d99a4e"))
+                statusEl.setTextColor(Color.parseColor("#ff8c1a"))
             }
             else -> {
                 statusEl.text = "POOR"
@@ -1205,7 +1185,7 @@ class MainActivity : Activity() {
         accEl.setTextColor(
             when {
                 acc < 5 -> Color.parseColor("#39ff14")
-                acc < 20 -> Color.parseColor("#d99a4e")
+                acc < 20 -> Color.parseColor("#ff8c1a")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1236,7 +1216,7 @@ class MainActivity : Activity() {
         el.setTextColor(
             when {
                 age < 1.5 -> Color.parseColor("#39ff14")
-                age < 3 -> Color.parseColor("#d99a4e")
+                age < 3 -> Color.parseColor("#ff8c1a")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1267,8 +1247,8 @@ class MainActivity : Activity() {
         }
         state = RunState.ARMED
         binding.timerBig.text = "0.000"
-        binding.timerBig.setTextColor(Color.parseColor("#d99a4e"))
-        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#d99a4e"))
+        binding.timerBig.setTextColor(Color.parseColor("#ffffff"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ff6a00"))
         startArmFlash()
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
@@ -1297,8 +1277,8 @@ class MainActivity : Activity() {
         state = RunState.RUNNING
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
-        binding.timerBig.setTextColor(Color.parseColor("#d99a4e"))
-        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#d99a4e"))
+        binding.timerBig.setTextColor(Color.parseColor("#ffffff"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ff6a00"))
         uiHandler.post(timerTick)
         updateLandPanel()
     }
@@ -1328,8 +1308,8 @@ class MainActivity : Activity() {
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
         binding.timerBig.text = "0.000"
-        binding.timerBig.setTextColor(Color.parseColor("#d99a4e"))
-        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#40d99a4e"))
+        binding.timerBig.setTextColor(Color.parseColor("#ffffff"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#40ff6a00"))
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
         binding.armBtn.text = "START TIMED RUN"
@@ -1428,8 +1408,8 @@ class MainActivity : Activity() {
         binding.sessBtn.text = "START RIDE"
         binding.sessBtn.setBackgroundResource(R.drawable.btn_amber_chamfer)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#8a6a3a")
-            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#8a6a3a")
+            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#ff6a00")
+            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#ff6a00")
         }
         binding.sessLive.visibility = View.GONE
         applyChromeVisibility()

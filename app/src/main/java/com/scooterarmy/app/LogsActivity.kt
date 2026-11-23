@@ -47,8 +47,10 @@ class LogsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLogsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // Same photographic background as the main screen (Build #79).
-        applyPhotoBackground(binding.root)
+        // Same photographic background as the main screen — with the
+        // Build #81 readability scrim (DIMMED_ALPHA), same reason as
+        // Settings: the bare weave fights the small grey text.
+        applyPhotoBackground(binding.root, DIMMED_ALPHA)
         store = LogStore(this)
         RouteMapDialog.configure(this)
 
@@ -124,7 +126,7 @@ class LogsActivity : Activity() {
             row.runBestBadge.visibility = if (run.isBest) View.VISIBLE else View.GONE
             row.root.setBackgroundResource(if (run.isBest) R.drawable.log_item_best_bg else R.drawable.log_item_bg)
             row.runTime.setTextColor(
-                if (run.isBest) Color.parseColor("#d99a4e") else Color.parseColor("#f0f0f0")
+                if (run.isBest) Color.parseColor("#ff8c1a") else Color.parseColor("#f0f0f0")
             )
             row.root.setOnClickListener { openRunDetail(run) }
             row.runDel.setOnClickListener {

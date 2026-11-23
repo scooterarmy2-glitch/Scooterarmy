@@ -75,9 +75,24 @@ private object PhotoCache {
     }
 }
 
-/** Draws one bitmap cover-scale inside its bounds (Build #80). */
-private class PhotoBackgroundDrawable(private val bitmap: Bitmap) : Drawable() {
+/** Draws one bitmap cover-scale inside its bounds (Build #80).
+ * Build #81: an optional readability scrim — a black overlay of
+ * `dimAlpha` (0–255) drawn over the photo, so the weave still shows
+ * through dimmed underneath while text on top reads clearly. The main
+ * screen keeps dimAlpha 0 (its scrim is baked into the asset, as Casey
+ * approved); the text-heavy Settings and Logs screens pass
+ * [DIMMED_ALPHA], because Casey found the bare weave "terrible behind
+ * the settings" — the small grey helper text was nearly illegible
+ * against the high-contrast basket pattern. */
+private class PhotoBackgroundDrawable(
+    private val bitmap: Bitmap,
+    private val dimAlpha: Int = 0
+) : Drawable() {
     private val photoPaint = Paint().apply { isFilterBitmap = true }
+    private val dimPaint = Paint().apply {
+        color = android.graphics.Color.BLACK
+        alpha = dimAlpha.coerceIn(0, 255)
+    }
     private var srcRect: Rect? = null
 
     override fun onBoundsChange(bounds: Rect) {
@@ -90,6 +105,7 @@ private class PhotoBackgroundDrawable(private val bitmap: Bitmap) : Drawable() {
     override fun draw(canvas: Canvas) {
         val src = srcRect ?: return
         canvas.drawBitmap(bitmap, src, bounds, photoPaint)
+        if (dimAlpha > 0) canvas.drawRect(bounds, dimPaint)
     }
 
     override fun setAlpha(alpha: Int) {
@@ -104,14 +120,23 @@ private class PhotoBackgroundDrawable(private val bitmap: Bitmap) : Drawable() {
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
 
+/** Readability scrim for the text-heavy screens (Build #81): ~67%
+ * black over the photo. Strong enough that the small grey helper text
+ * reads (verified in the render + harness contrast check), light enough
+ * that the weave still shows through dimmed underneath. Main keeps 0. */
+const val DIMMED_ALPHA = 170
+
 /** Photographic background for a screen root view. Reads the stored
  *  background choice (Settings > Display > Background, carbon default)
  *  from the view's own context, so Main, Settings and Logs all follow
  *  the same choice with no call-site changes. Panels and chips keep
  *  their brushed-metal photo look regardless — they are separate
- *  drawables and this choice only changes the full-screen photo. */
-fun applyPhotoBackground(root: View) {
+ *  drawables and this choice only changes the full-screen photo.
+ *  `dimAlpha` is the Build #81 readability scrim (0 = none, as Main
+ *  uses; DIMMED_ALPHA on Settings/Logs). */
+fun applyPhotoBackground(root: View, dimAlpha: Int = 0) {
     root.background = PhotoBackgroundDrawable(
-        PhotoCache.photo(root.resources, AppSettings(root.context).background)
+        PhotoCache.photo(root.resources, AppSettings(root.context).background),
+        dimAlpha
     )
 }

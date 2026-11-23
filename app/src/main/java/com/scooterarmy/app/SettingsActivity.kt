@@ -28,9 +28,17 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // Same photographic background as the main screen (Build #79).
-        applyPhotoBackground(binding.root)
+        // Same photographic background as the main screen — with the
+        // Build #81 readability scrim (DIMMED_ALPHA): Casey found the
+        // bare weave "terrible behind the settings", the small grey
+        // helper text nearly illegible against the basket pattern. The
+        // weave still shows through dimmed underneath; the text reads.
+        applyPhotoBackground(binding.root, DIMMED_ALPHA)
         settings = AppSettings(this)
+        // Build #81: visible build identifier — "Build 81 • v1.1.0" —
+        // so any screenshot proves which build is installed.
+        binding.buildLabel.text =
+            "Build ${BuildConfig.VERSION_CODE} • v${BuildConfig.VERSION_NAME}"
 
         // ── Speed response preset ──
         binding.presetGroup.setOnCheckedChangeListener { _, checkedId ->
@@ -134,7 +142,7 @@ class SettingsActivity : Activity() {
                 R.id.bgBrushed -> AppSettings.BG_BRUSHED
                 else -> AppSettings.BG_CARBON
             }
-            applyPhotoBackground(binding.root)
+            applyPhotoBackground(binding.root, DIMMED_ALPHA)
         }
 
         // ── Advanced ──
