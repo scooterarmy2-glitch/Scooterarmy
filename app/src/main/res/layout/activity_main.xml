@@ -1413,4 +1413,20 @@
                 android:textSize="16sp" />
         </LinearLayout>
     </LinearLayout>
+
+    <!-- BUILD #84 TEMPORARY DIAGNOSTICS OVERLAY: floats above the ScrollView
+         content (last child of rootLayout) so it never disturbs the layout
+         it measures. White monospace on an 80%-black scrim, updated from
+         MainActivity.updateDiagOverlay(). Remove when the bug is found. -->
+    <TextView
+        android:id="@+id/diagOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="#cc000000"
+        android:padding="6dp"
+        android:text="DIAG …"
+        android:textColor="#ffffff"
+        android:textSize="11sp"
+        android:typeface="monospace" />
 </FrameLayout>
