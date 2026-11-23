@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fullscreen info row: dark background with a 1px #1a1a1a top border (web .fs-info-row). -->
+<!-- Fullscreen info row: dark background with a 1px #1a1a1a top border (web .fs-info-row).
+     Build #79: photographic brushed-metal photo under a translucent dark tint. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#141210" />
+        </shape>
+    </item>
+    <item>
+        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#80000000" android:endColor="#b3000000" android:angle="270" />
         </shape>
     </item>
     <item android:height="1dp" android:gravity="top">
