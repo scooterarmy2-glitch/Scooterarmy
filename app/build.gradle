@@ -44,8 +44,10 @@ android {
 }
 
 dependencies {
-    // Route map (VIEW ROUTE) — OpenStreetMap tiles, no API key
+    // Route map (VIEW ROUTE) + live map — Esri dark tiles, no API key
     implementation 'org.osmdroid:osmdroid-android:6.1.18'
+    // Main pager: speedometer page + live map page (swipe right).
+    implementation 'androidx.viewpager2:viewpager2:1.0.0'
     // Fused Location Provider — fast lock + smooth fixes in town/trees.
     // Speed/timing still come from raw GPS_PROVIDER (Doppler) only.
     implementation 'com.google.android.gms:play-services-location:21.3.0'
