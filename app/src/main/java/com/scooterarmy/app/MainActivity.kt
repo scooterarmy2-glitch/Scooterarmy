@@ -378,7 +378,13 @@ class MainActivity : Activity() {
     // untouched, and the event always flows on to the children (the
     // return value is super's, never the detector's). classifyFling
     // (Models.kt) is the gate: vertical scrolls and taps return NONE.
-    private val navGesture = GestureDetector(
+    // Build #82: LAZY — an eager navGesture built with `this` runs during
+    // Activity construction, before attach() sets the base context, and
+    // GestureDetector's constructor touches ViewConfiguration/Resources
+    // through that null context: NPE, instant crash on launch (#81).
+    // First use is dispatchTouchEvent, which only runs after onCreate.
+    private val navGesture by lazy {
+        GestureDetector(
         this,
         object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(
@@ -398,7 +404,8 @@ class MainActivity : Activity() {
                 }
             }
         }
-    )
+        )
+    }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         navGesture.onTouchEvent(ev)
