@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- TOP SPEED chip (Build #81 LED): glassy LED-orange-edged chip — brighter border
      and a top inner highlight so it reads as lit glass, not a flat box.
-     Build #79: photographic brushed-metal photo under a translucent dark
-     tint. Amber border and top highlight unchanged. -->
+     Build #85: the <bitmap> item is GONE. A <bitmap> layer reports the
+     bitmap's intrinsic size (brushed_metal.jpg is 1600x1000) as the
+     drawable's minimum, and Android floors wrap_content views at their
+     background's minimum — that floored this chip to 1000px tall and
+     1038px wide, covering the whole gauge (Build #84 overlay: chip x0
+     y51). The brushed-steel look now comes from the code-built
+     BrushedPanelDrawable (Backgrounds.kt, zero minimum); this XML keeps
+     the same base, tint, border and highlight as defence-in-depth.
+     Amber border and top highlight unchanged. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#120e07" />
             <corners android:radius="4dp" />
         </shape>
-    </item>
-    <item>
-        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
     </item>
     <item>
         <shape android:shape="rectangle">

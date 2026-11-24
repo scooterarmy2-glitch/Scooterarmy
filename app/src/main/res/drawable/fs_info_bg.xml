@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Fullscreen info row: dark background with a 1px #1a1a1a top border (web .fs-info-row).
-     Build #79: photographic brushed-metal photo under a translucent dark tint. -->
+     Build #85: the <bitmap> item is GONE. A <bitmap> layer reports the
+     bitmap's intrinsic size (brushed_metal.jpg is 1600x1000) as the
+     drawable's minimum, and Android floors wrap_content views at their
+     background's minimum. The brushed-steel look now comes from the
+     code-built BrushedPanelDrawable (Backgrounds.kt, zero minimum);
+     this XML keeps the same base, tint and top border as
+     defence-in-depth. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#141210" />
         </shape>
-    </item>
-    <item>
-        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
     </item>
     <item>
         <shape android:shape="rectangle">
