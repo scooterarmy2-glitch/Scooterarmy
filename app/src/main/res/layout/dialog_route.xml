@@ -3,21 +3,29 @@
      bright blue route, green Start / red End pins, one stats row
      (distance / time / top speed, the ride's real numbers), Export GPX /
      Export CSV buttons. NO headline — Casey explicitly cut the
-     "GPX + CSV EXPORT. YOURS TO KEEP." line. Build #90: FULL SCREEN
-     (root match_parent, map 0dp + weight 1 — the map takes all remaining
-     space) and the "Export Data" title row is GONE (Casey Nov 23) — the
-     export buttons stay exactly as they are. -->
+     "GPX + CSV EXPORT. YOURS TO KEEP." line. The "ROUTE — <date>" title
+     STAYS (Casey Nov 24). Build #90: FULL SCREEN (root match_parent,
+     map 0dp + weight 1) and the "Export Data" title row is GONE
+     (Casey Nov 23) — the export buttons stay exactly as they are.
+     Build #91: TRULY full screen — the window is a non-floating
+     fullscreen dialog (RouteFullscreenDialog theme), so the root is
+     flat #080808 with NO padding and NO rounded corners: the map
+     bleeds to the display edges and no Logs screen shows anywhere.
+     The title / stats / buttons keep their own side insets. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/dialog_bg"
+    android:background="#080808"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="0dp">
 
     <TextView
         android:id="@+id/routeTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="16dp"
         android:fontFamily="@font/orbitron_700"
         android:text="ROUTE"
         android:letterSpacing="0.2"
@@ -41,7 +49,9 @@
         android:id="@+id/routeStatsPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="12dp"
+        android:layout_marginRight="16dp"
         android:background="@drawable/panel_bg"
         android:orientation="horizontal"
         android:paddingLeft="12dp"
@@ -131,7 +141,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="12dp"
+        android:layout_marginRight="16dp"
         android:orientation="horizontal">
 
         <Button
@@ -163,7 +175,10 @@
         android:id="@+id/routeClose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="12dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
         android:background="@drawable/dialog_btn_bg"
         android:fontFamily="@font/orbitron_700"
         android:letterSpacing="0.25"
