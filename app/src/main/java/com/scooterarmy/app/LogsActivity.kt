@@ -13,8 +13,12 @@ import com.scooterarmy.app.databinding.ItemRideBinding
 import com.scooterarmy.app.databinding.ItemRunBinding
 
 /**
- * Logs page (SpeedLog "Trips" shape, #SAMO style): summary card on top,
- * then the Rides and Timed Runs lists that used to live on the main screen.
+ * Logs page (SpeedLog "Trips" shape, #SAMO style): the RIDES and TIMED
+ * RUNS lists that used to live on the main screen. Build #90 (Casey
+ * Nov 23): the totals/summary card is GONE — the screen starts with
+ * RIDES. The header brand is ENGRAVED into the steel, matching the
+ * main screen (ENGRAVED_* spec, Models.kt) — the chrome title was
+ * cut by Casey the same day, before this build shipped.
  *
  * Reads the SAME LogStore / SharedPreferences as MainActivity — no
  * migration, no new keys, old rides and runs show up untouched.
@@ -54,11 +58,18 @@ class LogsActivity : Activity() {
         // minimum size (Backgrounds.kt) — the old header_bg / panel_bg
         // XMLs floored the header and the summary card at 1000px tall
         // (the Build #79 bitmap-floor defect; Casey's Build #85 Logs
-        // screenshot showed the giant steel panels).
+        // screenshot showed the giant steel panels). Build #90: the
+        // summary card is GONE (Casey Nov 23), so only the header
+        // gets a code-built background here.
         binding.headerRow.background =
             brushedPanelBackground(resources, PanelVariant.HEADER)
-        binding.summaryCard.background =
-            brushedPanelBackground(resources, PanelVariant.PANEL)
+        // Build #90 revised: ENGRAVED header brand (Casey Nov 23 —
+        // chrome title is OUT), matching the main screen (ENGRAVED_*
+        // spec, Models.kt): dark cut body + a fine bright edge along
+        // the bottom of each letter, cut into the brushed steel.
+        val density = resources.displayMetrics.density
+        applyEngravedTitle(binding.brandHash, density)
+        applyEngravedTitle(binding.brandText, density)
         store = LogStore(this)
         RouteMapDialog.configure(this)
 
@@ -88,19 +99,21 @@ class LogsActivity : Activity() {
     }
 
     private fun renderAll() {
-        renderSummary()
         renderRides()
         renderRuns()
     }
 
-    private fun renderSummary() {
-        val s = summarizeLogs(rides, runs)
-        binding.sumDist.text = formatTotalDist(s.totalDistMi)
-        binding.sumDistSub.text =
-            "${s.rideCount} ride${if (s.rideCount == 1) "" else "s"}"
-        binding.sumTime.text = fmtDur(s.totalMovingSec.toInt())
-        binding.sumTimeSub.text =
-            "${s.runCount} run${if (s.runCount == 1) "" else "s"}"
+    /** Build #90 revised: ENGRAVED title (Casey Nov 23 — the chrome
+     * title is OUT). Dark cut body + one paint shadow: a fine bright
+     * edge 1dp BELOW the glyphs, slightly softened — light catching
+     * the bottom edge of the cut into the brushed steel. Same
+     * treatment on "#" and "SAMO GPS", matching the main screen. */
+    private fun applyEngravedTitle(tv: android.widget.TextView, density: Float) {
+        tv.setTextColor(ENGRAVED_BODY_COLOR)
+        tv.setShadowLayer(
+            ENGRAVED_EDGE_RADIUS_DP * density, 0f,
+            ENGRAVED_EDGE_DY_DP * density, ENGRAVED_EDGE_COLOR
+        )
     }
 
     private fun renderRides() {

@@ -53,18 +53,21 @@ class GaugeView @JvmOverloads constructor(
     // white so it stands out against the blue arc; the arc, ring and
     // hub glow blue. Green stays ONLY on the target tick (the goal
     // marker); red never appears on the dial face.
-    // Build #89: STRONG underglow under the outer rim — two blurred
-    // blue arcs drawn BEFORE the rim, so the rim covers their inner
-    // part and the glow spills outward onto the black background.
-    // (Casey Nov 23 picked STRONG over soft.) The paints are the
-    // glow passes; see onDraw for the widths / radii.
-    private val rimGlowHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Build #90: GRADIENT underglow under the outer rim (Casey Nov 23:
+    // the #89 blob "looks like crap needs to be more of a gradient ..
+    // right now its just a big ass blob"). ONE arc stroke whose paint
+    // carries a RadialGradient shader — brightest at the rim's outer
+    // edge, fading smoothly to transparent outward. The shader is
+    // evaluated per-pixel by radius, so the falloff is a true smooth
+    // gradient, not stacked translucent bands: no flat band, no hard
+    // outer edge. The stroke spans from 2 units inside the rim
+    // centreline (hidden under the rim, drawn next) to
+    // RIM_GLOW_WIDTH_UNITS outside it; the stop spec lives in
+    // Models.kt (RIM_GLOW_STOPS / rimGlowAlphaAt) so the harness can
+    // prove the falloff. Same 270° sweep as the dial. Blue #00b4ff
+    // only; the ring itself is untouched (grey/white, drawn next).
+    private val rimGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#00b4ff")
-    }
-    private val rimGlowCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#00b4ff")
     }
     private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
@@ -83,9 +86,14 @@ class GaugeView @JvmOverloads constructor(
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
         color = Color.parseColor("#4000b4ff")
     }
+    // Build #90: the top band is CHROME, not flat white (Casey Nov 23:
+    // "shiny chrome too"). The paint carries the same diagonal chrome
+    // gradient as the ticks (CHROME_STOPS, Models.kt) — set in onDraw,
+    // like the rim — with the white shadow kept as the shine glow.
+    // Color white / alpha 255 in the field so nothing tints the shader.
     private val rimHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#f5f5f5"); alpha = 220
+        color = Color.parseColor("#ffffff"); alpha = 255
     }
     private val needleGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL; color = Color.parseColor("#4000b4ff")
@@ -96,11 +104,19 @@ class GaugeView @JvmOverloads constructor(
     private val targetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.parseColor("#39ff14")
     }
+    // Build #90: the ticks are CHROME, not flat grey (Casey Nov 23:
+    // "same polished silver/chrome treatment as the title"). Both
+    // paints carry the same diagonal chrome gradient as the rim
+    // highlight (CHROME_STOPS, Models.kt) — set in onDraw, like the
+    // rim — so the shine band sweeps across the dial and the ticks
+    // match the chrome title. Colors are white in the field so
+    // nothing tints the shader; minors are thinner (1*scale vs
+    // 2*scale), so they naturally read dimmer than the majors.
     private val tickMajorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#bbbbbb")
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#ffffff")
     }
     private val tickMinorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#3d3d3d")
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.BUTT; color = Color.parseColor("#ffffff")
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#cccccc"); textAlign = Paint.Align.CENTER
@@ -148,32 +164,27 @@ class GaugeView @JvmOverloads constructor(
         val r = min(w, h) / 2f - RIM_INSET_UNITS * scale
         val ratio = min(speed / maxSpd, 1.0)
 
-        // Build #89: STRONG underglow under the outer rim (Casey Nov 23
-        // picked STRONG). Two passes, drawn BEFORE the rim so the rim
-        // covers the inner part and the glow spills outward onto the
-        // black background around the ring — glow ONLY under the outer
-        // ring, not under the ticks, labels or digit. Scaled from the
-        // reference render (1080x2340, #88 gauge 1047px, scale 3.272):
-        // halo 70px wide / alpha 120 / blur 30, core 34px wide /
-        // alpha 200 / blur 14. In `scale` units (px per 320-unit, so
-        // dp-based at any gauge size): halo 21.4 wide / blur 9.2 at
-        // radius r + 9.2, core 10.4 wide / blur 4.3 at radius r + 6.7.
-        // Same 270° sweep as the dial. Blue #00b4ff only; the ring
-        // itself is untouched (grey/white, drawn next).
-        rimGlowHaloPaint.strokeWidth = 21.4f * scale
-        rimGlowHaloPaint.alpha = 120
-        rimGlowHaloPaint.setShadowLayer(9.2f * scale, 0f, 0f, Color.parseColor("#00b4ff"))
-        val haloR = r + 9.2f * scale
-        canvas.drawArc(cx - haloR, cy - haloR, cx + haloR, cy + haloR,
-            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimGlowHaloPaint)
-        rimGlowHaloPaint.clearShadowLayer()
-        rimGlowCorePaint.strokeWidth = 10.4f * scale
-        rimGlowCorePaint.alpha = 200
-        rimGlowCorePaint.setShadowLayer(4.3f * scale, 0f, 0f, Color.parseColor("#00b4ff"))
-        val coreR = r + 6.7f * scale
-        canvas.drawArc(cx - coreR, cy - coreR, cx + coreR, cy + coreR,
-            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimGlowCorePaint)
-        rimGlowCorePaint.clearShadowLayer()
+        // Build #90: GRADIENT underglow (see the paint comment above).
+        // The stroke spans glowInner..glowOuter; the RadialGradient
+        // shader maps each pixel's radius to its stop alpha, so the
+        // brightness falls steadily from the peak at the rim's outer
+        // edge to transparent at the outer edge. Positions are the
+        // stop offsets mapped to fractions of the gradient radius —
+        // the same stops rimGlowAlphaAt() interpolates, so the shader
+        // and the harness math agree exactly.
+        val glowInner = r + RIM_GLOW_INNER_UNITS * scale
+        val glowOuter = r + RIM_GLOW_WIDTH_UNITS * scale
+        val glowMid = (glowInner + glowOuter) / 2f
+        rimGlowPaint.strokeWidth = glowOuter - glowInner
+        rimGlowPaint.shader = RadialGradient(
+            cx, cy, glowOuter,
+            RIM_GLOW_STOPS.map { (_, a) -> Color.argb(a, 0, 0xb4, 0xff) }.toIntArray(),
+            RIM_GLOW_STOPS.map { (off, _) -> (r + off * scale) / glowOuter }.toFloatArray(),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawArc(cx - glowMid, cy - glowMid, cx + glowMid, cy + glowMid,
+            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimGlowPaint)
+        rimGlowPaint.shader = null
 
         // Steel rim: brushed-metal diagonal gradient, thin (look-pro).
         rimPaint.shader = LinearGradient(
@@ -192,6 +203,10 @@ class GaugeView @JvmOverloads constructor(
         // light from above, like the render (Build #78). 225°–315° is the
         // top of the dial (12 o'clock = 270° in canvas degrees); the
         // steel gradient already darkens the lower right.
+        // Build #90: CHROME, not flat white — the same diagonal chrome
+        // gradient as the ticks and the title, with the white shadow
+        // kept as the shine glow.
+        rimHighlightPaint.shader = chromeDialShader(cx - r, cy - r, cx + r, cy + r)
         rimHighlightPaint.strokeWidth = 2.5f * scale
         rimHighlightPaint.setShadowLayer(8f * scale, 0f, 0f, Color.parseColor("#ffffff"))
         canvas.drawArc(cx - r, cy - r, cx + r, cy + r, 225f, 90f, false, rimHighlightPaint)
@@ -235,6 +250,13 @@ class GaugeView @JvmOverloads constructor(
         // Build #78: numbers carry a soft white glow (the render's digits
         // are lit, not flat grey). Build #88: a touch more (5 -> 7,
         // #66 -> #88) so the digits glow with the arc.
+        // Build #90: the ticks are CHROME (same diagonal chrome gradient
+        // as the top band and the title) — set here, once per draw, so
+        // the shine band sweeps across the dial. The numbers stay
+        // white-with-glow; only the tick dashes are chrome.
+        val chromeShader = chromeDialShader(cx - r, cy - r, cx + r, cy + r)
+        tickMajorPaint.shader = chromeShader
+        tickMinorPaint.shader = chromeShader
         val minorStep = 5
         val majorStep = if (maxSpd > 100) 20 else 10
         textPaint.setShadowLayer(7f * scale, 0f, 0f, Color.parseColor("#88ffffff"))
@@ -266,12 +288,17 @@ class GaugeView @JvmOverloads constructor(
 
         // Needle — Build #78: wide soft halo pass, then the solid core,
         // so the needle glows like the render's instead of sitting flat.
+        // Build #90: the base is trimmed (NEEDLE_BASE_UNITS, Models.kt)
+        // — the #89 base sat 18 units behind the centre, 6 units past
+        // the 12-unit hub, so the tail poked out behind the hub. The
+        // base corners now sit ~7.8 units out, inside the hub, which
+        // is drawn after the needle and covers the inner end fully.
         val na = angleFor(speed)
         val nx = cos(na); val ny = sin(na)
         val px = -ny; val py = nx // perpendicular
         val tipR = r - 28f * scale
-        val baseR = -18f * scale
-        val halfW = 5f * scale
+        val baseR = NEEDLE_BASE_UNITS * scale
+        val halfW = NEEDLE_HALF_WIDTH_UNITS * scale
         val path = android.graphics.Path().apply {
             moveTo((cx + nx * tipR).toFloat(), (cy + ny * tipR).toFloat())
             lineTo((cx + nx * baseR + px * halfW).toFloat(), (cy + ny * baseR + py * halfW).toFloat())
@@ -296,8 +323,10 @@ class GaugeView @JvmOverloads constructor(
         canvas.drawCircle(cx, cy, 44f * scale, hubGlowPaint)
         hubGlowPaint.shader = null
         hubStrokePaint.strokeWidth = 2f * scale
-        canvas.drawCircle(cx, cy, 12f * scale, hubPaint)
-        canvas.drawCircle(cx, cy, 12f * scale, hubStrokePaint)
+        // HUB_RADIUS_UNITS (Models.kt) — the same radius the needle
+        // base is sized against, so the hub always covers the needle.
+        canvas.drawCircle(cx, cy, HUB_RADIUS_UNITS * scale, hubPaint)
+        canvas.drawCircle(cx, cy, HUB_RADIUS_UNITS * scale, hubStrokePaint)
         hubDotPaint.setShadowLayer(8f * scale, 0f, 0f, Color.parseColor("#00b4ff"))
         canvas.drawCircle(cx, cy, 5f * scale, hubDotPaint)
         hubDotPaint.clearShadowLayer()

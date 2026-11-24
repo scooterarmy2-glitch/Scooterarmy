@@ -1,6 +1,8 @@
 package com.scooterarmy.app
 
 
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -14,7 +16,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 89
+const val BUILD_NUMBER = 90
 
 /** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
  * recording — full blue <-> dimmed blue (the same rhythm as the STOP
@@ -26,10 +28,154 @@ const val BUILD_NUMBER = 89
 const val BRAND_FLASH_LOW_ALPHA = 0.10f
 const val BRAND_FLASH_PERIOD_MS = 800L
 
+/**
+ * Ring underglow, Build #90 (Casey Nov 23: the #89 two-pass blob
+ * "looks like crap needs to be more of a gradient .. right now its
+ * just a big ass blob around the speedometer"). ONE arc stroke whose
+ * paint carries a RadialGradient shader: brightest right at the rim's
+ * outer edge, fading smoothly to transparent as it moves outward —
+ * light spilling off the ring, not a painted halo. Thinner and
+ * subtler than the #89 blob (70px halo + 34px core at alpha 120/200,
+ * ~100px of near-uniform blue with a hard outer edge): the gradient
+ * band is 14 units wide (~47px at 1080px) and its alpha falls steadily
+ * the whole way out, so there is no flat band and no hard edge. Blue
+ * #00b4ff only, only under the outer ring.
+ *
+ * Stops are (offset from the rim centreline r, in `scale` units,
+ * alpha). The rim stroke covers r-3.5..r+3.5, so the visible part of
+ * the glow starts at the rim's outer edge (+3.5) — the ramp under the
+ * rim is hidden by the rim itself, which is drawn after the glow. The
+ * shader in GaugeView is built from these exact stops (positions are
+ * the offsets mapped to fractions of the gradient radius), so the
+ * pure function below and the on-device shader agree exactly. */
+const val RIM_GLOW_INNER_UNITS = -2f   // glow starts 2 units inside the rim centreline (under the rim)
+const val RIM_GLOW_WIDTH_UNITS = 14f   // glow ends 14 units outside the rim centreline
+val RIM_GLOW_STOPS: List<Pair<Float, Int>> = listOf(
+    -2f to 0,     // under the rim: transparent
+    3.5f to 150,  // rim outer edge: peak brightness
+    7f to 60,     // ~1/3 of the way out
+    10.5f to 20,  // ~2/3 of the way out
+    14f to 0      // outer edge: fully faded
+)
+
+/** Alpha of the ring glow at a given offset from the rim centreline r
+ * (in `scale` units): piecewise-linear interpolation over
+ * RIM_GLOW_STOPS. Pure, harness-tested: the alpha must fall steadily
+ * outward (150 at the rim edge, 60, 20, 0) — never flat, never rising.
+ * Outside the stops it is 0. */
+fun rimGlowAlphaAt(offsetUnits: Float): Int {
+    if (offsetUnits <= RIM_GLOW_STOPS.first().first) return 0
+    if (offsetUnits >= RIM_GLOW_STOPS.last().first) return 0
+    for (i in 0 until RIM_GLOW_STOPS.size - 1) {
+        val (x0, a0) = RIM_GLOW_STOPS[i]
+        val (x1, a1) = RIM_GLOW_STOPS[i + 1]
+        if (offsetUnits in x0..x1) {
+            val t = (offsetUnits - x0) / (x1 - x0)
+            return (a0 + (a1 - a0) * t).toInt()
+        }
+    }
+    return 0
+}
+
 /** The "#" flashes exactly when a ride is recording — the same
  * sessionActive state that drives the LIVE badge, the status pill and
  * the STOP button. At rest (or any other time) it is steady. */
 fun brandFlashing(sessionActive: Boolean): Boolean = sessionActive
+
+/** Needle base geometry, Build #90 (Casey Nov 23: on his #89
+ * screenshot the needle's butt end stuck out past the centre circle
+ * on the back side — you could see the tail poking through behind
+ * the hub). The needle is a triangle: tip at NEEDLE_TIP_UNITS from
+ * the centre, base corners at NEEDLE_BASE_UNITS behind the centre
+ * ± NEEDLE_HALF_WIDTH_UNITS perpendicular. The old base was -18
+ * units behind the centre while the hub circle is only 12 units in
+ * radius, so 6 units of tail stuck out past the hub on the back
+ * side. The base is now -6 units: the farthest base corner sits
+ * sqrt(6² + 5²) ≈ 7.8 units from the centre — strictly inside the
+ * 12-unit hub, which is drawn AFTER the needle and covers the inner
+ * end completely, with ~4.2 units to spare. The needle starts at
+ * the hub edge and points outward only: no tail, no butt end. */
+const val NEEDLE_BASE_UNITS = -6f
+const val NEEDLE_HALF_WIDTH_UNITS = 5f
+const val HUB_RADIUS_UNITS = 12f
+
+/** Farthest distance of any needle-base corner from the dial centre,
+ * in `scale` units. Must stay below HUB_RADIUS_UNITS — pure,
+ * harness-tested. */
+fun needleBaseExtentUnits(): Double =
+    kotlin.math.sqrt(
+        (NEEDLE_BASE_UNITS * NEEDLE_BASE_UNITS +
+            NEEDLE_HALF_WIDTH_UNITS * NEEDLE_HALF_WIDTH_UNITS).toDouble()
+    )
+
+/**
+ * Polished chrome, Build #90 (Casey Nov 23: the "#SAMO GPS" header
+ * title should look like CHROME — "with a bit of shine"). A real
+ * multi-stop silver gradient, NOT a flat grey: bright silver top
+ * edge, a distinct near-white SHINE streak in the upper third (the
+ * specular band where light catches the metal), mid grey, a dark
+ * shadow-side band, then silver climbing back to a bright bottom
+ * edge. The shine stop is pure white (0xFFFFFFFF) and narrow — it
+ * reads as a specular highlight, not a pale wash. The old 4-stop
+ * gradient (white -> #bbbbbb -> #eeeeee -> #999999) had no dark band
+ * and no distinct shine, so it read as dull grey metal.
+ *
+ * Stops are (fraction down the gradient, ARGB color). The gradient
+ * is DIAGONAL across the dial (GaugeView: chromeDialShader) so the
+ * shine band sweeps across the dial like light catching metal, and
+ * the ticks + top band match each other. (The header title used to
+ * share these stops vertically; Build #90 revised made the title
+ * ENGRAVED instead — see ENGRAVED_* below — while the dial keeps
+ * the chrome.) */
+val CHROME_STOPS: List<Pair<Float, Int>> = listOf(
+    0.00f to 0xFFECECEC.toInt(),  // bright silver top edge
+    0.14f to 0xFFFFFFFF.toInt(),  // SHINE — near-white specular band
+    0.30f to 0xFFDCDCDC.toInt(),  // bright silver below the shine
+    0.48f to 0xFF909090.toInt(),  // mid grey
+    0.62f to 0xFF5C5C5C.toInt(),  // darkest — shadow side of the metal
+    0.78f to 0xFFB9B9B9.toInt(),  // silver climbing back
+    0.90f to 0xFFF7F7F7.toInt(),  // bright bottom edge
+    1.00f to 0xFFCFCFCF.toInt()   // silver foot
+)
+
+/** Diagonal chrome gradient across a square region (the dial): top-left
+ * to bottom-right, so the shine band sweeps across the dial like light
+ * catching metal. Same stops as the title used to use — the DIAL keeps
+ * the chrome (Casey Nov 23: item 7, ticks + top band stay chrome even
+ * though the title went engraved instead). */
+fun chromeDialShader(left: Float, top: Float, right: Float, bottom: Float): LinearGradient =
+    LinearGradient(
+        left, top, right, bottom,
+        CHROME_STOPS.map { it.second }.toIntArray(),
+        CHROME_STOPS.map { it.first }.toFloatArray(),
+        Shader.TileMode.CLAMP
+    )
+
+/**
+ * ENGRAVED title, Build #90 revised (Casey Nov 23 — SUPERSEDES the
+ * chrome title): the "#SAMO GPS" header title is engraved INTO the
+ * brushed-steel header, like polished metal engraving. NOT raised,
+ * NOT chrome, NOT a gradient: a subtle inset look — a DARK engraved
+ * letter body (darker than the steel panel, so the cut reads as a
+ * recess) with a fine BRIGHT highlight along the LOWER edge (light
+ * catching the bottom edge of the cut; the top inner wall of the cut
+ * sits in shadow, which the dark body gives for free). Polished, not
+ * flat: the edge is near-white with a cold silver tint, the body is
+ * near-black with a cold tint, and the edge is softened by a small
+ * blur radius so it reads as caught light, not a hard duplicate.
+ *
+ * Implemented with ONE paint shadow (TextView.setShadowLayer): the
+ * body is the textColor, the shadow is the bright edge drawn 1dp
+ * BELOW the glyphs (dy positive) with a small radius. A paint has
+ * only one shadow layer, so the engraved title carries NO blue glow
+ * shadow — the old brandHash blue glow went with the blue "#".
+ * The recording-only "#" flash still works: it animates the
+ * brandHash VIEW alpha (ObjectAnimator on "alpha"), which is
+ * independent of the paint color/shadow. */
+val ENGRAVED_BODY_COLOR = 0xFF14161A.toInt()   // near-black, cold — the cut
+val ENGRAVED_EDGE_COLOR = 0xFFE9EDF2.toInt()   // near-white, cold silver — caught light
+const val ENGRAVED_EDGE_DY_DP = 1f             // edge sits 1dp below the glyphs
+const val ENGRAVED_EDGE_RADIUS_DP = 0.75f      // slight softening — light, not a hard copy
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {

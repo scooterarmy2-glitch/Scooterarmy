@@ -240,9 +240,11 @@ object EsriDarkTiles {
  * VIEW ROUTE (look-pro): a dark Esri map (no API key) with the recorded
  * ride as a bright blue line, green Start pin, red End pin — like the
  * approved map render. One stats row (distance / time / top speed, the
- * ride's real numbers) and an Export Data card with blue Export GPX +
- * green Export CSV. The export lambdas come from LogsActivity — this
- * dialog only wires the buttons, it never builds export content.
+ * ride's real numbers) and blue Export GPX / Export CSV buttons (the
+ * "Export Data" title row was cut in Build #90, Casey Nov 23). The
+ * export lambdas come from LogsActivity — this dialog only wires the
+ * buttons, it never builds export content. Build #90: FULL SCREEN —
+ * the dialog fills the display and the map takes all remaining space.
  * Tiles need internet to view; recording itself is fully offline. Tile
  * cache lives in the app's private files dir so no storage permission
  * is needed.
@@ -335,10 +337,21 @@ object RouteMapDialog {
         binding.routeClose.setOnClickListener { dialog.dismiss() }
         dialog.setOnDismissListener { map.onPause() }
         dialog.show()
-        dialog.window?.setLayout(
-            (context.resources.displayMetrics.widthPixels * 0.92).toInt(),
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        // Build #90 (Casey Nov 23: the route dialog was "a small box
+        // floating on the screen with dead space around it"): FULL
+        // SCREEN — the window fills the display and the map takes all
+        // remaining space (dialog_route.xml: root match_parent, map
+        // 0dp + weight 1), so the stats + export buttons + CLOSE stay
+        // in flow below the map and are always reachable. The decor
+        // padding is cleared so no floating-box margin survives.
+        dialog.window?.apply {
+            setLayout(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundDrawableResource(android.R.color.transparent)
+            decorView.setPadding(0, 0, 0, 0)
+        }
         map.onResume()
     }
 

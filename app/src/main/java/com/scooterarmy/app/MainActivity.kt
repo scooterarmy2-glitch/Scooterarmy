@@ -242,18 +242,26 @@ class MainActivity : Activity() {
         rides = store.rides
         runs = store.runs
 
-        applyChromeGradient(binding.brandText)
-        applyBrandGradient(binding.brandHash)
+        // Build #90 revised (Casey Nov 23 — chrome title is OUT): the
+        // "#SAMO GPS" title is ENGRAVED into the brushed-steel header
+        // — dark cut body + a fine bright edge along the bottom of
+        // each letter (ENGRAVED_* spec, Models.kt). Same treatment on
+        // "#" and "SAMO GPS" so the whole wordmark reads as one
+        // engraving. The recording-only "#" flash still works: it
+        // animates the brandHash VIEW alpha, not the paint.
+        val density = resources.displayMetrics.density
+        applyEngravedTitle(binding.brandText, density)
+        applyEngravedTitle(binding.brandHash, density)
         // Brushed-steel panel backgrounds (Build #85, Backgrounds.kt):
         // code-built drawables with zero minimum size, so no panel can
         // floor a wrap_content view's height (the Build #79–#84 bug).
         // The app background itself is plain black (#080808).
         applyPanelBackgrounds()
         // LED glows (density-scaled so they render the same on every screen).
-        // Build #87: bright blue, like the map — the brand hash, the speed
-        // digit and the timer all glow blue.
-        val density = resources.displayMetrics.density
-        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#00b4ff"))
+        // Build #87: bright blue, like the map — the speed digit and
+        // the timer glow blue. The brand hash does NOT get a blue glow
+        // any more: a paint has one shadow layer, and the engraved
+        // title's shadow IS its bright lower edge (Build #90 revised).
         binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#00b4ff"))
         binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#4000b4ff"))
         binding.spdUnit.text = "MPH"
@@ -875,21 +883,22 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun applyChromeGradient(tv: android.widget.TextView) {
-        tv.post {
-            if (tv.height > 0) {
-                tv.paint.shader = LinearGradient(
-                    0f, 0f, 0f, tv.height.toFloat(),
-                    intArrayOf(
-                        Color.WHITE, Color.parseColor("#bbbbbb"),
-                        Color.parseColor("#eeeeee"), Color.parseColor("#999999")
-                    ),
-                    floatArrayOf(0f, 0.4f, 0.6f, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                tv.invalidate()
-            }
-        }
+    /** Build #90 revised: ENGRAVED title (Casey Nov 23 — the chrome
+     * title is OUT). The text is cut INTO the brushed-steel header:
+     * a dark body (ENGRAVED_BODY_COLOR) with ONE paint shadow — a
+     * fine bright edge (ENGRAVED_EDGE_COLOR) 1dp BELOW the glyphs,
+     * slightly softened, like light catching the bottom edge of the
+     * cut. The shadow's dy is positive (below); the dark body gives
+     * the shadowed top wall for free. No gradient, no blue glow: a
+     * paint has a single shadow layer, so the engraved edge IS the
+     * shadow. The "#" flash is unaffected — it animates the VIEW
+     * alpha, and the same treatment applies to "#" and "SAMO GPS". */
+    private fun applyEngravedTitle(tv: android.widget.TextView, density: Float) {
+        tv.setTextColor(ENGRAVED_BODY_COLOR)
+        tv.setShadowLayer(
+            ENGRAVED_EDGE_RADIUS_DP * density, 0f,
+            ENGRAVED_EDGE_DY_DP * density, ENGRAVED_EDGE_COLOR
+        )
     }
 
     /** Brushed-steel panel backgrounds (Build #85): every panel and chip
@@ -915,24 +924,9 @@ class MainActivity : Activity() {
         binding.fsInfoRow.background = brushedPanelBackground(res, PanelVariant.FS)
     }
 
-    /** LED-blue gradient for the "#" in the brand, matching the map.
-     * Build #87: light blue -> bright blue — the primary is blue now. */
-    private fun applyBrandGradient(tv: android.widget.TextView) {
-        tv.post {
-            if (tv.height > 0) {
-                tv.paint.shader = LinearGradient(
-                    0f, 0f, 0f, tv.height.toFloat(),
-                    intArrayOf(
-                        Color.parseColor("#7dd3ff"),
-                        Color.parseColor("#00b4ff")
-                    ),
-                    floatArrayOf(0f, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                tv.invalidate()
-            }
-        }
-    }
+    // (No second title helper: "#" gets the SAME engraved treatment
+    // as "SAMO GPS" — one wordmark, one cut. The old blue "#" gradient
+    // and its blue glow shadow are gone with the chrome title.)
 
     private fun setBtn(btn: Button, enabled: Boolean) {
         btn.isEnabled = enabled
