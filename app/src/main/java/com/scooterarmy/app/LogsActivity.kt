@@ -144,7 +144,7 @@ class LogsActivity : Activity() {
                 if (run.isBest) PanelVariant.LOG_ITEM_BEST else PanelVariant.LOG_ITEM
             )
             row.runTime.setTextColor(
-                if (run.isBest) Color.parseColor("#ff8c1a") else Color.parseColor("#f0f0f0")
+                if (run.isBest) Color.parseColor("#00b4ff") else Color.parseColor("#f0f0f0")
             )
             row.root.setOnClickListener { openRunDetail(run) }
             row.runDel.setOnClickListener {

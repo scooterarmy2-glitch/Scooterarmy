@@ -14,7 +14,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 86
+const val BUILD_NUMBER = 87
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {

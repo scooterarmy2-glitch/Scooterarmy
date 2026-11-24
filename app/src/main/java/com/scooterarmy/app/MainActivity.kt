@@ -236,19 +236,19 @@ class MainActivity : Activity() {
         runs = store.runs
 
         applyChromeGradient(binding.brandText)
-        applyEmberGradient(binding.brandHash)
+        applyBrandGradient(binding.brandHash)
         // Brushed-steel panel backgrounds (Build #85, Backgrounds.kt):
         // code-built drawables with zero minimum size, so no panel can
         // floor a wrap_content view's height (the Build #79–#84 bug).
-        // The app background itself is plain dark black (#080808).
+        // The app background itself is plain black (#080808).
         applyPanelBackgrounds()
-        // Ember glows (density-scaled so they render the same on every screen).
-        // Build #81: vivid LED orange, not the muted amber — the brand hash,
-        // the speed digit and the timer all glow LED orange.
+        // LED glows (density-scaled so they render the same on every screen).
+        // Build #87: bright blue, like the map — the brand hash, the speed
+        // digit and the timer all glow blue.
         val density = resources.displayMetrics.density
-        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#ff6a00"))
-        binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#ff6a00"))
-        binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#40ff6a00"))
+        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#00b4ff"))
+        binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#00b4ff"))
+        binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#4000b4ff"))
         binding.spdUnit.text = "MPH"
         binding.tgtSuf.text = "MPH"
         binding.topSpdUnit.text = "MPH"
@@ -813,17 +813,16 @@ class MainActivity : Activity() {
         binding.fsInfoRow.background = brushedPanelBackground(res, PanelVariant.FS)
     }
 
-    /** LED-orange gradient for the "#" in the brand, matching the web header.
-     * Build #85: both stops are vivid LED orange — the pale #ffb347 top
-     * stop is gone (Casey: vivid glowing LED lines, not muted/pale). */
-    private fun applyEmberGradient(tv: android.widget.TextView) {
+    /** LED-blue gradient for the "#" in the brand, matching the map.
+     * Build #87: light blue -> bright blue — the primary is blue now. */
+    private fun applyBrandGradient(tv: android.widget.TextView) {
         tv.post {
             if (tv.height > 0) {
                 tv.paint.shader = LinearGradient(
                     0f, 0f, 0f, tv.height.toFloat(),
                     intArrayOf(
-                        Color.parseColor("#ff8c1a"),
-                        Color.parseColor("#ff6a00")
+                        Color.parseColor("#7dd3ff"),
+                        Color.parseColor("#00b4ff")
                     ),
                     floatArrayOf(0f, 1f),
                     Shader.TileMode.CLAMP
@@ -1019,7 +1018,7 @@ class MainActivity : Activity() {
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
         binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#ff8c1a"))
+        binding.giAcc.setTextColor(Color.parseColor("#ffcc00"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
@@ -1031,7 +1030,7 @@ class MainActivity : Activity() {
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
         binding.giAcc.text = acc.roundToInt().toString()
-        binding.giAcc.setTextColor(Color.parseColor("#ff8c1a"))
+        binding.giAcc.setTextColor(Color.parseColor("#ffcc00"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
     }
@@ -1172,23 +1171,19 @@ class MainActivity : Activity() {
         val ratio = disp / maxSpd()
 
         binding.spdNum.text = disp.roundToInt().toString()
-        // Build #81 LED: the speed digit is white at normal speeds and
-        // turns LED orange, then LED red, as it nears the gauge max —
-        // glowing lines, never a pale pastel fill. (The muted amber
-        // (the muted-amber thresholds are gone.)
+        // Build #87: the speed digit is white at normal speeds and
+        // turns LED blue, then LED red, as it nears the gauge max —
+        // red past 85% is over-limit, which is where red belongs.
         binding.spdNum.setTextColor(
             when {
                 ratio > 0.85 -> Color.parseColor("#ff2d1a")
-                ratio > 0.6 -> Color.parseColor("#ff8c1a")
+                ratio > 0.6 -> Color.parseColor("#00b4ff")
                 else -> Color.WHITE
             }
         )
-        // LED glow follows the speed color — vivid orange, red at the top.
-        val glowColor = when {
-            ratio > 0.85 -> Color.parseColor("#ff2d1a")
-            ratio > 0.6 -> Color.parseColor("#ff6a00")
-            else -> Color.parseColor("#ff6a00")
-        }
+        // LED glow follows the speed color — bright blue, red at the top.
+        val glowColor = if (ratio > 0.85) Color.parseColor("#ff2d1a")
+            else Color.parseColor("#00b4ff")
         binding.spdNum.setShadowLayer(16f * resources.displayMetrics.density, 0f, 0f, glowColor)
         binding.gauge.speed = disp
         // Dial heading below the 50 — live bearing while moving, "—" stopped.
@@ -1215,7 +1210,7 @@ class MainActivity : Activity() {
         val gpsEl = binding.fsGpsVal
         when {
             lastSig >= 3 -> { gpsEl.text = "LOCKED"; gpsEl.setTextColor(Color.parseColor("#39ff14")) }
-            lastSig >= 1 -> { gpsEl.text = "WEAK"; gpsEl.setTextColor(Color.parseColor("#ff8c1a")) }
+            lastSig >= 1 -> { gpsEl.text = "WEAK"; gpsEl.setTextColor(Color.parseColor("#ffcc00")) }
             else -> { gpsEl.text = "POOR"; gpsEl.setTextColor(Color.parseColor("#ff5533")) }
         }
         val accEl = binding.fsAccVal
@@ -1223,7 +1218,7 @@ class MainActivity : Activity() {
         accEl.setTextColor(
             when {
                 lastAcc < 5 -> Color.parseColor("#39ff14")
-                lastAcc < 20 -> Color.parseColor("#ff8c1a")
+                lastAcc < 20 -> Color.parseColor("#ffcc00")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1246,7 +1241,7 @@ class MainActivity : Activity() {
         )
         bars.forEachIndexed { i, bar ->
             bar.setBackgroundColor(
-                if (i < sig) Color.parseColor("#39ff14") else Color.parseColor("#333333")
+                if (i < sig) Color.parseColor("#00b4ff") else Color.parseColor("#333333")
             )
         }
         binding.acctxt.text = "±${acc.roundToInt()}m"
@@ -1262,7 +1257,7 @@ class MainActivity : Activity() {
             }
             sig >= 1 -> {
                 statusEl.text = "WEAK"
-                statusEl.setTextColor(Color.parseColor("#ff8c1a"))
+                statusEl.setTextColor(Color.parseColor("#ffcc00"))
             }
             else -> {
                 statusEl.text = "POOR"
@@ -1274,7 +1269,7 @@ class MainActivity : Activity() {
         accEl.setTextColor(
             when {
                 acc < 5 -> Color.parseColor("#39ff14")
-                acc < 20 -> Color.parseColor("#ff8c1a")
+                acc < 20 -> Color.parseColor("#ffcc00")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1305,7 +1300,7 @@ class MainActivity : Activity() {
         el.setTextColor(
             when {
                 age < 1.5 -> Color.parseColor("#39ff14")
-                age < 3 -> Color.parseColor("#ff8c1a")
+                age < 3 -> Color.parseColor("#ffcc00")
                 else -> Color.parseColor("#ff5533")
             }
         )
@@ -1320,7 +1315,7 @@ class MainActivity : Activity() {
         binding.sdot.setBackgroundResource(
             when (cls) {
                 "active" -> R.drawable.dot_green
-                "warn" -> R.drawable.dot_amber
+                "warn" -> R.drawable.dot_yellow
                 "error" -> R.drawable.dot_red
                 else -> R.drawable.dot_gray
             }
@@ -1337,7 +1332,7 @@ class MainActivity : Activity() {
         state = RunState.ARMED
         binding.timerBig.text = "0.000"
         binding.timerBig.setTextColor(Color.parseColor("#ffffff"))
-        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ff6a00"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#00b4ff"))
         startArmFlash()
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
@@ -1350,7 +1345,7 @@ class MainActivity : Activity() {
         updateLandPanel()
     }
 
-    /** Amber flash on the timer while a run is ARMED and waiting to start. */
+    /** Flash on the timer while a run is ARMED and waiting to start. */
     private fun startArmFlash() {
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
@@ -1367,7 +1362,7 @@ class MainActivity : Activity() {
         flashAnimator?.cancel()
         binding.timerBig.alpha = 1f
         binding.timerBig.setTextColor(Color.parseColor("#ffffff"))
-        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#ff6a00"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#00b4ff"))
         uiHandler.post(timerTick)
         updateLandPanel()
     }
@@ -1398,7 +1393,7 @@ class MainActivity : Activity() {
         binding.timerBig.alpha = 1f
         binding.timerBig.text = "0.000"
         binding.timerBig.setTextColor(Color.parseColor("#ffffff"))
-        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#40ff6a00"))
+        binding.timerBig.setShadowLayer(12f * resources.displayMetrics.density, 0f, 0f, Color.parseColor("#4000b4ff"))
         setProg(0.0)
         binding.progFill.setBackgroundResource(R.drawable.prog_fill)
         binding.armBtn.text = "START TIMED RUN"
@@ -1461,7 +1456,7 @@ class MainActivity : Activity() {
         sessionRoute = mutableListOf()
 
         binding.sessBtn.text = "STOP RIDE"
-        binding.sessBtn.setBackgroundResource(R.drawable.btn_red_chamfer)
+        binding.sessBtn.setBackgroundResource(R.drawable.btn_stop)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#e53935")
             binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#e53935")
@@ -1495,10 +1490,10 @@ class MainActivity : Activity() {
         stopPulseAnimator?.cancel()
         binding.sessBtn.alpha = 1f
         binding.sessBtn.text = "START RIDE"
-        binding.sessBtn.setBackgroundResource(R.drawable.btn_amber_chamfer)
+        binding.sessBtn.setBackgroundResource(R.drawable.btn_start)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#ff6a00")
-            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#ff6a00")
+            binding.sessBtn.outlineSpotShadowColor = Color.parseColor("#00b4ff")
+            binding.sessBtn.outlineAmbientShadowColor = Color.parseColor("#00b4ff")
         }
         binding.sessLive.visibility = View.GONE
         applyChromeVisibility()

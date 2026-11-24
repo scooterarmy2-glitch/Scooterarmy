@@ -81,7 +81,7 @@ class LiveMap(
         // distance/time chips take the steel-blue secondary accent
         // (CHIP_PLAIN), echoing the map's blue route line.
         val res = map.context.resources
-        speedChip.background = brushedPanelBackground(res, PanelVariant.CHIP_AMBER)
+        speedChip.background = brushedPanelBackground(res, PanelVariant.CHIP_BLUE)
         distChip.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
         timeChip.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
         statusPill.background = brushedPanelBackground(res, PanelVariant.PILL)

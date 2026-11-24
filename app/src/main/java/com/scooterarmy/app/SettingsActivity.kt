@@ -28,7 +28,7 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // Build #85: plain dark black background (#080808, the root's XML
+        // Build #85: plain black background (#080808 since #87 rev 1; the root's XML
         // background) — the carbon-weave photo and the Background option
         // are gone, so there is nothing to apply and no scrim to fight.
         settings = AppSettings(this)
