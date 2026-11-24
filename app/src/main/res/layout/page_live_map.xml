@@ -5,15 +5,40 @@
      No toolbar: the back chevron at the top-left returns to the speedo.
      Build #86: the chips row and the pill get code-built backgrounds
      (LiveMap init) — the old chip_pill / chip_pill_amber /
-     status_pill_bg XMLs floored them at 1000px. -->
+     status_pill_bg XMLs floored them at 1000px.
+     Build #88: FULL-BLEED (Casey Nov 23) — the MapView fills the whole
+     page and the header + chips float OVER it as overlays, with a
+     subtle gradient scrim behind them for readability. No solid black
+     band at the top. Plus a home / reposition button (bottom-right,
+     above the status pill) that centres the map on the last known fix,
+     clustered with custom +/− zoom buttons (Build #88 — osmdroid's
+     built-in zoom buttons sat bottom-center under the pill, only
+     slivers showed; the customs match the home button's style). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <LinearLayout
+    <!-- Map first: full-bleed, fills the entire page. -->
+    <org.osmdroid.views.MapView
+        android:id="@+id/liveMap"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#07172f" />
+
+    <!-- Subtle top scrim so the header + chips read over bright map
+         tiles. A gradient fading to transparent — never a solid bar. -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_gravity="top"
+        android:background="@drawable/map_top_scrim" />
+
+    <!-- Header + chips overlay, transparent background. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
         android:orientation="vertical">
 
         <!-- Header: back chevron + title (real navigation, not decoration). -->
@@ -184,14 +209,56 @@
                 android:textSize="12sp"
                 android:visibility="gone" />
         </LinearLayout>
-
-        <org.osmdroid.views.MapView
-            android:id="@+id/liveMap"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="#07172f" />
     </LinearLayout>
+
+    <!-- Custom zoom buttons (Build #88): osmdroid's built-in +/− sit
+         bottom-center, under the status pill (only slivers showed on
+         Casey's phone, screenshot 6721). These match the home button's
+         style and cluster with it on the right side, above the pill:
+         + on top, − middle, home at the bottom. Same
+         controller.zoomIn()/zoomOut() the built-ins called — no
+         zoom-behavior change. 12dp gaps between the three 48dp buttons. -->
+    <ImageButton
+        android:id="@+id/liveZoomInBtn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="196dp"
+        android:background="@drawable/btn_home_bg"
+        android:contentDescription="Zoom in"
+        android:padding="12dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_zoom_in" />
+
+    <ImageButton
+        android:id="@+id/liveZoomOutBtn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="136dp"
+        android:background="@drawable/btn_home_bg"
+        android:contentDescription="Zoom out"
+        android:padding="12dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_zoom_out" />
+
+    <!-- Home / reposition button (Build #88): centres the map on the
+         last known GPS fix at the current zoom. Bottom-right, above the
+         status pill — clear of the chips row and the pill. -->
+    <ImageButton
+        android:id="@+id/liveHomeBtn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="76dp"
+        android:background="@drawable/btn_home_bg"
+        android:contentDescription="Center map on my location"
+        android:padding="12dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_home_target" />
 
     <!-- Bottom status pill. -->
     <TextView

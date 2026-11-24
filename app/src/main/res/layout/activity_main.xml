@@ -47,6 +47,10 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/orbitron_900"
                         android:letterSpacing="0.06"
+                        android:shadowColor="#00b4ff"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
                         android:text="#"
                         android:textColor="#00b4ff"
                         android:textSize="18sp" />
@@ -135,20 +139,13 @@
                 android:id="@+id/headerDivider"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
+                android:layout_marginBottom="4dp"
                 android:background="@drawable/header_divider" />
 
-            <LinearLayout
-                android:id="@+id/innerCol"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipChildren="false"
-                android:orientation="vertical"
-                android:paddingLeft="14dp"
-                android:paddingTop="4dp"
-                android:paddingRight="14dp"
-                android:paddingBottom="12dp">
-
-                <!-- GAUGE -->
+            <!-- GAUGE ROW moved out of innerCol (Build #88):
+                 innerCol has 14dp side padding for the boxes;
+                 the dial must reach the screen edges, so the
+                 gauge row is a direct child of contentCol. -->
                 <LinearLayout
                     android:id="@+id/gaugeRow"
                     android:layout_width="match_parent"
@@ -241,7 +238,7 @@
                             android:shadowColor="#00b4ff"
                             android:shadowDx="0"
                             android:shadowDy="0"
-                            android:shadowRadius="12"
+                            android:shadowRadius="18"
                             android:text="0"
                             android:textColor="#ffffff"
                             android:textSize="22sp" />
@@ -512,6 +509,19 @@
                         android:visibility="gone" />
                 </LinearLayout>
                 </LinearLayout>
+            <LinearLayout
+                android:id="@+id/innerCol"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:orientation="vertical"
+                android:paddingLeft="14dp"
+                android:paddingTop="4dp"
+                android:paddingRight="14dp"
+                android:paddingBottom="12dp">
+
+                <!-- GAUGE -->
+
 
                 <!-- GPS INFO PANEL -->
                 <LinearLayout
