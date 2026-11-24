@@ -43,7 +43,6 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/brandHash"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/orbitron_900"
@@ -53,7 +52,6 @@
                     android:textSize="18sp" />
 
                 <TextView
-                    android:id="@+id/brandText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/orbitron_900"

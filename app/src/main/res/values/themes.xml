@@ -8,4 +8,24 @@
         <!-- Blue accent (Build #87) so cursors / selection handles match the app instead of the light-theme teal. -->
         <item name="android:colorAccent">#00b4ff</item>
     </style>
+
+    <!-- TRULY FULL-SCREEN dialog (Build #91, route view): NOT a
+         floating window — windowIsFloating=false is the whole fix.
+         Build #90's plain Dialog() used the default floating dialog
+         theme, so setLayout(MATCH_PARENT) still left it an inset
+         panel with the Logs header peeking above it. This theme makes
+         the dialog window cover the entire display edge-to-edge, no
+         frame, no title, no rounded-corner inset, no underlying
+         screen visible — the ROUTE title, map, stats, export buttons
+         and CLOSE all live inside that full-screen view. -->
+    <style name="RouteFullscreenDialog" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">#080808</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:statusBarColor">#080808</item>
+        <item name="android:navigationBarColor">#080808</item>
+        <item name="android:colorAccent">#00b4ff</item>
+    </style>
 </resources>

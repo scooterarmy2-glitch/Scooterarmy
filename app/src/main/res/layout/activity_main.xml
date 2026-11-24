@@ -282,102 +282,88 @@
                     </LinearLayout>
                 </FrameLayout>
 
-                <!-- LANDSCAPE TRIP PANEL: gauge on the left, live trip info
-                     on the right (Speedo-style). Shown only in landscape,
-                     never in fullscreen. Portrait never sees it. -->
+                <!-- LANDSCAPE LIVE MAP + COMPACT TRIP STATS (Build #91,
+                     Casey Nov 24): gauge on the left, the REAL live map
+                     on the right (same Esri tiles + route + labels as
+                     the swipe page, driven by a second LiveMap bound to
+                     this column), with the compact trip stats bar —
+                     the same trip box as portrait (TOP SPEED /
+                     DISTANCE / DURATION) — directly below it. Shown
+                     only in landscape, never in fullscreen. Portrait
+                     never sees it. The old big TRIP panel is gone. -->
                 <LinearLayout
                     android:id="@+id/landPanel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:background="@drawable/panel_bg"
-                    android:elevation="4dp"
                     android:orientation="vertical"
-                    android:padding="14dp"
                     android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/landTitle"
+                    <!-- Map frame: fills all remaining height (weight 1)
+                         once the column stretches to the gauge height. -->
+                    <FrameLayout
+                        android:id="@+id/landMapFrame"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/orbitron_700"
-                        android:gravity="center_horizontal"
-                        android:letterSpacing="0.25"
-                        android:text="TRIP"
-                        android:textColor="#cccccc"
-                        android:textSize="9sp" />
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/map_frame_bg"
+                        android:clipToOutline="true">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center_horizontal"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="@font/orbitron_700"
-                                android:letterSpacing="0.2"
-                                android:text="DISTANCE"
-                                android:textColor="#cccccc"
-                                android:textSize="8sp" />
-
-                            <TextView
-                                android:id="@+id/landDist"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:fontFamily="@font/orbitron_900"
-                                android:text="—"
-                                android:textColor="@color/chrome"
-                                android:textSize="18sp" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="1dp"
+                        <org.osmdroid.views.MapView
+                            android:id="@+id/liveMap"
+                            android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="#252525" />
+                            android:background="#07172f" />
 
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <!-- LIVE badge while recording (LiveMap drives it). -->
+                        <TextView
+                            android:id="@+id/liveBadge"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center_horizontal"
-                            android:orientation="vertical">
+                            android:layout_gravity="top|start"
+                            android:layout_marginLeft="10dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/live_badge_bg"
+                            android:fontFamily="@font/orbitron_900"
+                            android:letterSpacing="0.1"
+                            android:paddingLeft="10dp"
+                            android:paddingTop="6dp"
+                            android:paddingRight="10dp"
+                            android:paddingBottom="6dp"
+                            android:text="● LIVE"
+                            android:textColor="#ffffff"
+                            android:textSize="12sp"
+                            android:visibility="gone" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="@font/orbitron_700"
-                                android:letterSpacing="0.2"
-                                android:text="ELAPSED"
-                                android:textColor="#cccccc"
-                                android:textSize="8sp" />
+                        <!-- Bottom status pill (LiveMap drives it). -->
+                        <TextView
+                            android:id="@+id/liveStatusPill"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="12dp"
+                            android:background="@drawable/status_pill_bg"
+                            android:fontFamily="@font/share_tech_mono"
+                            android:paddingLeft="16dp"
+                            android:paddingTop="8dp"
+                            android:paddingRight="16dp"
+                            android:paddingBottom="8dp"
+                            android:text="Not recording"
+                            android:textColor="#00b4ff"
+                            android:textSize="12sp" />
+                    </FrameLayout>
 
-                            <TextView
-                                android:id="@+id/landTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:fontFamily="@font/orbitron_900"
-                                android:text="—"
-                                android:textColor="@color/chrome"
-                                android:textSize="18sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
+                    <!-- COMPACT TRIP STATS: same trip box as portrait
+                         (TOP SPEED / DISTANCE / DURATION), driven by
+                         updateLandPanel(). Background set in code
+                         (applyPanelBackgrounds, PANEL). -->
                     <LinearLayout
+                        android:id="@+id/landStats"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -392,8 +378,8 @@
                                 android:fontFamily="@font/orbitron_700"
                                 android:letterSpacing="0.2"
                                 android:text="TOP SPEED"
-                                android:textColor="#cccccc"
-                                android:textSize="8sp" />
+                                android:textColor="#5a7aa8"
+                                android:textSize="7sp" />
 
                             <TextView
                                 android:id="@+id/landTopSpd"
@@ -409,7 +395,7 @@
                         <View
                             android:layout_width="1dp"
                             android:layout_height="match_parent"
-                            android:background="#252525" />
+                            android:background="#22384f" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -423,12 +409,44 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/orbitron_700"
                                 android:letterSpacing="0.2"
-                                android:text="AVG SPEED"
-                                android:textColor="#cccccc"
-                                android:textSize="8sp" />
+                                android:text="DISTANCE"
+                                android:textColor="#5a7aa8"
+                                android:textSize="7sp" />
 
                             <TextView
-                                android:id="@+id/landAvgSpd"
+                                android:id="@+id/landDist"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="@font/orbitron_900"
+                                android:text="—"
+                                android:textColor="@color/chrome"
+                                android:textSize="18sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="#22384f" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/orbitron_700"
+                                android:letterSpacing="0.2"
+                                android:text="DURATION"
+                                android:textColor="#5a7aa8"
+                                android:textSize="7sp" />
+
+                            <TextView
+                                android:id="@+id/landTime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -439,23 +457,28 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/landGps"
+                    <!-- STOP RIDE while recording (same action as the
+                         portrait STOP RIDE; updateLandPanel controls it). -->
+                    <Button
+                        android:id="@+id/landStopBtn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:fontFamily="@font/share_tech_mono"
-                        android:gravity="center_horizontal"
-                        android:letterSpacing="0.08"
-                        android:text="—"
-                        android:textColor="#aaaaaa"
-                        android:textSize="10sp" />
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/btn_red"
+                        android:elevation="6dp"
+                        android:fontFamily="@font/orbitron_700"
+                        android:letterSpacing="0.2"
+                        android:text="STOP RIDE"
+                        android:textColor="#ffffff"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
 
+                    <!-- Timed-run row while armed/running/done. -->
                     <LinearLayout
                         android:id="@+id/landRunRow"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="8dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:visibility="gone">
@@ -480,33 +503,6 @@
                             android:textColor="@color/blue"
                             android:textSize="20sp" />
                     </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/landLastRide"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:fontFamily="@font/share_tech_mono"
-                        android:gravity="center_horizontal"
-                        android:letterSpacing="0.05"
-                        android:text=""
-                        android:textColor="#aaaaaa"
-                        android:textSize="10sp"
-                        android:visibility="gone" />
-
-                    <Button
-                        android:id="@+id/landStopBtn"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/btn_red"
-                        android:elevation="6dp"
-                        android:fontFamily="@font/orbitron_700"
-                        android:letterSpacing="0.2"
-                        android:text="STOP RIDE"
-                        android:textColor="#ffffff"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
                 </LinearLayout>
                 </LinearLayout>
             <LinearLayout
@@ -522,6 +518,119 @@
 
                 <!-- GAUGE -->
 
+
+                <!-- LIVE STRIP — the TRIP BOX (TOP SPEED / DISTANCE / DURATION).
+                     Build #91 (Casey Nov 24): this box sits DIRECTLY
+                     below the speedometer — FIRST box under the dial,
+                     ahead of the STATUS strip. New order: dial -> trip
+                     box -> STATUS strip -> RIDE -> TIMED SPEED RUN.
+                     marginTop is 0 and innerCol paddingTop is 0, so
+                     the trip box top is flush with the dial bottom.
+                     At rest it is GONE, so the strip stays first. -->
+                <LinearLayout
+                    android:id="@+id/sessLive"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:background="@drawable/live_strip_bg"
+                    android:elevation="4dp"
+                    android:outlineAmbientShadowColor="#00b4ff"
+                    android:outlineSpotShadowColor="#00b4ff"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
+                            android:text="TOP SPEED"
+                            android:textColor="#5a7aa8"
+                            android:textSize="7sp" />
+
+                        <TextView
+                            android:id="@+id/liveTopSpd"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/orbitron_900"
+                            android:text="0"
+                            android:textColor="#ffffff"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="#22384f" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
+                            android:text="DISTANCE"
+                            android:textColor="#5a7aa8"
+                            android:textSize="7sp" />
+
+                        <TextView
+                            android:id="@+id/liveDist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/orbitron_900"
+                            android:text="0.0"
+                            android:textColor="#ffffff"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="#22384f" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/orbitron_700"
+                            android:letterSpacing="0.2"
+                            android:text="DURATION"
+                            android:textColor="#5a7aa8"
+                            android:textSize="7sp" />
+
+                        <TextView
+                            android:id="@+id/liveDur"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/orbitron_900"
+                            android:text="0:00"
+                            android:textColor="#ffffff"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+                </LinearLayout>
 
                 <!-- GPS INFO PANEL — Build #90 (Casey Nov 23): the strip
                      sits DIRECTLY below the speedometer — no gap at all,
@@ -1063,112 +1172,6 @@
                         android:shadowRadius="6"
                         android:textColor="#ffffff"
                             android:textSize="11sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- LIVE STRIP -->
-                <LinearLayout
-                    android:id="@+id/sessLive"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/live_strip_bg"
-                    android:elevation="4dp"
-                    android:outlineAmbientShadowColor="#00b4ff"
-                    android:outlineSpotShadowColor="#00b4ff"
-                    android:orientation="horizontal"
-                    android:padding="10dp"
-                    android:visibility="gone">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
-                            android:text="TOP SPEED"
-                            android:textColor="#5a7aa8"
-                            android:textSize="7sp" />
-
-                        <TextView
-                            android:id="@+id/liveTopSpd"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/orbitron_900"
-                            android:text="0"
-                            android:textColor="#ffffff"
-                            android:textSize="16sp" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:background="#22384f" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
-                            android:text="DISTANCE"
-                            android:textColor="#5a7aa8"
-                            android:textSize="7sp" />
-
-                        <TextView
-                            android:id="@+id/liveDist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/orbitron_900"
-                            android:text="0.0"
-                            android:textColor="#ffffff"
-                            android:textSize="16sp" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:background="#22384f" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
-                            android:text="DURATION"
-                            android:textColor="#5a7aa8"
-                            android:textSize="7sp" />
-
-                        <TextView
-                            android:id="@+id/liveDur"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/orbitron_900"
-                            android:text="0:00"
-                            android:textColor="#ffffff"
-                            android:textSize="16sp" />
                     </LinearLayout>
                 </LinearLayout>
 
