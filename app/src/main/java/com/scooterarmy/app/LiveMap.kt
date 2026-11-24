@@ -29,17 +29,21 @@ fun liveStatusText(recording: Boolean, idleMin: Int): String {
  * Live map page (look-pro) — swipe-right from the speedometer, swipe back
  * (or tap ‹) to return. Draws the current ride's route LIVE in blue as
  * the fixes come in, reusing the ride's recorded route points — no second
- * recording pipeline. The map follows the rider while recording; when
- * not recording it shows just the current position, no trail, no LIVE
- * badge, no End pin. The End pin appears only once the ride is stopped.
+ * recording pipeline. The map NEVER moves on its own (Build #94): no
+ * follow-while-recording, no first-fix centering — it stays exactly
+ * where the user put it and recenters ONLY on the home button tap.
+ * The position dot and the route line still update live on every fix,
+ * so the rider's progress is always visible; the camera just doesn't
+ * chase it. When not recording it shows just the current position, no
+ * trail, no LIVE badge, no End pin. The End pin appears only once the
+ * ride is stopped.
  *
  * Touch note (Build #85): the page is a direct child of rootLayout, NOT
  * a ViewPager2 page any more (the pager is gone since Build #81) — the
  * swipe-back is MainActivity.dispatchTouchEvent (fling detector +
  * drag-release tracking), so a horizontal drag on the map switches
- * pages, same as the pager did. While recording the map auto-follows,
- * so panning is not needed; pinch-zoom and vertical panning still work
- * on the map itself, and multi-touch never triggers a page switch.
+ * pages, same as the pager did. Pinch-zoom and panning work on the map
+ * itself, and multi-touch never triggers a page switch.
  */
 class LiveMap(
     root: View,
@@ -74,7 +78,6 @@ class LiveMap(
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
     private var lastRouteSize = -1
-    private var centeredOnce = false
     private var recording = false
     /** Last known real GPS fix, for the home / reposition button
      * (Build #88). Set on every fix, recording or not. Never a
@@ -114,10 +117,15 @@ class LiveMap(
         // so the map shows familiar tiles on the first swipe even before
         // the first GPS fix arrives. Without it the map opens at (0, 0)
         // — ocean off Africa at zoom 16 — which reads as a blank/broken
-        // page. The first real fix re-centres on the rider (centeredOnce
-        // in onFix), and recording follows the rider from then on.
+        // page. Build #94: the map opens at zoom 15, not 16 — the
+        // reference frame Casey sent is a zoomed-out highway view, and
+        // the transportation labels are ~3x denser per screen at z15
+        // (15.7% vs 5.0% non-transparent tile area over downtown
+        // Glasgow), so more highway shields + street names are visible
+        // at a glance. Still street-level, still real tiles at every
+        // zoom the map allows, pinch-in to 18 unchanged.
         map.controller.setCenter(GeoPoint(37.006, -85.921))
-        map.controller.setZoom(16.0)
+        map.controller.setZoom(15.0)
         map.overlays.add(routeLine)
         // Build #89: street labels above the live route — same
         // reference overlay as the route dialog (added after the route
@@ -139,9 +147,10 @@ class LiveMap(
 
     /** Home button: re-centre on the last known real fix at the current
      * zoom. Real location only — never the Glasgow fallback, never a
-     * fake. No fix yet: nothing happens. While recording the map
-     * already follows every fix (onFix), so this is a no-op then; it
-     * matters when not recording, after the user has panned away. */
+     * fake. No fix yet: nothing happens. Build #94: this is now the
+     * ONLY way the map recenters — no follow-while-recording, no
+     * first-fix centering — so it matters while recording too: tap it
+     * any time to jump back to the rider after panning away. */
     fun recenter() {
         val fix = lastFix ?: return
         map.controller.setCenter(fix)
@@ -184,24 +193,26 @@ class LiveMap(
         // Heading arrow only while actually moving — a stopped chip can
         // keep reporting its last bearing, which would point a lie.
         positionOverlay.setPosition(pos, if (speedMph >= 1.0) f.bearingDeg else null)
-        if (recording) {
-            if (route.size != lastRouteSize) {
-                lastRouteSize = route.size
-                routeLine.setPoints(route.map { GeoPoint(it.lat, it.lon) })
-                if (startMarker == null && route.isNotEmpty()) {
-                    val first = route.first()
-                    startMarker = RouteMapDialog.pinMarker(
-                        map, GeoPoint(first.lat, first.lon),
-                        Color.parseColor("#39ff14"), "Start"
-                    ).also { map.overlays.add(it) }
-                }
+        if (recording && route.size != lastRouteSize) {
+            lastRouteSize = route.size
+            routeLine.setPoints(route.map { GeoPoint(it.lat, it.lon) })
+            if (startMarker == null && route.isNotEmpty()) {
+                val first = route.first()
+                startMarker = RouteMapDialog.pinMarker(
+                    map, GeoPoint(first.lat, first.lon),
+                    Color.parseColor("#39ff14"), "Start"
+                ).also { map.overlays.add(it) }
             }
-            // Follow the rider.
-            map.controller.setCenter(pos)
-        } else if (!centeredOnce) {
-            map.controller.setCenter(pos)
-            centeredOnce = true
         }
+        // Build #94: NO automatic recentering anywhere in onFix — the
+        // old code followed the rider on every fix while recording AND
+        // snapped to the first fix when not recording (centeredOnce),
+        // so any scroll/pan was undone within a second and Casey
+        // reported (Nov 24) the map "keeps snapping back to current
+        // location on first open, when I scroll". The camera moves
+        // ONLY on the home button (recenter() above) or the user's
+        // own pan/zoom. The position dot, the route line and the chips
+        // still update live on every fix — only the camera is still.
         map.invalidate()
     }
 
@@ -219,7 +230,6 @@ class LiveMap(
         endMarker = null
         lastRouteSize = -1
         routeLine.setPoints(emptyList())
-        centeredOnce = false
         setRecording(true)
         map.invalidate()
     }

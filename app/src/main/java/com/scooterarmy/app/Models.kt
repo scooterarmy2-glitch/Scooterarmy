@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 93
+const val BUILD_NUMBER = 94
 
 /** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
  * recording — full blue <-> dimmed blue (the same rhythm as the STOP
@@ -509,20 +509,20 @@ enum class FlingDir { NONE, RIGHT, LEFT }
 
 /**
  * Swipe classifier for the main screen ↔ live map navigation (Build #81,
- * loosened Build #85): a deliberate horizontal fling, not a vertical
- * scroll and not a tap. `dx`/`dy` are the fling's total displacement in
- * px, `vx` its horizontal velocity in px/s. Thresholds (Build #85):
- * at least 60px horizontally, at least 1.5x as far horizontally as
- * vertically, and at least 400 px/s horizontally.
+ * loosened Build #85, TIGHTENED Build #94): a deliberate horizontal fling,
+ * not a vertical scroll and not a tap. `dx`/`dy` are the fling's total
+ * displacement in px, `vx` its horizontal velocity in px/s. Thresholds
+ * (Build #94): at least 120px horizontally, at least 2.0x as far
+ * horizontally as vertically, and at least 400 px/s horizontally.
  *
- * WHY LOOSENED: the #81 gates (100px / 2:1 / 800 px/s) were too strict
- * for a real thumb swipe — a casual deliberate swipe is 400–700 px/s
- * and often drifts more than 26.5° off horizontal, so it failed ALL
- * THREE gates and Casey reported (Nov 23) that "swiping doesn't work
- * on latest build at all". 400 px/s is still ~3x the platform's own
- * fling minimum (~141 px/s at his 2.8125 density) and a tap moves
- * ~0–10px, so taps and vertical scrolls still return NONE. Slow drags
- * that never reach fling velocity are caught by classifySwipeRelease
+ * WHY TIGHTENED (Casey Nov 24, driving): swiping back from the live map
+ * was too sensitive — panning the map IS a horizontal drag, and the #85
+ * gates (60px / 1.5x / 400 px/s) let an ordinary map pan flick switch
+ * pages. A deliberate thumb swipe is 300–500px and nearly horizontal
+ * (ratio 3x+), a map pan is usually shorter or more diagonal, so 120px /
+ * 2.0x separates them while a real swipe still passes first try. The
+ * velocity gate stays 400 px/s (a casual deliberate swipe is 400–700
+ * px/s); slow deliberate swipes are caught by classifySwipeRelease
  * (distance + direction only, no velocity gate). Pure, harness-tested —
  * the gesture detector in MainActivity only calls showLiveMapPage /
  * showMainPage when this returns RIGHT/LEFT.
@@ -530,22 +530,33 @@ enum class FlingDir { NONE, RIGHT, LEFT }
 fun classifyFling(dx: Float, dy: Float, vx: Float): FlingDir {
     val adx = kotlin.math.abs(dx)
     val ady = kotlin.math.abs(dy)
-    if (adx < 60f) return FlingDir.NONE
-    if (adx < 1.5f * ady) return FlingDir.NONE
+    if (adx < 120f) return FlingDir.NONE
+    if (adx < 2.0f * ady) return FlingDir.NONE
     if (kotlin.math.abs(vx) < 400f) return FlingDir.NONE
     return if (dx > 0) FlingDir.RIGHT else FlingDir.LEFT
 }
 
 /**
- * Drag-release classifier (Build #85): the slow-swipe half of the
- * navigation. A fling needs velocity; a deliberate drag does not — the
- * old ViewPager2 switched pages on ANY horizontal drag past its slop,
- * and a slow drag that never becomes a fling currently does NOTHING,
- * which also reads as "swiping doesn't work". On finger-up, if the
- * total displacement is at least 100px horizontally and at least 1.5x
- * as far horizontally as vertically, switch pages in that direction.
- * No velocity gate: the displacement + direction gates already reject
- * taps (near-zero displacement) and vertical scrolls (vertical-dominant).
+ * Drag-release classifier (Build #85, TIGHTENED Build #94): the
+ * slow-swipe half of the navigation. A fling needs velocity; a
+ * deliberate drag does not — the old ViewPager2 switched pages on ANY
+ * horizontal drag past its slop, and a slow drag that never becomes a
+ * fling currently does NOTHING, which also reads as "swiping doesn't
+ * work". On finger-up, if the total displacement is at least 280px
+ * horizontally and at least 2.0x as far horizontally as vertically,
+ * switch pages in that direction. No velocity gate: the displacement +
+ * direction gates already reject taps (near-zero displacement) and
+ * vertical scrolls (vertical-dominant).
+ *
+ * WHY 280px / 2.0x (Casey Nov 24, driving): the #85 gates (100px /
+ * 1.5x) fired on ordinary map pans — panning the live map sideways
+ * IS a 100–250px mostly-horizontal drag, so looking around the map
+ * kept throwing him back to the speedo. 280px is ~100dp on his phone
+ * (~26% of the screen width): a deliberate thumb swipe is 300–500px,
+ * a pan to look around is usually shorter, and a diagonal pan fails
+ * the 2.0x ratio. Honest limit: a LONG, nearly-horizontal pan
+ * (>280px, >2:1) still switches pages — that gesture is
+ * indistinguishable from a swipe by distance + direction alone.
  * Pure, harness-tested — MainActivity.dispatchTouchEvent calls this on
  * ACTION_UP for single-pointer gestures only (multi-touch cancels it,
  * so pinch-zoom on the map never switches pages).
@@ -553,8 +564,8 @@ fun classifyFling(dx: Float, dy: Float, vx: Float): FlingDir {
 fun classifySwipeRelease(dx: Float, dy: Float): FlingDir {
     val adx = kotlin.math.abs(dx)
     val ady = kotlin.math.abs(dy)
-    if (adx < 100f) return FlingDir.NONE
-    if (adx < 1.5f * ady) return FlingDir.NONE
+    if (adx < 280f) return FlingDir.NONE
+    if (adx < 2.0f * ady) return FlingDir.NONE
     return if (dx > 0) FlingDir.RIGHT else FlingDir.LEFT
 }
 
