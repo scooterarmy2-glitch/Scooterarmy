@@ -760,7 +760,16 @@ class MainActivity : Activity() {
             // recording state (trip box visible) so the column fits
             // with no scroll in both states — sessionActive is set
             // before this pass in start/stopSession.
-            recording = sessionActive
+            recording = sessionActive,
+            // Build #93: the variable rows join the fit — the gauge
+            // height subtracts the GPS diagnostics row and the BEST
+            // VS LAST card only when actually visible. Both
+            // visibilities are final by now in this pass (bvlCard
+            // set above, diagRow set by applySettings + the solo
+            // override above), so this reads the real state, never
+            // a setting.
+            diagnostics = binding.diagRow.visibility == View.VISIBLE,
+            bvl = binding.bvlCard.visibility == View.VISIBLE
         )
         layoutGaugeSize(gw, gh, speedoOnly)
         // TOP SPEED chip hardening (Build #78): the chip is in the
@@ -1701,6 +1710,9 @@ class MainActivity : Activity() {
         val card = binding.bvlCard
         if (runs.isEmpty()) {
             card.visibility = View.GONE
+            // Build #93: same re-size as below — the card hiding (logs
+            // deleted) grows the dial back on the next frame.
+            applyChromeVisibility()
             return
         }
         card.visibility = if (isLandscape() || fullscreen) View.GONE else View.VISIBLE
@@ -1727,6 +1739,13 @@ class MainActivity : Activity() {
                 delta.setTextColor(Color.parseColor("#ff5533"))
             }
         }
+        // Build #93: the card appearing changes the column height, so
+        // re-run the chrome pass — the fit reads the card's new
+        // visibility and shrinks the dial to keep the screen
+        // scroll-free. Without this the gauge only re-sized on the
+        // next start/stop/rotation/resume. applyChromeVisibility
+        // never calls renderBvL, so there is no recursion.
+        applyChromeVisibility()
     }
 
     // ── Speed alert ─────────────────────────────────────────────

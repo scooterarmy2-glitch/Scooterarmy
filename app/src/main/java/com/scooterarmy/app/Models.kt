@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 92
+const val BUILD_NUMBER = 93
 
 /** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
  * recording — full blue <-> dimmed blue (the same rhythm as the STOP
@@ -393,7 +393,9 @@ fun gaugeSizeForScreen(
     landscape: Boolean,
     fullscreen: Boolean,
     solo: Boolean = false,
-    recording: Boolean = false
+    recording: Boolean = false,
+    diagnostics: Boolean = false,
+    bvl: Boolean = false
 ): Pair<Int, Int> {
     // Build #89: exactly the window width — never wider (that clips
     // the rim) and never narrower (that leaves black margins).
@@ -444,7 +446,17 @@ fun gaugeSizeForScreen(
             // engages on the four shapes, it only guards degenerate
             // screens. Solo / landscape / fullscreen branches above
             // are untouched.
-            val gh = portraitGaugeHeightForFit(wPx, hPx, density, recording)
+            // Build #93 (Casey Nov 24): the SAME fit, extended to the
+            // two VARIABLE rows — the GPS diagnostics row and the
+            // BEST VS LAST card. Both add height the #92 fit never
+            // subtracted, so the column overflowed again whenever
+            // either showed (diagnostics on: +76px idle / +123px
+            // recording on his phone, sim-measured — his Build 92
+            // screenshots). Their heights are subtracted only when
+            // actually visible, read from the views' real visibility
+            // in applyChromeVisibility. Solo / landscape / fullscreen
+            // branches above are untouched.
+            val gh = portraitGaugeHeightForFit(wPx, hPx, density, recording, diagnostics, bvl)
             full to gh
         }
     }
@@ -457,23 +469,39 @@ fun gaugeSizeForScreen(
  * is dp/sp-based, so it scales with density and never with the
  * window. The gauge takes the window height minus the chrome,
  * capped at the window width (it never gets wider than the
- * screen), floored at GAUGE_MIN_PX. Pure function of window
- * metrics + recording state, same as gaugeSizeForScreen.
+ * screen). Pure function of window metrics + visible-row state,
+ * same as gaugeSizeForScreen.
+ *
+ * Build #93: the two VARIABLE rows join the chrome — the GPS
+ * diagnostics row (48dp, sim-measured at all four shapes) and the
+ * BEST VS LAST card (128dp, sim-measured), each subtracted only
+ * when actually visible. GAUGE_MIN_PX is the preferred minimum,
+ * but when the chrome alone leaves less room than that (only the
+ * 720x1280 recording + diagnostics + BVL state, where the chrome
+ * exceeds the window by 35px), the dial takes whatever room is
+ * left instead of forcing an overflow — the ScrollView absorbs
+ * those few px as the safety net it was kept as.
  */
 const val PORTRAIT_CHROME_IDLE_DP = 431f
 const val PORTRAIT_CHROME_RECORDING_DP = 483f
+const val PORTRAIT_DIAG_ROW_DP = 48f
+const val PORTRAIT_BVL_CARD_DP = 128f
 const val GAUGE_MIN_PX = 240
 
 fun portraitGaugeHeightForFit(
     wPx: Int,
     hPx: Int,
     density: Float,
-    recording: Boolean
+    recording: Boolean,
+    diagnostics: Boolean = false,
+    bvl: Boolean = false
 ): Int {
-    val chromeDp =
+    var chromeDp =
         if (recording) PORTRAIT_CHROME_RECORDING_DP else PORTRAIT_CHROME_IDLE_DP
-    val chromePx = (chromeDp * density).toInt()
-    return maxOf(GAUGE_MIN_PX, minOf(wPx, hPx - chromePx))
+    if (diagnostics) chromeDp += PORTRAIT_DIAG_ROW_DP
+    if (bvl) chromeDp += PORTRAIT_BVL_CARD_DP
+    val roomPx = hPx - (chromeDp * density).toInt()
+    return if (roomPx >= GAUGE_MIN_PX) minOf(wPx, roomPx) else maxOf(0, roomPx)
 }
 
 /** Which way a fling goes, for the swipe navigation (Build #81). */
