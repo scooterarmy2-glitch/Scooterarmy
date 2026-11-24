@@ -26,6 +26,11 @@ object LogDetailDialog {
         onExportGpx: (() -> Unit)? = null
     ) {
         val binding = DialogLogDetailBinding.inflate(LayoutInflater.from(context))
+        // Build #86: code-built brushed-steel background with zero
+        // minimum size (Backgrounds.kt) — the old dialog_bg XML floored
+        // this dialog at 1000px tall (the Build #79 bitmap-floor defect).
+        binding.root.background =
+            brushedPanelBackground(context.resources, PanelVariant.DIALOG)
         binding.logTitle.text = title
         binding.logBig.text = big
         binding.logBigLbl.text = bigLbl

@@ -50,6 +50,15 @@ class LogsActivity : Activity() {
         // Build #85: plain dark black background (@color/bg, the root's
         // XML background) — the carbon-weave photo is gone, so there is
         // nothing to apply and no scrim to fight.
+        // Build #86: code-built brushed-steel backgrounds with zero
+        // minimum size (Backgrounds.kt) — the old header_bg / panel_bg
+        // XMLs floored the header and the summary card at 1000px tall
+        // (the Build #79 bitmap-floor defect; Casey's Build #85 Logs
+        // screenshot showed the giant steel panels).
+        binding.headerRow.background =
+            brushedPanelBackground(resources, PanelVariant.HEADER)
+        binding.summaryCard.background =
+            brushedPanelBackground(resources, PanelVariant.PANEL)
         store = LogStore(this)
         RouteMapDialog.configure(this)
 
@@ -103,6 +112,10 @@ class LogsActivity : Activity() {
             row.rideName.text = ride.name
             row.rideMeta.text = "${ride.dur}   ${ride.dist}"
             row.rideTopSpd.text = ride.topSpd
+            // Build #86: code-built row background (zero minimum) — the
+            // old log_item_bg XML floored every ride row at 1000px.
+            row.root.background =
+                brushedPanelBackground(resources, PanelVariant.LOG_ITEM)
             row.root.setOnClickListener { openRideDetail(ride) }
             row.rideDel.setOnClickListener {
                 rides = rides.filter { it.id != ride.id }.toMutableList()
@@ -123,7 +136,13 @@ class LogsActivity : Activity() {
             row.runDate.text = run.date
             row.runTime.text = "${run.time}s"
             row.runBestBadge.visibility = if (run.isBest) View.VISIBLE else View.GONE
-            row.root.setBackgroundResource(if (run.isBest) R.drawable.log_item_best_bg else R.drawable.log_item_bg)
+            // Build #86: code-built row background (zero minimum) — the
+            // old log_item_bg / log_item_best_bg XMLs floored every run
+            // row at 1000px. Best rows keep the dark-gold border.
+            row.root.background = brushedPanelBackground(
+                resources,
+                if (run.isBest) PanelVariant.LOG_ITEM_BEST else PanelVariant.LOG_ITEM
+            )
             row.runTime.setTextColor(
                 if (run.isBest) Color.parseColor("#ff8c1a") else Color.parseColor("#f0f0f0")
             )

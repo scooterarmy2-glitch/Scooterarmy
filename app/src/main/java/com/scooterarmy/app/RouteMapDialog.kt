@@ -44,50 +44,84 @@ object EsriDarkTiles {
      * Highest zoom with REAL tile data, Build #78. Esri serves genuine
      * tiles only to z16 — z17/z18/z19 all return the same 2521-byte
      * uniform (204,204,204) blank tile (verified by curl, Nov 23), so
-     * pinch-zooming past 16 used to show the grey "Map data not yet
-     * available" blanks. Capping the source AND each MapView at 16
-     * keeps the map on real data.
+     * the tile SOURCE stays capped at 16: the downloader never fetches
+     * past real data, and no blank tile can ever be cached.
+     *
+     * The MAP, though, may zoom to MAP_MAX_ZOOM (Build #86): osmdroid
+     * 6.1.18 ships a MapTileApproximater in the provider chain — it sits
+     * BEFORE the downloader and scales the cached lower-zoom tile up
+     * (verified in the shipped classes.jar: Approximater$TileLoader
+     * calls approximateTileFromLowerZoom, and MapTileProviderArray
+     * skips any provider whose zoom range does not cover the request,
+     * so the downloader is never even asked for z17/z18). Both maps
+     * open at z16 first, so the parent tiles are cached before the user
+     * can pinch in. Past 16 the picture is a 2x/4x upscale of real
+     * z16 data — softer, but real map, never blank.
      */
     const val MAX_ZOOM = 16
 
-    /** Deep navy the loading map shows instead of light grey. */
-    const val NAVY_BG = "#0a1628"
+    /** Highest zoom the MapView lets the user pinch to (Build #86).
+     * Served by the approximater from cached z16 tiles — see MAX_ZOOM. */
+    const val MAP_MAX_ZOOM = 18
+
+    /** Deep dark navy the loading map shows instead of light grey —
+     * Build #86: matched to the tinted base (the target video frame's
+     * base measures (8,24,48) — deep dark navy, near black-blue). */
+    const val NAVY_BG = "#07172f"
 
     /**
-     * Navy tint for the grey Esri tiles, Build #78 — shifts the dark
-     * grey base to the deep navy of the reference video frame while
-     * keeping streets and labels readable. ColorMatrix rows:
-     *   R' = 0.50R − 25, G' = 0.60G − 18, B' = 0.80B + 5, A' = A.
-     * Verified on the real z16 Glasgow tile (PIL/numpy, Nov 23):
-     *   base (71,71,73) → (10,24,63) deep navy
-     *   street grey (150,150,150) → (50,72,125) readable blue
-     *   white (255,255,255) → (102,135,209) light steel blue
-     * The route line (#00b4ff) and the Start/End pins are drawn ABOVE
-     * the tiles, so the tint never touches them.
+     * Navy tint for the grey Esri tiles — Build #86 rework (was #78).
+     * Casey sent the target video frame (Nov 23): the map base is
+     * DEEP dark navy, near black-blue, and the street labels are WHITE
+     * and clearly readable. The old #78 matrix (0.50/0.60/0.80) kept
+     * the base navy but crushed the labels to dim blue-grey
+     * (150 → (50,72,125)) — barely readable, which is what Casey saw.
+     *
+     * The fix is a steep per-channel linear map anchored on the REAL
+     * tile's measured values (Glasgow z16 tile, PIL, Nov 23): the tile
+     * has NO pixels brighter than 154 — the brightest pixels ARE the
+     * labels (max lum 154, p99.9 = 137, 86% of pixels are the 71 base).
+     * So the top anchor is 154, not 255:
+     *   R' = 2.73R − 186.2, G' = 2.60G − 160.8, B' = 2.49B − 134.1
+     * Verified on the real tile:
+     *   base (71,71,73) → (7,23,47) deep dark navy (frame: (8,24,48))
+     *   street grey (100,100,102) → (87,99,115) visible slate
+     *   street grey (119,119,121) → (139,149,162) clearly readable
+     *   label (137,137,139) → (187,194,207) bright
+     *   label core (154,154,156) → (234,239,254) near-white
+     * Label-vs-base contrast is ~13:1. The route line (#00b4ff) and
+     * the Start/End pins are drawn ABOVE the tiles, so the tint never
+     * touches them. No headline is added — Casey cut the "GPX + CSV
+     * EXPORT. YOURS TO KEEP." line; the Export GPX / Export CSV
+     * buttons stay without it.
      */
     val NAVY_MATRIX = floatArrayOf(
-        0.50f, 0f, 0f, 0f, -25f,
-        0f, 0.60f, 0f, 0f, -18f,
-        0f, 0f, 0.80f, 0f, 5f,
+        2.73f, 0f, 0f, 0f, -186.2f,
+        0f, 2.60f, 0f, 0f, -160.8f,
+        0f, 0f, 2.49f, 0f, -134.1f,
         0f, 0f, 0f, 1f, 0f
     )
 
     /** Pure form of the matrix above, for the JVM harness. Truncates
-     * like the verified PIL math, so (71,71,73) → (10,24,63). */
+     * like the verified PIL math, so (71,71,73) → (7,23,47) and
+     * (154,154,156) → (234,239,254). */
     fun navyTintRgb(r: Int, g: Int, b: Int): Triple<Int, Int, Int> =
         Triple(
-            (0.50 * r - 25).toInt().coerceIn(0, 255),
-            (0.60 * g - 18).toInt().coerceIn(0, 255),
-            (0.80 * b + 5).toInt().coerceIn(0, 255)
+            (2.73 * r - 186.2).toInt().coerceIn(0, 255),
+            (2.60 * g - 160.8).toInt().coerceIn(0, 255),
+            (2.49 * b - 134.1).toInt().coerceIn(0, 255)
         )
 
     /** One call that makes a MapView navy + zoom-capped: background,
      * max zoom, and the tint on the tiles overlay. Call AFTER
      * setTileSource(...), so the overlay exists. Shared by the route
-     * dialog and the live map — one definition, one matrix. */
+     * dialog and the live map — one definition, one matrix. The map
+     * max is MAP_MAX_ZOOM (18, approximater-scaled), NOT the source
+     * max — the source stays at 16 so the downloader never fetches
+     * blank tiles. */
     fun applyNavy(map: MapView) {
         map.setBackgroundColor(Color.parseColor(NAVY_BG))
-        map.maxZoomLevel = MAX_ZOOM.toDouble()
+        map.maxZoomLevel = MAP_MAX_ZOOM.toDouble()
         val tiles = map.overlayManager.tilesOverlay
         tiles.setColorFilter(
             android.graphics.ColorMatrixColorFilter(
@@ -149,6 +183,15 @@ object RouteMapDialog {
     ) {
         if (ride.route.size < 2) return
         val binding = DialogRouteBinding.inflate(LayoutInflater.from(context))
+        // Build #86: code-built brushed-steel backgrounds with zero
+        // minimum size (Backgrounds.kt) — the old dialog_bg / panel_bg
+        // XMLs floored this dialog's root and stats panel at 1000px
+        // (the Build #79–#84 bitmap-floor defect), pushing the Export
+        // GPX / Export CSV buttons below the screen.
+        binding.root.background =
+            brushedPanelBackground(context.resources, PanelVariant.DIALOG)
+        binding.routeStatsPanel.background =
+            brushedPanelBackground(context.resources, PanelVariant.PANEL)
         binding.routeTitle.text = "ROUTE — ${ride.name}"
         binding.statDistVal.text = ride.dist
         binding.statTimeVal.text = ride.dur
@@ -160,8 +203,8 @@ object RouteMapDialog {
 
         val map: MapView = binding.routeMap
         map.setTileSource(EsriDarkTiles.source())
-        // Navy + zoom cap (Build #78) — after setTileSource, so the
-        // tiles overlay exists for the tint.
+        // Navy + zoom cap (Build #86: map max 18, source max 16) —
+        // after setTileSource, so the tiles overlay exists for the tint.
         EsriDarkTiles.applyNavy(map)
         map.setMultiTouchControls(true)
         map.setUseDataConnection(true)
@@ -230,9 +273,10 @@ object RouteMapDialog {
         } else {
             map.zoomToBoundingBox(box, false, 40)
             // zoomToBoundingBox is unbounded — a small route can push
-            // past 16, where Esri serves only blank tiles (Build #78).
-            if (map.zoomLevelDouble > EsriDarkTiles.MAX_ZOOM.toDouble()) {
-                map.controller.setZoom(EsriDarkTiles.MAX_ZOOM.toDouble())
+            // past the map max (18, approximater-scaled past the z16
+            // real-data ceiling). Clamp it so the map stays on data.
+            if (map.zoomLevelDouble > EsriDarkTiles.MAP_MAX_ZOOM.toDouble()) {
+                map.controller.setZoom(EsriDarkTiles.MAP_MAX_ZOOM.toDouble())
             }
         }
         map.invalidate()

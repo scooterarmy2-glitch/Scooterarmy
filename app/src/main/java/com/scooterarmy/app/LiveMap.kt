@@ -52,6 +52,11 @@ class LiveMap(
     private val timeVal: TextView = root.findViewById(R.id.liveTimeVal)
     private val liveBadge: TextView = root.findViewById(R.id.liveBadge)
     private val statusPill: TextView = root.findViewById(R.id.liveStatusPill)
+    // Chip containers (Build #86 ids in page_live_map.xml) — their
+    // backgrounds are set in code below, same recipe as the main screen.
+    private val speedChip: View = root.findViewById(R.id.liveSpeedChip)
+    private val distChip: View = root.findViewById(R.id.liveDistChip)
+    private val timeChip: View = root.findViewById(R.id.liveTimeChip)
 
     private val density = map.context.resources.displayMetrics.density
     private val routeLine = Polyline().apply {
@@ -66,10 +71,24 @@ class LiveMap(
     private var recording = false
 
     init {
+        // Build #86: code-built brushed-steel backgrounds with zero
+        // minimum size (Backgrounds.kt) — the old chip_pill /
+        // chip_pill_amber / status_pill_bg XMLs each floored their chip
+        // at 1000px tall (the Build #79 bitmap-floor defect), so the
+        // chips row and the pill were giant steel boxes squeezing the
+        // MapView into thin strips (Casey's Build #85 screenshot).
+        // Speed chip keeps the LED-orange border (CHIP_AMBER); the
+        // distance/time chips take the steel-blue secondary accent
+        // (CHIP_PLAIN), echoing the map's blue route line.
+        val res = map.context.resources
+        speedChip.background = brushedPanelBackground(res, PanelVariant.CHIP_AMBER)
+        distChip.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
+        timeChip.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
+        statusPill.background = brushedPanelBackground(res, PanelVariant.PILL)
         map.setTileSource(EsriDarkTiles.source())
-        // Navy + zoom cap (Build #78) — after setTileSource, so the
-        // tiles overlay exists for the tint. Same single call the route
-        // dialog uses; same matrix, same cap.
+        // Navy + zoom cap (Build #86: map max 18, source max 16) —
+        // after setTileSource, so the tiles overlay exists for the tint.
+        // Same single call the route dialog uses; same matrix, same cap.
         EsriDarkTiles.applyNavy(map)
         map.setMultiTouchControls(true)
         map.setUseDataConnection(true)

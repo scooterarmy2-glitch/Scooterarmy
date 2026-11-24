@@ -35,11 +35,16 @@ import android.graphics.drawable.Drawable
  * code-built drawable, which draws the same bitmap 1:1 centered (the
  * same placement the `<bitmap android:gravity="center">` item gave)
  * but reports NO minimum and NO intrinsic size, so wrap_content views
- * measure at their natural content height. The four main-screen-only
- * XML drawables (gps_info_bg, top_spd_bg, live_strip_bg, fs_info_bg)
- * also had their `<bitmap>` item stripped as defence-in-depth;
- * panel_bg and header_bg are shared with Logs/dialogs and are left
- * alone (same defect there — flagged as a follow-up, same recipe).
+ * measure at their natural content height. Build #85 fixed the four
+ * main-screen-only XML drawables (gps_info_bg, top_spd_bg,
+ * live_strip_bg, fs_info_bg) by stripping their `<bitmap>` item and
+ * re-backed the main-screen views in code. Build #86 finishes the job:
+ * the eight remaining `<bitmap>` drawables (chip_pill, chip_pill_amber,
+ * status_pill_bg, panel_bg, header_bg, log_item_bg, log_item_best_bg,
+ * dialog_bg) are stripped too, and every view that used them is
+ * re-backed in code from this factory (LiveMap chips + pill,
+ * Logs header/summary/rows, route + log-detail dialogs) — so no
+ * `<bitmap>` minimum remains anywhere in the app.
  *
  * BACKGROUND (Build #85, Casey Nov 23): the app background is plain
  * dark black (#080808, @color/bg on the roots). The carbon-weave
@@ -55,6 +60,12 @@ import android.graphics.drawable.Drawable
  * never solid pale fills. The last pale survivors were the TOP SPEED
  * chip labels (#c99a55) and the Settings slider values + brand-hash
  * gradient top stop (#ffb347); all are #ff8c1a now.
+ *
+ * BLUE (Build #86, Casey Nov 23): steel blue #5a7aa8 is the SECONDARY
+ * accent, echoing the map's blue route line — the plain live-map chips'
+ * border (CHIP_PLAIN) and the route-map frame. Orange stays the
+ * primary LED colour; the dial, the buttons and the panel edges stay
+ * orange. Blue never replaces orange anywhere.
  */
 
 /** One brushed-steel bitmap, decoded once per process. */
@@ -68,9 +79,13 @@ private object BrushedCache {
     }
 }
 
-/** Which panel this drawable is for — same look each XML used to give. */
+/** Which panel this drawable is for — same look each XML used to give.
+ * Build #86 adds the six variants that lived on the live-map page,
+ * Logs and the dialogs (CHIP_PLAIN, CHIP_AMBER, PILL, LOG_ITEM,
+ * LOG_ITEM_BEST, DIALOG). */
 enum class PanelVariant {
-    HEADER, PANEL, GPS, CHIP, LIVE, FS
+    HEADER, PANEL, GPS, CHIP, LIVE, FS,
+    CHIP_PLAIN, CHIP_AMBER, PILL, LOG_ITEM, LOG_ITEM_BEST, DIALOG
 }
 
 /**
@@ -94,6 +109,11 @@ class BrushedPanelDrawable(
     private val highlightInsetDp: Float = 0f,
     private val highlightColor: Int = 0x26ffffff,
     private val topBorderColor: Int = 0,
+    // Top border geometry — 1dp full-width by default (fullscreen info
+    // row); DIALOG takes the old dialog_bg's 2dp LED-orange strip inset
+    // 12dp from the sides (Build #86).
+    private val topBorderHeightDp: Float = 1f,
+    private val topBorderInsetDp: Float = 0f,
     density: Float = 1f
 ) : Drawable() {
     private val densityPx: Float = density
@@ -186,11 +206,13 @@ class BrushedPanelDrawable(
                 highlightPaint
             )
         }
-        // 1dp top border, full width (fullscreen info row).
+        // Top border (default 1dp, full width — the fullscreen info row;
+        // DIALOG overrides height/inset for its 2dp LED-orange strip).
         if (topBorderColor != 0) {
-            val h = strokePaint.strokeWidth
+            val h = topBorderHeightDp * densityPx
+            val inset = topBorderInsetDp * densityPx
             canvas.drawRect(
-                b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.top + h,
+                b.left + inset, b.top.toFloat(), b.right - inset, b.top + h,
                 topBorderPaint
             )
         }
@@ -231,6 +253,10 @@ private const val TINT_BOTTOM = 0xb3000000.toInt()
 /** LED-orange panel edge (70% #ff6a00 — same as the old XML stroke). */
 private const val LED_EDGE = 0xb3ff6a00.toInt()
 
+/** Steel blue (Build #86) — the secondary accent, echoing the map's
+ * blue route line. The plain live-map chips' border; never the primary. */
+private const val STEEL_BLUE = 0x5a7aa8.toInt()
+
 /** Code-built brushed-steel background for one panel variant. */
 fun brushedPanelBackground(resources: Resources, variant: PanelVariant): Drawable {
     val density = resources.displayMetrics.density
@@ -263,6 +289,49 @@ fun brushedPanelBackground(resources: Resources, variant: PanelVariant): Drawabl
         PanelVariant.FS -> BrushedPanelDrawable(
             bitmap, baseColor = 0x141210, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
             topBorderColor = 0x1a1a1a, density = density
+        )
+        // ── Build #86: the live-map / Logs / dialog variants ──
+        // CHIP_PLAIN is the old chip_pill (distance / time chips): same
+        // base/radius/highlight, but the grey #4a4a4a border is now the
+        // steel-blue secondary accent, echoing the map's blue route.
+        PanelVariant.CHIP_PLAIN -> BrushedPanelDrawable(
+            bitmap, baseColor = 0x0e0e0e, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = STEEL_BLUE, radiusDp = 16f, highlightInsetDp = 8f,
+            density = density
+        )
+        // CHIP_AMBER is the old chip_pill_amber (speed chip): LED-orange
+        // border stays — the active chip is the primary colour.
+        PanelVariant.CHIP_AMBER -> BrushedPanelDrawable(
+            bitmap, baseColor = 0x120e07, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = 0xff6a00, radiusDp = 16f, highlightInsetDp = 8f,
+            density = density
+        )
+        // PILL is the old status_pill_bg (live-map bottom pill).
+        PanelVariant.PILL -> BrushedPanelDrawable(
+            bitmap, baseColor = 0x100d08, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = 0xff6a00, radiusDp = 16f, highlightInsetDp = 10f,
+            density = density
+        )
+        // LOG_ITEM is the old log_item_bg (ride + run rows).
+        PanelVariant.LOG_ITEM -> BrushedPanelDrawable(
+            bitmap, baseColor = 0x0d0c0a, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = 0x3d3d3d, radiusDp = 6f, highlightInsetDp = 6f,
+            highlightColor = 0x1affffff, density = density
+        )
+        // LOG_ITEM_BEST is the old log_item_best_bg (best run rows): dark
+        // gold border + top strip, exactly as the XML had them.
+        PanelVariant.LOG_ITEM_BEST -> BrushedPanelDrawable(
+            bitmap, baseColor = 0x0e0c07, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = 0x4a3200, radiusDp = 6f, highlightInsetDp = 6f,
+            highlightColor = 0x664500, density = density
+        )
+        // DIALOG is the old dialog_bg (route + log-detail dialogs):
+        // LED-orange border + the 2dp LED-orange top strip inset 12dp.
+        PanelVariant.DIALOG -> BrushedPanelDrawable(
+            bitmap, baseColor = 0x0e0c08, tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = 0xff6a00, radiusDp = 8f,
+            topBorderColor = 0xff6a00, topBorderHeightDp = 2f,
+            topBorderInsetDp = 12f, density = density
         )
     }
 }
