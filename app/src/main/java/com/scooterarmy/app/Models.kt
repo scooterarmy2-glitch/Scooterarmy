@@ -9,12 +9,12 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.roundToInt
 
-/** Build #84: the human-facing build number shown in the header ("Build 84")
- * and in Settings ("Build 84 • v1.1.0"). This is a SINGLE constant — never
+/** Build #85: the human-facing build number shown in the header ("Build 85")
+ * and in Settings ("Build 85 • v1.1.0"). This is a SINGLE constant — never
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 84
+const val BUILD_NUMBER = 85
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {
@@ -181,9 +181,14 @@ fun fitGaugeForViewport(
  * uses): the portrait gauge is the smaller of (screen width + 8dp,
  * so it bleeds slightly off the left/right edges) and (screen height
  * minus the fixed design height of the rest of the portrait column —
- * header, status strip, RIDE box, TIMED box, paddings — 451dp, measured
- * from the Build #80 layout simulator: non-gauge column 1184px at
- * density 2.625 = 451dp). It NEVER comes from a measured view height:
+ * header, status strip, RIDE box, TIMED box, paddings — 460dp, measured
+ * from the Build #85 layout simulator on the fixed natural heights:
+ * non-gauge column 1274px at density 2.8125 = 453dp, and 912px at
+ * density 2.0 = 456dp; 460dp covers the worst case plus font-metric
+ * variance. (Build #80 measured 451dp on the same natural heights; the
+ * reserve was re-measured after the bitmap-floor fix because the gauge
+ * must now fit the real column, not the broken one.) It NEVER comes
+ * from a measured view height:
  * measured heights are transient while the hierarchy settles (the
  * ViewPager2 reparent in Builds #78–#80), and a transient shrink once
  * stuck the gauge at the 320px floor on Casey's phone. The 320px floor
@@ -199,7 +204,7 @@ fun gaugeSizeForScreen(
     landscape: Boolean,
     fullscreen: Boolean
 ): Pair<Int, Int> {
-    val reservedPx = (451f * density).toInt()
+    val reservedPx = (460f * density).toInt()
     val full = wPx + (8 * density).toInt()
     return when {
         fullscreen && !landscape -> {
@@ -225,21 +230,53 @@ fun gaugeSizeForScreen(
 enum class FlingDir { NONE, RIGHT, LEFT }
 
 /**
- * Swipe classifier for the main screen ↔ live map navigation (Build #81):
- * a deliberate horizontal fling, not a vertical scroll and not a tap.
- * `dx`/`dy` are the fling's total displacement in px, `vx` its horizontal
- * velocity in px/s. Thresholds: at least 100px horizontally, at least
- * twice as far horizontally as vertically, and at least 800 px/s
- * horizontally. Pure, harness-tested — the gesture detector in
- * MainActivity only calls showLiveMapPage/showMainPage when this
- * returns RIGHT/LEFT.
+ * Swipe classifier for the main screen ↔ live map navigation (Build #81,
+ * loosened Build #85): a deliberate horizontal fling, not a vertical
+ * scroll and not a tap. `dx`/`dy` are the fling's total displacement in
+ * px, `vx` its horizontal velocity in px/s. Thresholds (Build #85):
+ * at least 60px horizontally, at least 1.5x as far horizontally as
+ * vertically, and at least 400 px/s horizontally.
+ *
+ * WHY LOOSENED: the #81 gates (100px / 2:1 / 800 px/s) were too strict
+ * for a real thumb swipe — a casual deliberate swipe is 400–700 px/s
+ * and often drifts more than 26.5° off horizontal, so it failed ALL
+ * THREE gates and Casey reported (Nov 23) that "swiping doesn't work
+ * on latest build at all". 400 px/s is still ~3x the platform's own
+ * fling minimum (~141 px/s at his 2.8125 density) and a tap moves
+ * ~0–10px, so taps and vertical scrolls still return NONE. Slow drags
+ * that never reach fling velocity are caught by classifySwipeRelease
+ * (distance + direction only, no velocity gate). Pure, harness-tested —
+ * the gesture detector in MainActivity only calls showLiveMapPage /
+ * showMainPage when this returns RIGHT/LEFT.
  */
 fun classifyFling(dx: Float, dy: Float, vx: Float): FlingDir {
     val adx = kotlin.math.abs(dx)
     val ady = kotlin.math.abs(dy)
+    if (adx < 60f) return FlingDir.NONE
+    if (adx < 1.5f * ady) return FlingDir.NONE
+    if (kotlin.math.abs(vx) < 400f) return FlingDir.NONE
+    return if (dx > 0) FlingDir.RIGHT else FlingDir.LEFT
+}
+
+/**
+ * Drag-release classifier (Build #85): the slow-swipe half of the
+ * navigation. A fling needs velocity; a deliberate drag does not — the
+ * old ViewPager2 switched pages on ANY horizontal drag past its slop,
+ * and a slow drag that never becomes a fling currently does NOTHING,
+ * which also reads as "swiping doesn't work". On finger-up, if the
+ * total displacement is at least 100px horizontally and at least 1.5x
+ * as far horizontally as vertically, switch pages in that direction.
+ * No velocity gate: the displacement + direction gates already reject
+ * taps (near-zero displacement) and vertical scrolls (vertical-dominant).
+ * Pure, harness-tested — MainActivity.dispatchTouchEvent calls this on
+ * ACTION_UP for single-pointer gestures only (multi-touch cancels it,
+ * so pinch-zoom on the map never switches pages).
+ */
+fun classifySwipeRelease(dx: Float, dy: Float): FlingDir {
+    val adx = kotlin.math.abs(dx)
+    val ady = kotlin.math.abs(dy)
     if (adx < 100f) return FlingDir.NONE
-    if (adx < 2f * ady) return FlingDir.NONE
-    if (kotlin.math.abs(vx) < 800f) return FlingDir.NONE
+    if (adx < 1.5f * ady) return FlingDir.NONE
     return if (dx > 0) FlingDir.RIGHT else FlingDir.LEFT
 }
 

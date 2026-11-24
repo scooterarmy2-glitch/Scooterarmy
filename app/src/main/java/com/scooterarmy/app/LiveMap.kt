@@ -33,10 +33,13 @@ fun liveStatusText(recording: Boolean, idleMin: Int): String {
  * not recording it shows just the current position, no trail, no LIVE
  * badge, no End pin. The End pin appears only once the ride is stopped.
  *
- * Touch note: the page lives in a ViewPager2, so a horizontal drag on the
- * map switches pages — that IS the swipe-back gesture. While recording
- * the map auto-follows, so panning is not needed; pinch-zoom and vertical
- * panning still work on the map itself.
+ * Touch note (Build #85): the page is a direct child of rootLayout, NOT
+ * a ViewPager2 page any more (the pager is gone since Build #81) — the
+ * swipe-back is MainActivity.dispatchTouchEvent (fling detector +
+ * drag-release tracking), so a horizontal drag on the map switches
+ * pages, same as the pager did. While recording the map auto-follows,
+ * so panning is not needed; pinch-zoom and vertical panning still work
+ * on the map itself, and multi-touch never triggers a page switch.
  */
 class LiveMap(
     root: View,
@@ -70,6 +73,13 @@ class LiveMap(
         EsriDarkTiles.applyNavy(map)
         map.setMultiTouchControls(true)
         map.setUseDataConnection(true)
+        // Build #85: a home fallback centre (Glasgow, KY — Casey's town),
+        // so the map shows familiar tiles on the first swipe even before
+        // the first GPS fix arrives. Without it the map opens at (0, 0)
+        // — ocean off Africa at zoom 16 — which reads as a blank/broken
+        // page. The first real fix re-centres on the rider (centeredOnce
+        // in onFix), and recording follows the rider from then on.
+        map.controller.setCenter(GeoPoint(37.006, -85.921))
         map.controller.setZoom(16.0)
         map.overlays.add(routeLine)
         map.overlays.add(positionOverlay)
@@ -82,11 +92,12 @@ class LiveMap(
 
     /**
      * Re-request tiles + redraw, called when the live-map page is swiped
-     * into view (Build #78). The map is created offscreen (page 1 of the
-     * pager) and its first draw happens only when it becomes visible; a
-     * forced redraw here makes sure tiles are actually requested then,
-     * instead of leaving the "Map data not yet available" placeholders
-     * on screen. Cheap — a no-op redraw when tiles are already there.
+     * into view (Build #78, still true after the pager is gone: the map
+     * is created while GONE and its first draw happens only when it
+     * becomes visible). A forced redraw here makes sure tiles are
+     * actually requested then, instead of leaving the "Map data not yet
+     * available" placeholders on screen. Cheap — a no-op redraw when
+     * tiles are already there.
      * (TilesOverlay has no invalidate() of its own — MapView.invalidate()
      * drives the overlay draw that requests missing tiles.)
      */

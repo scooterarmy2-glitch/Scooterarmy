@@ -47,10 +47,9 @@ class LogsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLogsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // Same photographic background as the main screen — with the
-        // Build #81 readability scrim (DIMMED_ALPHA), same reason as
-        // Settings: the bare weave fights the small grey text.
-        applyPhotoBackground(binding.root, DIMMED_ALPHA)
+        // Build #85: plain dark black background (@color/bg, the root's
+        // XML background) — the carbon-weave photo is gone, so there is
+        // nothing to apply and no scrim to fight.
         store = LogStore(this)
         RouteMapDialog.configure(this)
 

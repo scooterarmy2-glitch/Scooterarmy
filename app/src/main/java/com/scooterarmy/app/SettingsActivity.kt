@@ -28,12 +28,9 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // Same photographic background as the main screen — with the
-        // Build #81 readability scrim (DIMMED_ALPHA): Casey found the
-        // bare weave "terrible behind the settings", the small grey
-        // helper text nearly illegible against the basket pattern. The
-        // weave still shows through dimmed underneath; the text reads.
-        applyPhotoBackground(binding.root, DIMMED_ALPHA)
+        // Build #85: plain dark black background (#080808, the root's XML
+        // background) — the carbon-weave photo and the Background option
+        // are gone, so there is nothing to apply and no scrim to fight.
         settings = AppSettings(this)
         // Build #81: visible build identifier — "Build 81 • v1.1.0" —
         // so any screenshot proves which build is installed.
@@ -132,19 +129,6 @@ class SettingsActivity : Activity() {
                 else -> 100
             }
         }
-        // Background photo (Build #80): carbon weave (Casey's photo,
-        // default) or brushed steel. The Settings screen itself
-        // re-applies its background right away so the choice is visible
-        // immediately; Main picks it up live on return (onResume).
-        binding.bgGroup.setOnCheckedChangeListener { _, checkedId ->
-            if (updatingUi) return@setOnCheckedChangeListener
-            settings.background = when (checkedId) {
-                R.id.bgBrushed -> AppSettings.BG_BRUSHED
-                else -> AppSettings.BG_CARBON
-            }
-            applyPhotoBackground(binding.root, DIMMED_ALPHA)
-        }
-
         // ── Advanced ──
         binding.diagSwitch.setOnCheckedChangeListener { _, checked ->
             if (!updatingUi) settings.showDiagnostics = checked
@@ -204,11 +188,6 @@ class SettingsActivity : Activity() {
             140 -> binding.gaugeGroup.check(R.id.gauge140)
             180 -> binding.gaugeGroup.check(R.id.gauge180)
             else -> binding.gaugeGroup.check(R.id.gauge100)
-        }
-
-        when (settings.background) {
-            AppSettings.BG_BRUSHED -> binding.bgGroup.check(R.id.bgBrushed)
-            else -> binding.bgGroup.check(R.id.bgCarbon)
         }
 
         binding.diagSwitch.isChecked = settings.showDiagnostics

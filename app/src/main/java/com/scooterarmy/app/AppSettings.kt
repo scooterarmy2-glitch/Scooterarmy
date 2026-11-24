@@ -31,12 +31,6 @@ class AppSettings(private val prefs: SharedPreferences) {
         const val PRESET_OFF = "off"
         const val PRESET_CUSTOM = "custom"
 
-        /** Main-screen background photo (Build #80): Casey's carbon
-         *  weave is the default; brushed steel stays as an option. */
-        const val BG_CARBON = "carbon"
-        const val BG_BRUSHED = "brushed"
-        const val DEF_BACKGROUND = BG_CARBON
-
         const val DEF_PRESET = PRESET_BIKE
         const val DEF_DEADBAND = 0.30
         const val DEF_ALPHA = 0.25
@@ -75,12 +69,6 @@ class AppSettings(private val prefs: SharedPreferences) {
         fun validPreset(v: String?): String = when (v) {
             PRESET_BIKE, PRESET_RESPONSIVE, PRESET_OFF, PRESET_CUSTOM -> v
             else -> DEF_PRESET
-        }
-
-        /** Background choice: anything unrecognised falls back to carbon. */
-        fun validBackground(v: String?): String = when (v) {
-            BG_CARBON, BG_BRUSHED -> v
-            else -> DEF_BACKGROUND
         }
 
         /** Preset → effective bridge parameters. "custom" uses the sliders. */
@@ -207,13 +195,6 @@ class AppSettings(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean("set_diagnostics", DEF_DIAGNOSTICS)
         set(v) = prefs.edit().putBoolean("set_diagnostics", v).apply()
 
-    /** Main-screen background photo (Build #80): carbon weave (Casey's
-     *  photo, default) or brushed steel. A stored value that is not one
-     *  of the two reads back as carbon. */
-    var background: String
-        get() = validBackground(prefs.getString("set_background", DEF_BACKGROUND))
-        set(v) = prefs.edit().putString("set_background", validBackground(v)).apply()
-
     /** Wipe every settings key — logs, alert limit and everything else untouched. */
     fun resetAll() {
         prefs.edit()
@@ -230,7 +211,6 @@ class AppSettings(private val prefs: SharedPreferences) {
             .remove("set_alert_beep")
             .remove("set_gauge_max")
             .remove("set_diagnostics")
-            .remove("set_background")
             .apply()
     }
 }

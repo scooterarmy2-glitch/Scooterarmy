@@ -20,7 +20,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.util.Log
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.Gravity
@@ -149,10 +148,6 @@ class MainActivity : Activity() {
     // ── Handlers / animators ────────────────────────────────────
     private val uiHandler = Handler(Looper.getMainLooper())
 
-    // Build #84 diagnostics: last gauge-size inputs, reported by the overlay.
-    private var lastWinH = 0
-    private var lastGw = 0
-    private var lastGh = 0
     private var flashAnimator: android.animation.ObjectAnimator? = null
     private var alertFlashAnimator: android.animation.ObjectAnimator? = null
     private var stopPulseAnimator: android.animation.ObjectAnimator? = null
@@ -242,9 +237,11 @@ class MainActivity : Activity() {
 
         applyChromeGradient(binding.brandText)
         applyEmberGradient(binding.brandHash)
-        // Shared photographic background (Backgrounds.kt, Build #79) —
-        // real carbon-fiber photo behind everything.
-        applyPhotoBackground(binding.rootLayout)
+        // Brushed-steel panel backgrounds (Build #85, Backgrounds.kt):
+        // code-built drawables with zero minimum size, so no panel can
+        // floor a wrap_content view's height (the Build #79–#84 bug).
+        // The app background itself is plain dark black (#080808).
+        applyPanelBackgrounds()
         // Ember glows (density-scaled so they render the same on every screen).
         // Build #81: vivid LED orange, not the muted amber — the brand hash,
         // the speed digit and the timer all glow LED orange.
@@ -384,6 +381,18 @@ class MainActivity : Activity() {
     // untouched, and the event always flows on to the children (the
     // return value is super's, never the detector's). classifyFling
     // (Models.kt) is the gate: vertical scrolls and taps return NONE.
+    // Build #85: a fling alone is NOT enough — the #81 gates were too
+    // strict for a real thumb swipe (800 px/s + 2:1), so a slow drag
+    // that never becomes a fling did nothing at all, and Casey reported
+    // swiping broken. dispatchTouchEvent ALSO tracks the drag itself
+    // (DOWN → UP, single-pointer only) and calls classifySwipeRelease
+    // on release: a clearly-horizontal displacement switches pages even
+    // without fling velocity. Both paths call the same show functions,
+    // which are idempotent (guarded by liveMapVisible), so a fast fling
+    // firing both switches exactly once.
+    private var swipeDownX = 0f
+    private var swipeDownY = 0f
+    private var swipeTracking = false
     // Build #82: LAZY — an eager navGesture built with `this` runs during
     // Activity construction, before attach() sets the base context, and
     // GestureDetector's constructor touches ViewConfiguration/Resources
@@ -414,6 +423,32 @@ class MainActivity : Activity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // Drag-release swipe tracking (Build #85): the slow-swipe half.
+        // dispatchTouchEvent sees every event before any child, and the
+        // ScrollView / gauge listeners cannot steal it. On UP, a
+        // clearly-horizontal displacement switches pages even if it
+        // never became a fling (see classifySwipeRelease, Models.kt).
+        // Multi-touch cancels the tracking, so pinch-zoom on the map
+        // never switches pages.
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                swipeDownX = ev.x
+                swipeDownY = ev.y
+                swipeTracking = true
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> swipeTracking = false
+            MotionEvent.ACTION_UP -> {
+                if (swipeTracking) {
+                    swipeTracking = false
+                    when (classifySwipeRelease(ev.x - swipeDownX, ev.y - swipeDownY)) {
+                        FlingDir.RIGHT -> if (!liveMapVisible) showLiveMapPage()
+                        FlingDir.LEFT -> if (liveMapVisible) showMainPage()
+                        FlingDir.NONE -> {}
+                    }
+                }
+            }
+            MotionEvent.ACTION_CANCEL -> swipeTracking = false
+        }
         navGesture.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
@@ -434,11 +469,8 @@ class MainActivity : Activity() {
         // header must be top-anchored and the boxes visible in portrait,
         // and a stale layout state (from a rotation, a fullscreen
         // double-tap or a backgrounded transient) is healed here instead
-        // of surviving until the next ride start/stop. The background
-        // photo is re-applied too, so a Background change made in
-        // Settings shows live on return (no restart).
+        // of surviving until the next ride start/stop.
         applyChromeVisibility()
-        applyPhotoBackground(binding.rootLayout)
         startLocation()
         imuBridge.start()
         if (::liveMap.isInitialized) liveMap.onResume()
@@ -601,10 +633,6 @@ class MainActivity : Activity() {
             isLandscape(), fullscreen
         )
         layoutGaugeSize(gw, gh, speedoOnly)
-        // Build #84 diagnostics: remember the gauge-size inputs for the overlay.
-        lastWinH = winH
-        lastGw = gw
-        lastGh = gh
         // TOP SPEED chip hardening (Build #78): the chip is in the
         // layout and VISIBLE in portrait, but it did not appear in
         // Casey's Build #77 screenshot. No code path sets it GONE in
@@ -619,40 +647,6 @@ class MainActivity : Activity() {
         }
         if (fullscreen) updateFsInfo()
         updateLandPanel()
-        // Build #84 diagnostics overlay: refresh after this layout pass
-        // and again once settled (500ms), so the screenshot shows both
-        // first-pass and settled values. Runs on every chrome pass and
-        // onResume (which calls applyChromeVisibility).
-        binding.scrollView.post { updateDiagOverlay() }
-        binding.scrollView.postDelayed({ updateDiagOverlay() }, 500)
-    }
-
-    /** Build #84 TEMPORARY diagnostics overlay: shows the phone's real
-     * screen metrics and view-tree measurements on the main screen, so a
-     * screenshot proves what the device is actually doing. Same lines go
-     * to logcat (tag SAMO_DIAG). Remove when the bug is found. */
-    private fun updateDiagOverlay() {
-        val dm = resources.displayMetrics
-        val cfg = resources.configuration
-        val orient = if (cfg.orientation == Configuration.ORIENTATION_LANDSCAPE) "land" else "port"
-        // Build #84: every measurement in BOTH px and dp — Casey: not all
-        // phones share his screen size, so dp is what generalizes. Nothing
-        // here (or in any fix that follows) is hardcoded to 1080x2340 / 2.77.
-        val dp: (Int) -> Int = { px -> (px / dm.density).toInt() }
-        val lines = listOf(
-            "DIAG Build $BUILD_NUMBER",
-            "dm ${dm.widthPixels}x${dm.heightPixels} d${dm.density} dpi${dm.densityDpi} sd${dm.scaledDensity} x${dm.xdpi.toInt()} y${dm.ydpi.toInt()}",
-            "cfg $orient ${cfg.screenWidthDp}x${cfg.screenHeightDp} sw${cfg.smallestScreenWidthDp} dpi${cfg.densityDpi}",
-            "sv h${binding.scrollView.height}=${dp(binding.scrollView.height)}dp y${binding.scrollView.scrollY} fv=${binding.scrollView.isFillViewport}",
-            "col h${binding.contentCol.height}=${dp(binding.contentCol.height)}dp top${binding.contentCol.top}=${dp(binding.contentCol.top)}dp",
-            "gw ${binding.gaugeWrap.width}x${binding.gaugeWrap.height}=${dp(binding.gaugeWrap.width)}x${dp(binding.gaugeWrap.height)}dp top${binding.gaugeWrap.top}=${dp(binding.gaugeWrap.top)}dp",
-            "chip x${binding.topSpdBox.x.toInt()}=${dp(binding.topSpdBox.x.toInt())}dp y${binding.topSpdBox.y.toInt()}=${dp(binding.topSpdBox.y.toInt())}dp hdr top${binding.headerRow.top}=${dp(binding.headerRow.top)}dp",
-            "strip top${binding.gpsInfo.top}=${dp(binding.gpsInfo.top)}dp",
-            "gIn dmH${dm.heightPixels} winH$lastWinH gw$lastGw=${dp(lastGw)}dp gh$lastGh=${dp(lastGh)}dp"
-        )
-        val text = lines.joinToString("\n")
-        binding.diagOverlay.text = text
-        Log.d("SAMO_DIAG", text)
     }
 
     /** Gauge layout params + the speed-digit scale that tracks them.
@@ -796,18 +790,42 @@ class MainActivity : Activity() {
         }
     }
 
-    /** Red-orange gradient for the "#" in the brand, matching the web header. */
+    /** Brushed-steel panel backgrounds (Build #85): every panel and chip
+     * on the main screen gets a code-built BrushedPanelDrawable, which
+     * draws the same brushed-metal bitmap 1:1 centred but reports zero
+     * minimum size — the old `<bitmap>` layer-list drawables floored
+     * wrap_content views at 1000px and broke the whole screen. Set in
+     * code (not XML) so the fix covers every usage, including views
+     * that start GONE (landPanel, bvlCard, sessLive, fsInfoRow, diagRow)
+     * and become VISIBLE later. Called once in onCreate; the drawables
+     * survive visibility changes. */
+    private fun applyPanelBackgrounds() {
+        val res = resources
+        binding.headerRow.background = brushedPanelBackground(res, PanelVariant.HEADER)
+        binding.gpsInfo.background = brushedPanelBackground(res, PanelVariant.GPS)
+        binding.diagRow.background = brushedPanelBackground(res, PanelVariant.PANEL)
+        binding.rideBox.background = brushedPanelBackground(res, PanelVariant.PANEL)
+        binding.runBox.background = brushedPanelBackground(res, PanelVariant.PANEL)
+        binding.landPanel.background = brushedPanelBackground(res, PanelVariant.PANEL)
+        binding.bvlCard.background = brushedPanelBackground(res, PanelVariant.PANEL)
+        binding.topSpdBox.background = brushedPanelBackground(res, PanelVariant.CHIP)
+        binding.sessLive.background = brushedPanelBackground(res, PanelVariant.LIVE)
+        binding.fsInfoRow.background = brushedPanelBackground(res, PanelVariant.FS)
+    }
+
+    /** LED-orange gradient for the "#" in the brand, matching the web header.
+     * Build #85: both stops are vivid LED orange — the pale #ffb347 top
+     * stop is gone (Casey: vivid glowing LED lines, not muted/pale). */
     private fun applyEmberGradient(tv: android.widget.TextView) {
         tv.post {
             if (tv.height > 0) {
                 tv.paint.shader = LinearGradient(
                     0f, 0f, 0f, tv.height.toFloat(),
                     intArrayOf(
-                        Color.parseColor("#ffb347"),
                         Color.parseColor("#ff8c1a"),
                         Color.parseColor("#ff6a00")
                     ),
-                    floatArrayOf(0f, 0.5f, 1f),
+                    floatArrayOf(0f, 1f),
                     Shader.TileMode.CLAMP
                 )
                 tv.invalidate()
