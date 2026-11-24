@@ -48,10 +48,10 @@
                 android:letterSpacing="0.2"
                 android:text="SPEED RESPONSE"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <TextView
@@ -72,6 +72,7 @@
 
                 <RadioButton
                     android:id="@+id/presetBike"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Bike — steady, vibration-proof (default)"
@@ -80,6 +81,7 @@
 
                 <RadioButton
                     android:id="@+id/presetResponsive"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Responsive — quicker, for the car"
@@ -88,6 +90,7 @@
 
                 <RadioButton
                     android:id="@+id/presetOff"
+                    android:button="@drawable/radio_btn_glow_red"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Off — pure GPS, no motion help"
@@ -96,6 +99,7 @@
 
                 <RadioButton
                     android:id="@+id/presetCustom"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Custom — your sliders below"
@@ -124,14 +128,21 @@
                     android:fontFamily="@font/share_tech_mono"
                     android:text="0.30 m/s²"
                     android:textColor="#ff8c1a"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:shadowColor="#aaff6a00"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8" />
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/deadbandSeek"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="45" />
+                android:max="45"
+                android:splitTrack="false"
+                android:thumb="@drawable/seek_thumb_glow"
+                android:progressDrawable="@drawable/seek_progress_glow" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -154,14 +165,21 @@
                     android:fontFamily="@font/share_tech_mono"
                     android:text="0.25"
                     android:textColor="#ff8c1a"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:shadowColor="#aaff6a00"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8" />
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/alphaSeek"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="45" />
+                android:max="45"
+                android:splitTrack="false"
+                android:thumb="@drawable/seek_thumb_glow"
+                android:progressDrawable="@drawable/seek_progress_glow" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -184,20 +202,27 @@
                     android:fontFamily="@font/share_tech_mono"
                     android:text="±2.5 m/s"
                     android:textColor="#ff8c1a"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:shadowColor="#aaff6a00"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8" />
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/clampSeek"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="8" />
+                android:max="8"
+                android:splitTrack="false"
+                android:thumb="@drawable/seek_thumb_glow"
+                android:progressDrawable="@drawable/seek_progress_glow" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="20dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <!-- GPS -->
             <TextView
@@ -208,10 +233,10 @@
                 android:letterSpacing="0.2"
                 android:text="GPS"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <TextView
@@ -231,6 +256,7 @@
 
                 <RadioButton
                     android:id="@+id/lock5"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5 m"
@@ -239,6 +265,7 @@
 
                 <RadioButton
                     android:id="@+id/lock10"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="10 m"
@@ -247,6 +274,7 @@
 
                 <RadioButton
                     android:id="@+id/lock20"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="20 m"
@@ -271,6 +299,7 @@
 
                 <RadioButton
                     android:id="@+id/reject05"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0.5 m/s"
@@ -279,6 +308,7 @@
 
                 <RadioButton
                     android:id="@+id/reject10"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1.0 m/s"
@@ -287,6 +317,7 @@
 
                 <RadioButton
                     android:id="@+id/reject20"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="2.0 m/s"
@@ -296,6 +327,7 @@
 
             <Switch
                 android:id="@+id/spikeSwitch"
+                android:thumb="@drawable/switch_thumb_glow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -307,7 +339,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="20dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <!-- TIMER -->
             <TextView
@@ -318,10 +350,10 @@
                 android:letterSpacing="0.2"
                 android:text="TIMER"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <LinearLayout
@@ -345,14 +377,21 @@
                     android:fontFamily="@font/share_tech_mono"
                     android:text="4 mph"
                     android:textColor="#ff8c1a"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:shadowColor="#aaff6a00"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8" />
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/armSeek"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="16" />
+                android:max="16"
+                android:splitTrack="false"
+                android:thumb="@drawable/seek_thumb_glow"
+                android:progressDrawable="@drawable/seek_progress_glow" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -375,20 +414,27 @@
                     android:fontFamily="@font/share_tech_mono"
                     android:text="45 mph"
                     android:textColor="#ff8c1a"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:shadowColor="#aaff6a00"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8" />
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/targetSeek"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="22" />
+                android:max="22"
+                android:splitTrack="false"
+                android:thumb="@drawable/seek_thumb_glow"
+                android:progressDrawable="@drawable/seek_progress_glow" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="20dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <!-- RIDE -->
             <TextView
@@ -399,10 +445,10 @@
                 android:letterSpacing="0.2"
                 android:text="RIDE"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <TextView
@@ -422,6 +468,7 @@
 
                 <RadioButton
                     android:id="@+id/idle1"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1 min"
@@ -430,6 +477,7 @@
 
                 <RadioButton
                     android:id="@+id/idle5"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5 min"
@@ -438,6 +486,7 @@
 
                 <RadioButton
                     android:id="@+id/idle10"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="10 min"
@@ -446,6 +495,7 @@
 
                 <RadioButton
                     android:id="@+id/idleOff"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Off"
@@ -457,7 +507,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="20dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <!-- ALERTS -->
             <TextView
@@ -468,14 +518,15 @@
                 android:letterSpacing="0.2"
                 android:text="ALERTS"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <Switch
                 android:id="@+id/beepSwitch"
+                android:thumb="@drawable/switch_thumb_glow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -487,7 +538,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="20dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <!-- DISPLAY -->
             <TextView
@@ -498,10 +549,10 @@
                 android:letterSpacing="0.2"
                 android:text="DISPLAY"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <TextView
@@ -521,6 +572,7 @@
 
                 <RadioButton
                     android:id="@+id/gauge100"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="100 mph"
@@ -529,6 +581,7 @@
 
                 <RadioButton
                     android:id="@+id/gauge140"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="140 mph"
@@ -537,6 +590,7 @@
 
                 <RadioButton
                     android:id="@+id/gauge180"
+                    android:button="@drawable/radio_btn_glow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="180 mph"
@@ -553,7 +607,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="20dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <!-- ADVANCED -->
             <TextView
@@ -564,14 +618,15 @@
                 android:letterSpacing="0.2"
                 android:text="ADVANCED"
                 android:textColor="#ff8c1a"
-                android:shadowColor="#59ff6a00"
+                android:shadowColor="#aaff6a00"
                 android:shadowDx="0"
                 android:shadowDy="0"
-                android:shadowRadius="6"
+                android:shadowRadius="10"
                 android:textSize="12sp" />
 
             <Switch
                 android:id="@+id/diagSwitch"
+                android:thumb="@drawable/switch_thumb_glow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -592,16 +647,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="24dp"
-                android:background="#2a2a2a" />
+                android:background="#22384f" />
 
             <Button
                 android:id="@+id/resetBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/btn_gray"
+                android:background="@drawable/btn_red_outline"
                 android:text="RESET ALL TO DEFAULTS"
-                android:textColor="#ffffff"
+                android:textColor="#ff2d1a"
                 android:textSize="12sp" />
 
             <Button

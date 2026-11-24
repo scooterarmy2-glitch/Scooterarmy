@@ -29,8 +29,12 @@
         android:background="@drawable/map_frame_bg"
         android:clipToOutline="true" />
 
-    <!-- Stats row: distance / time / top speed, each once. -->
+    <!-- Stats row: distance / time / top speed, each once.
+         Build #86: android:id so RouteMapDialog can set the code-built
+         PANEL background (zero minimum) — the old panel_bg XML floored
+         this row at 1000px, pushing the Export buttons off-screen. -->
     <LinearLayout
+        android:id="@+id/routeStatsPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"

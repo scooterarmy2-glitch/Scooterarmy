@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- LIVE MAP page (look-pro) — page 1 of the main pager, swipe-right from
-     the speedometer. Dark Esri map, live chips on top (speed / distance /
-     ride time / red LIVE badge while recording), bottom status pill.
-     No toolbar: the back chevron at the top-left returns to the speedo. -->
+<!-- LIVE MAP page (look-pro) — swipe-right page from the speedometer.
+     Dark Esri map, live chips on top (speed / distance / ride time /
+     red LIVE badge while recording), bottom status pill.
+     No toolbar: the back chevron at the top-left returns to the speedo.
+     Build #86: the chips row and the pill get code-built backgrounds
+     (LiveMap init) — the old chip_pill / chip_pill_amber /
+     status_pill_bg XMLs floored them at 1000px. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -56,6 +59,7 @@
             android:paddingBottom="8dp">
 
             <LinearLayout
+                android:id="@+id/liveSpeedChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/chip_pill_amber"
@@ -88,6 +92,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/liveDistChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="8dp"
@@ -121,6 +126,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/liveTimeChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="8dp"
@@ -184,7 +190,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#0a1628" />
+            android:background="#07172f" />
     </LinearLayout>
 
     <!-- Bottom status pill. -->
