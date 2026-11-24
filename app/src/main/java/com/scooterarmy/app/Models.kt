@@ -14,14 +14,17 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 88
+const val BUILD_NUMBER = 89
 
 /** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
- * recording — full blue <-> dimmed blue, 1s per half-cycle (the same
- * rhythm as the STOP button pulse). The low end stays clearly visible:
- * a live indicator, not a strobe, never invisible. */
-const val BRAND_FLASH_LOW_ALPHA = 0.35f
-const val BRAND_FLASH_PERIOD_MS = 1000L
+ * recording — full blue <-> dimmed blue (the same rhythm as the STOP
+ * button pulse). Build #89 (Casey Nov 23: "more strong"): the swing
+ * is deeper (dim end 0.35 -> 0.10) and quicker (1000ms -> 800ms per
+ * half-cycle) so the flash is clearly noticeable at a glance. The
+ * low end stays visible — a live indicator, not a strobe, never
+ * fully invisible. */
+const val BRAND_FLASH_LOW_ALPHA = 0.10f
+const val BRAND_FLASH_PERIOD_MS = 800L
 
 /** The "#" flashes exactly when a ride is recording — the same
  * sessionActive state that drives the LIVE badge, the status pill and
@@ -202,32 +205,65 @@ fun landscapeGaugeSize(wPx: Int, hPx: Int, density: Float): Int {
 }
 
 /**
+ * Rim inset, Build #89 (GaugeView): the steel rim's centreline sits
+ * this far (in `scale` units, where scale = gaugePx / 320) inside the
+ * gauge view's edge. The rim stroke is 7 units wide, centred on the
+ * centreline, so its outer edge is (RIM_INSET_UNITS − 3.5) * scale
+ * inside the view edge — at 4f that is 0.5 * scale, ~1.7px at 1080px:
+ * the rim TOUCHES the screen edges (Casey Nov 23: "edge to edge
+ * literally") without being clipped. Was 18f, then 10f (#88).
+ */
+const val RIM_INSET_UNITS = 4f
+
+/** Gap (px) between the rim's outer edge and the gauge view's edge,
+ * from the rim geometry alone: the stroke's outer half (3.5 units)
+ * eats into the inset. Pure, harness-tested. At 1080px: 1.7px. */
+fun rimOuterGapPx(gaugePx: Int): Float =
+    (RIM_INSET_UNITS - 3.5f) * (gaugePx / 320f)
+
+/**
+ * Height of the solo-mode trip section (the sessLive strip inside
+ * innerCol, with its margins + innerCol padding), Build #89: 78dp,
+ * measured from the layout simulator at two densities (218px @2.8125,
+ * 156px @2.0). The landscape solo dial leaves room for it below the
+ * dial so dial + trip box fit the window without clipping.
+ */
+const val SOLO_TRIP_STRIP_DP = 78f
+
+/**
  * Gauge size from the WINDOW metrics only, Build #81 (replaces the
  * Build #80 layout-listener fit as the size the activity actually
- * uses): the portrait gauge is the smaller of (screen width + 8dp,
- * so it bleeds slightly off the left/right edges) and (screen height
- * minus the fixed design height of the rest of the portrait column —
- * header, status strip, RIDE box, TIMED box, paddings — 460dp, measured
- * from the Build #85 layout simulator on the fixed natural heights:
- * non-gauge column 1274px at density 2.8125 = 453dp, and 912px at
- * density 2.0 = 456dp; 460dp covers the worst case plus font-metric
- * variance. (Build #80 measured 451dp on the same natural heights; the
- * reserve was re-measured after the bitmap-floor fix because the gauge
- * must now fit the real column, not the broken one.) It NEVER comes
- * from a measured view height:
- * measured heights are transient while the hierarchy settles (the
- * ViewPager2 reparent in Builds #78–#80), and a transient shrink once
- * stuck the gauge at the 320px floor on Casey's phone. The 320px floor
- * survives only as a safety net for very short screens, where the
- * ScrollView scrolls the overflow instead of shrinking the dial to
- * nothing. Fullscreen / landscape branches are the pre-#81 formulas,
- * unchanged. Pure, harness-tested.
+ * uses). It NEVER comes from a measured view height: measured heights
+ * are transient while the hierarchy settles (the ViewPager2 reparent
+ * in Builds #78–#80), and a transient shrink once stuck the gauge at
+ * the 320px floor on Casey's phone. The 320px floor survives only as
+ * a safety net for very short screens, where the ScrollView scrolls
+ * the overflow instead of shrinking the dial to nothing. Fullscreen /
+ * landscape branches are the pre-#81 formulas, unchanged. Pure,
+ * harness-tested.
  *
  * Build #88: `solo` is the double-tap speedo-only mode (Casey Nov 23) —
  * everything but the dial hidden, dial centered and big, in EITHER
  * orientation. Portrait solo is edge-to-edge like the normal portrait
- * gauge (width + 8dp) with no column reserve (the column is hidden);
- * landscape solo fills the height like fullscreen landscape.
+ * gauge with no column reserve (the column is hidden); landscape solo
+ * fills the height like fullscreen landscape.
+ *
+ * Build #89 (Casey Nov 23: "edge to edge literally" — the #88 dial
+ * still showed ~35px of black margin each side): the portrait gauge
+ * is EXACTLY the window width — the old `+ 8dp` bleed is gone (it
+ * would clip the rim now that the GaugeView inset is ~0), and the
+ * 460dp height reserve NO LONGER shrinks the portrait dial. That
+ * reserve was the Build #81 one-screen fit: it capped the gauge at
+ * 1047px on Casey's phone so the whole column fit without scrolling.
+ * The trade is deliberate and Casey's call: the dial touches the
+ * edges, and the column scrolls the small overflow instead (~25px
+ * on his 1080x2340 — the strip and RIDE/TIMED boxes stay reachable
+ * by scroll; on shorter screens the scroll is longer). The reserve
+ * math is kept in fitGaugeForViewport() (pure, harness-tested) as
+ * the documented one-screen-fit formula, but nothing sizes the
+ * portrait dial from it any more. Solo portrait is likewise exactly
+ * the window width (the old +8dp bled 11px per side and clipped the
+ * rim — the solo dial was never truly edge-to-edge either).
  */
 fun gaugeSizeForScreen(
     wPx: Int,
@@ -237,15 +273,22 @@ fun gaugeSizeForScreen(
     fullscreen: Boolean,
     solo: Boolean = false
 ): Pair<Int, Int> {
-    val reservedPx = (460f * density).toInt()
-    val full = wPx + (8 * density).toInt()
+    // Build #89: exactly the window width — never wider (that clips
+    // the rim) and never narrower (that leaves black margins).
+    val full = wPx
     return when {
         solo && !landscape -> {
             val s = maxOf(320, minOf(full, hPx - (32 * density).toInt()))
             s to s
         }
         solo && landscape -> {
-            val s = maxOf(320, minOf(wPx, hPx) - (16 * density).toInt())
+            // Build #89: the trip box stays visible below the dial in
+            // solo mode, so the dial leaves room for it (16dp margin +
+            // the 78dp trip section) instead of filling the height
+            // alone — otherwise dial + trip box would clip top and
+            // bottom. Portrait solo needs no shrink (dial + trip box
+            // fit the tall window).
+            val s = maxOf(320, minOf(wPx, hPx) - ((16f + SOLO_TRIP_STRIP_DP) * density).toInt())
             s to s
         }
         fullscreen && !landscape -> {
@@ -261,7 +304,9 @@ fun gaugeSizeForScreen(
             s to s
         }
         else -> {
-            val s = maxOf(320, minOf(full, hPx - reservedPx))
+            // Build #89: literally the window width — no height
+            // reserve, no bleed. See the comment above.
+            val s = maxOf(320, full)
             s to s
         }
     }

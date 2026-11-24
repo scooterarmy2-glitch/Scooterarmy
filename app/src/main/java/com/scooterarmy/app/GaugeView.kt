@@ -53,6 +53,19 @@ class GaugeView @JvmOverloads constructor(
     // white so it stands out against the blue arc; the arc, ring and
     // hub glow blue. Green stays ONLY on the target tick (the goal
     // marker); red never appears on the dial face.
+    // Build #89: STRONG underglow under the outer rim — two blurred
+    // blue arcs drawn BEFORE the rim, so the rim covers their inner
+    // part and the glow spills outward onto the black background.
+    // (Casey Nov 23 picked STRONG over soft.) The paints are the
+    // glow passes; see onDraw for the widths / radii.
+    private val rimGlowHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = Color.parseColor("#00b4ff")
+    }
+    private val rimGlowCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = Color.parseColor("#00b4ff")
+    }
     private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
     }
@@ -121,12 +134,46 @@ class GaugeView @JvmOverloads constructor(
         if (w <= 0 || h <= 0) return
         val cx = w / 2f; val cy = h / 2f
         val scale = min(w, h) / 320f
-        // Build #88: rim inset 18 -> 10 — with the portrait gauge now
-        // full-bleed (gaugeRow out of the padded innerCol), the dial
-        // circle itself reaches nearly the screen edges; the 10*scale
-        // inset still clears the 7*scale rim stroke (3.5*scale past r).
-        val r = min(w, h) / 2f - 10f * scale
+        // Build #89: rim inset 10 -> 4 (RIM_INSET_UNITS, Models.kt) —
+        // the rim stroke is 7*scale wide, centred on r, so its outer
+        // edge sits at r + 3.5*scale. With the inset at 4*scale the
+        // outer edge lands 0.5*scale (~1.7px at 1080px) inside the
+        // view edge: the rim TOUCHES the screen edges (Casey Nov 23:
+        // "edge to edge literally") without being clipped. The view
+        // itself is now exactly the window width (Models.kt
+        // gaugeSizeForScreen), so that ~1.7px is the whole side
+        // margin. The glow shadows still extend past the rim and are
+        // clipped by the view bounds — they just fade at the edge,
+        // which is the look.
+        val r = min(w, h) / 2f - RIM_INSET_UNITS * scale
         val ratio = min(speed / maxSpd, 1.0)
+
+        // Build #89: STRONG underglow under the outer rim (Casey Nov 23
+        // picked STRONG). Two passes, drawn BEFORE the rim so the rim
+        // covers the inner part and the glow spills outward onto the
+        // black background around the ring — glow ONLY under the outer
+        // ring, not under the ticks, labels or digit. Scaled from the
+        // reference render (1080x2340, #88 gauge 1047px, scale 3.272):
+        // halo 70px wide / alpha 120 / blur 30, core 34px wide /
+        // alpha 200 / blur 14. In `scale` units (px per 320-unit, so
+        // dp-based at any gauge size): halo 21.4 wide / blur 9.2 at
+        // radius r + 9.2, core 10.4 wide / blur 4.3 at radius r + 6.7.
+        // Same 270° sweep as the dial. Blue #00b4ff only; the ring
+        // itself is untouched (grey/white, drawn next).
+        rimGlowHaloPaint.strokeWidth = 21.4f * scale
+        rimGlowHaloPaint.alpha = 120
+        rimGlowHaloPaint.setShadowLayer(9.2f * scale, 0f, 0f, Color.parseColor("#00b4ff"))
+        val haloR = r + 9.2f * scale
+        canvas.drawArc(cx - haloR, cy - haloR, cx + haloR, cy + haloR,
+            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimGlowHaloPaint)
+        rimGlowHaloPaint.clearShadowLayer()
+        rimGlowCorePaint.strokeWidth = 10.4f * scale
+        rimGlowCorePaint.alpha = 200
+        rimGlowCorePaint.setShadowLayer(4.3f * scale, 0f, 0f, Color.parseColor("#00b4ff"))
+        val coreR = r + 6.7f * scale
+        canvas.drawArc(cx - coreR, cy - coreR, cx + coreR, cy + coreR,
+            Math.toDegrees(a0).toFloat(), Math.toDegrees(sweep).toFloat(), false, rimGlowCorePaint)
+        rimGlowCorePaint.clearShadowLayer()
 
         // Steel rim: brushed-metal diagonal gradient, thin (look-pro).
         rimPaint.shader = LinearGradient(

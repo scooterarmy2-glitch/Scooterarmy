@@ -613,10 +613,12 @@ class MainActivity : Activity() {
 
     private fun applyChromeVisibility() {
         // Build #88: speedo-only is a double-tap toggle (speedoOnlyToggle)
-        // in EITHER orientation — the dial alone, centered and big. It
-        // hides the same chrome as landscape/fullscreen, but shows no
-        // fullscreen overlays (no fsHint/fsInfoRow) and keeps the TOP
-        // SPEED chip (part of the dial).
+        // in EITHER orientation — the dial big, with the trip box below
+        // it (Build #89). It hides the same chrome as landscape/
+        // fullscreen, but shows no fullscreen overlays (no fsHint/
+        // fsInfoRow). The TOP SPEED chip hides in solo (Build #89 —
+        // solo is exactly the dial + the trip box), though it stays
+        // visible in normal landscape.
         val speedoOnly = isLandscape() || fullscreen || speedoOnlyToggle
         // Landscape (not fullscreen, not speedo-only): gauge on the LEFT,
         // live trip panel on the RIGHT — Speedo-style.
@@ -630,8 +632,24 @@ class MainActivity : Activity() {
         binding.runBox.visibility = if (speedoOnly) gone else vis
         binding.bvlCard.visibility =
             if (speedoOnly || runs.isEmpty()) gone else vis
+        // Build #89 (Casey Nov 23): in double-tap solo mode the trip
+        // box (sessLive: TOP SPEED / DISTANCE / DURATION) stays
+        // visible directly below the dial — solo is exactly the dial
+        // + the trip box. While recording updateSessionLive() keeps
+        // it live; at rest it shows its at-rest values (layout
+        // defaults 0 / 0.0 / 0:00, or the last ride's finals). The
+        // toggle — not landscape/fullscreen — is the condition:
+        // normal landscape keeps it hidden (the trip panel is the
+        // trip display there) and fullscreen hides everything.
         binding.sessLive.visibility =
-            if (speedoOnly) gone else if (sessionActive) vis else gone
+            if (speedoOnlyToggle) vis
+            else if (speedoOnly) gone
+            else if (sessionActive) vis else gone
+        // Build #89: the diagnostics row never shows in solo mode
+        // either — solo is exactly the dial + the trip box. (This
+        // runs after applySettings in every chrome pass, so it
+        // sticks.)
+        if (speedoOnlyToggle) binding.diagRow.visibility = gone
         // Build #88: innerCol is only padding when every box inside it
         // is GONE (landscape / fullscreen / double-tap solo) — its 16dp
         // vertical padding would otherwise sit under the dial as dead
@@ -649,7 +667,11 @@ class MainActivity : Activity() {
                 binding.sessLive.visibility == vis) vis else gone
         binding.fsHint.visibility = if (fullscreen) vis else gone
         binding.fsInfoRow.visibility = if (fullscreen) vis else gone
-        binding.topSpdBox.visibility = if (fullscreen) gone else vis
+        // Build #89: the TOP SPEED chip hides in solo mode (solo is
+        // exactly the dial + the trip box) but stays visible in normal
+        // landscape and portrait, as before.
+        binding.topSpdBox.visibility =
+            if (fullscreen || speedoOnlyToggle) gone else vis
         binding.landPanel.visibility = if (landscapePanel) vis else gone
         binding.gaugeRow.orientation =
             if (landscapePanel) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL

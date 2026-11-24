@@ -153,6 +153,87 @@ object EsriDarkTiles {
 
     /** Pure URL math, exercised by the JVM harness (no key anywhere). */
     fun tileUrl(z: Int, x: Int, y: Int): String = "$BASE$z/$y/$x"
+
+    /**
+     * Street-label overlay, Build #89 (Casey Nov 23: "keep the street
+     * labels and stuff above the traced route. Don't let the router
+     * cover the labels"). The street names are BAKED INTO the base
+     * tiles, so no reordering of the base layer can ever put them
+     * above the route polyline — the polyline is an overlay and always
+     * draws over the tiles. The fix is a second tile layer drawn
+     * ABOVE the route: Esri's Reference/World_Transportation service
+     * carries the same street names (plus highway shields) as
+     * transparent PNG tiles, designed to sit on top of a basemap.
+     *
+     * WHY NOT the Canvas reference: Canvas/World_Dark_Gray_Reference
+     * is the "matching" companion to the dark base, but it carries
+     * ONLY place labels ("Nashville" at z12) — verified Nov 24: its
+     * z16 tiles are fully transparent even over downtown Nashville
+     * and Manhattan, so it has no street names at any zoom that
+     * matters. World_Transportation was verified live Nov 24 over
+     * Glasgow, KY: real street labels at z15–z18 ("W Main St",
+     * "Cumberland St", "Samson St", "W Front St", highway shield 90)
+     * in a light tan that the navy tint turns white (see below).
+     * Free, no key, no account — same as the base. URL order is
+     * z/y/x like every Esri service.
+     *
+     * Source max is MAP_MAX_ZOOM (18), NOT the base's 16: the
+     * transportation service serves REAL tiles at z17 (1079 label px
+     * over Glasgow) and z18 (243 px) — verified by curl Nov 24 —
+     * unlike the base, whose z17+ tiles are the uniform blank. So
+     * labels stay real at every zoom the map allows; no approximater
+     * upscaling is involved.
+     *
+     * The overlay gets the SAME navy tint as the base (applyNavy's
+     * matrix): the tan label text (229,211,170) maps to white
+     * (255,255,255), the black label halos stay black, and the dark
+     * road lines in the layer stay dark — invisible on navy, which
+     * is what we want (only the LABELS come from this layer; the
+     * roads stay the base's). Alpha is untouched by the matrix, so
+     * the transparent tile background stays transparent.
+     *
+     * Callers add it AFTER the route polyline and BEFORE the pins,
+     * so the draw order is: base tiles < route line < labels < pins
+     * and position dot. The overlay fetches its own tiles into the
+     * same osmdroid cache (separate subfolder per source name).
+     */
+    private const val REF_BASE =
+        "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/"
+
+    /** Fresh reference source per map — same z/y/x swap as the base. */
+    fun referenceSource(): OnlineTileSourceBase = object : OnlineTileSourceBase(
+        "EsriTransportRef", 0, MAP_MAX_ZOOM, 256, ".png", arrayOf(REF_BASE)
+    ) {
+        override fun getTileURLString(pMapTileIndex: Long): String {
+            val z = MapTileIndex.getZoom(pMapTileIndex)
+            val x = MapTileIndex.getX(pMapTileIndex)
+            val y = MapTileIndex.getY(pMapTileIndex)
+            // Esri order is z/y/x — NOT the usual z/x/y.
+            return "$REF_BASE$z/$y/$x"
+        }
+    }
+
+    /** Pure URL math, exercised by the JVM harness (no key anywhere). */
+    fun referenceUrl(z: Int, x: Int, y: Int): String = "$REF_BASE$z/$y/$x"
+
+    /** Labels overlay, tinted navy like the base, appended to the
+     * map's overlay list — call AFTER adding the route polyline so
+     * the street names draw on top of it. Returns the overlay. */
+    fun addLabelsOverlay(map: MapView): org.osmdroid.views.overlay.TilesOverlay {
+        val overlay = org.osmdroid.views.overlay.TilesOverlay(
+            org.osmdroid.tileprovider.MapTileProviderBasic(
+                map.context, referenceSource()
+            ),
+            map.context
+        )
+        overlay.setColorFilter(
+            android.graphics.ColorMatrixColorFilter(
+                android.graphics.ColorMatrix(NAVY_MATRIX)
+            )
+        )
+        map.overlays.add(overlay)
+        return overlay
+    }
 }
 
 /**
@@ -217,6 +298,12 @@ object RouteMapDialog {
             width = 4f * context.resources.displayMetrics.density
         }
         map.overlays.add(line)
+        // Build #89: street labels ABOVE the route — the labels are
+        // baked into the base tiles, so the polyline always covered
+        // them. The transportation reference overlay draws its own
+        // street names on top of the route (added after the line,
+        // before the pins, so the pins still sit on top of everything).
+        EsriDarkTiles.addLabelsOverlay(map)
         map.overlays.add(pinMarker(map, points.first(), Color.parseColor("#39ff14"), "Start"))
         map.overlays.add(pinMarker(map, points.last(), Color.parseColor("#ff2200"), "End"))
 

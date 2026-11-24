@@ -112,6 +112,11 @@ class LiveMap(
         map.controller.setCenter(GeoPoint(37.006, -85.921))
         map.controller.setZoom(16.0)
         map.overlays.add(routeLine)
+        // Build #89: street labels above the live route — same
+        // reference overlay as the route dialog (added after the route
+        // line, before the position dot and pins, so the dot/pins stay
+        // on top of the labels).
+        EsriDarkTiles.addLabelsOverlay(map)
         map.overlays.add(positionOverlay)
         root.findViewById<View>(R.id.liveMapBack).setOnClickListener { onBack() }
         // Build #88: home / reposition button — centres the map on the
