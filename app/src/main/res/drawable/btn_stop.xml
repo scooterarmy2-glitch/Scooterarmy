@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- STOP RIDE button (look-pro): same plain rectangle as btn_start,
-     red — recording/running is where red belongs (Build #87: renamed
-     from btn_red_chamfer; the chamfered shape is gone since #86).
-     Build #88: solid black fill, red outline kept. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="100dp"
-    android:height="24dp"
-    android:viewportWidth="100"
-    android:viewportHeight="24">
-    <path
-        android:pathData="M0,0 L100,0 L100,24 L0,24 Z"
-        android:fillColor="#080808"
-        android:strokeColor="#c62828"
-        android:strokeWidth="1" />
-</vector>
+<!-- STOP RIDE button (look-pro): same shape as btn_start, red —
+     recording/running is where red belongs (Build #87: renamed from
+     btn_red_chamfer; the chamfered shape is gone since #86).
+     Build #88: solid black fill, red outline kept. Build #89: soft
+     rounded corners, 4dp — the same radius as the RIDE/TIMED panels
+     and the status strip, matching the other boxes (Casey Nov 23).
+     START and STOP are the same button with swapped backgrounds, so
+     the rounding applies to both states. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#080808" />
+            <stroke android:width="1dp" android:color="#c62828" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- START RIDE button (Build #86 plain rectangle; Build #87 blue;
-     Build #88 solid black fill): square corners, solid #080808 fill
-     with a bright LED-blue edge — a lit button on a black face. The
-     bright top edge is kept, full width now that the corners are
-     square. Vector so it scales with the button. Works on API 21+;
-     minSdk is 26. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="100dp"
-    android:height="24dp"
-    android:viewportWidth="100"
-    android:viewportHeight="24">
-    <path
-        android:pathData="M0,0 L100,0 L100,24 L0,24 Z"
-        android:fillColor="#080808"
-        android:strokeColor="#00b4ff"
-        android:strokeWidth="2" />
-    <!-- Bright top edge so the button reads as lit metal. -->
-    <path
-        android:pathData="M0,0 L100,0 L100,2 L0,2 Z"
-        android:fillColor="#59ffffff" />
-</vector>
+     Build #88 solid black fill; Build #89 soft rounded corners):
+     4dp corners — the same radius as the RIDE/TIMED panels and the
+     status strip (PanelVariant.PANEL / GPS, radiusDp 4f), so the
+     button matches the other boxes instead of sitting square inside
+     them. Solid #080808 fill, bright LED-blue edge, bright top edge
+     kept (same layer-list pattern as btn_primary). Not chamfered —
+     Casey Nov 23 superseded the #86 square call: rounded like the
+     other boxes. Shape drawable (dp-based), so the radius is exact
+     at any screen size; the old vector stretched non-uniformly. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#080808" />
+            <stroke android:width="2dp" android:color="#00b4ff" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <!-- Bright top edge so the button reads as lit metal. Inset 4dp
+         each side so the strip never pokes past the rounded corners. -->
+    <item android:left="4dp" android:right="4dp" android:top="0dp" android:height="1dp" android:gravity="top">
+        <shape android:shape="rectangle">
+            <solid android:color="#59ffffff" />
+        </shape>
+    </item>
+</layer-list>
