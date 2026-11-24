@@ -458,13 +458,17 @@
                     </LinearLayout>
 
                     <!-- STOP RIDE while recording (same action as the
-                         portrait STOP RIDE; updateLandPanel controls it). -->
+                         portrait STOP RIDE; updateLandPanel controls it).
+                         Build #92 (Casey Nov 24): black fill + red
+                         outline, exactly like the portrait STOP RIDE
+                         (btn_stop) — the old btn_red solid-red block
+                         is gone. -->
                     <Button
                         android:id="@+id/landStopBtn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/btn_red"
+                        android:background="@drawable/btn_stop"
                         android:elevation="6dp"
                         android:fontFamily="@font/orbitron_700"
                         android:letterSpacing="0.2"
