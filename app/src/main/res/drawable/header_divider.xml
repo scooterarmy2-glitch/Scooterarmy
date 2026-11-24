@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Header divider: one 1dp muted-amber hairline (look-pro). -->
+<!-- Header divider: one 1dp steel-blue hairline (Build #87). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#6a5228" />
+    <solid android:color="#22384f" />
 </shape>

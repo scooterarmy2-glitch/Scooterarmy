@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- STOP RIDE button (look-pro): same plain rectangle as btn_start,
+     red — recording/running is where red belongs (Build #87: renamed
+     from btn_red_chamfer; the chamfered shape is gone since #86). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M0,0 L100,0 L100,24 L0,24 Z"
+        android:strokeColor="#c62828"
+        android:strokeWidth="1">
+        <gradient
+            android:type="linear"
+            android:startX="0"
+            android:startY="0"
+            android:endX="0"
+            android:endY="24"
+            android:startColor="#e53935"
+            android:endColor="#b71c1c" />
+    </path>
+</vector>
