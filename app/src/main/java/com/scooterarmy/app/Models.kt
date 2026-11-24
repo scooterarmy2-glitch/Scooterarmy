@@ -16,6 +16,18 @@ import kotlin.math.roundToInt
  * even though the APK was Build #81/#82. Bump this constant every build. */
 const val BUILD_NUMBER = 88
 
+/** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
+ * recording — full blue <-> dimmed blue, 1s per half-cycle (the same
+ * rhythm as the STOP button pulse). The low end stays clearly visible:
+ * a live indicator, not a strobe, never invisible. */
+const val BRAND_FLASH_LOW_ALPHA = 0.35f
+const val BRAND_FLASH_PERIOD_MS = 1000L
+
+/** The "#" flashes exactly when a ride is recording — the same
+ * sessionActive state that drives the LIVE badge, the status pill and
+ * the STOP button. At rest (or any other time) it is steady. */
+fun brandFlashing(sessionActive: Boolean): Boolean = sessionActive
+
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {
     fun toJson(): JSONObject = JSONObject().apply {

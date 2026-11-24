@@ -155,6 +155,9 @@ class MainActivity : Activity() {
     private var flashAnimator: android.animation.ObjectAnimator? = null
     private var alertFlashAnimator: android.animation.ObjectAnimator? = null
     private var stopPulseAnimator: android.animation.ObjectAnimator? = null
+    // Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
+    // recording (alpha pulse on brandHash), steady at all other times.
+    private var brandFlashAnimator: android.animation.ObjectAnimator? = null
     private var toneGen: ToneGenerator? = null
 
     private val timerTick = object : Runnable {
@@ -540,14 +543,16 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // The three pulse/flash animators repeat forever; if any is still
+        // The four pulse/flash animators repeat forever; if any is still
         // running it holds its View (and the Activity) past destroy.
         flashAnimator?.cancel()
         alertFlashAnimator?.cancel()
         stopPulseAnimator?.cancel()
+        brandFlashAnimator?.cancel()
         flashAnimator = null
         alertFlashAnimator = null
         stopPulseAnimator = null
+        brandFlashAnimator = null
         try { toneGen?.release() } catch (_: Exception) {}
         toneGen = null
         if (::liveMap.isInitialized) liveMap.onDestroy()
@@ -1545,6 +1550,17 @@ class MainActivity : Activity() {
             repeatCount = android.animation.ValueAnimator.INFINITE
             start()
         }
+        // Build #88 add-on: the "#" in "#SAMO" flashes while recording —
+        // same 1s pulse rhythm as the STOP button, full blue <-> dimmed
+        // blue (never invisible). The brandHash TextView is the "#" alone,
+        // so only it pulses; "SAMO GPS" stays steady.
+        brandFlashAnimator?.cancel()
+        brandFlashAnimator = android.animation.ObjectAnimator.ofFloat(binding.brandHash, "alpha", 1f, BRAND_FLASH_LOW_ALPHA).apply {
+            duration = BRAND_FLASH_PERIOD_MS
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            start()
+        }
         binding.sessLive.visibility = View.VISIBLE
         applyChromeVisibility()
         uiHandler.post(liveTick)
@@ -1566,6 +1582,10 @@ class MainActivity : Activity() {
         if (::liveMap.isInitialized) liveMap.onSessionStop()
         stopPulseAnimator?.cancel()
         binding.sessBtn.alpha = 1f
+        // Build #88 add-on: recording ended — stop the "#" flash and
+        // restore it to full brightness (steady) immediately.
+        brandFlashAnimator?.cancel()
+        binding.brandHash.alpha = 1f
         binding.sessBtn.text = "START RIDE"
         binding.sessBtn.setBackgroundResource(R.drawable.btn_start)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
