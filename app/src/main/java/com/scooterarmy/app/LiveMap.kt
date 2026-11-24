@@ -69,6 +69,10 @@ class LiveMap(
     private var lastRouteSize = -1
     private var centeredOnce = false
     private var recording = false
+    /** Last known real GPS fix, for the home / reposition button
+     * (Build #88). Set on every fix, recording or not. Never a
+     * fallback — if no fix has arrived yet, the button does nothing. */
+    private var lastFix: GeoPoint? = null
 
     init {
         // Build #86: code-built brushed-steel backgrounds with zero
@@ -91,6 +95,13 @@ class LiveMap(
         // Same single call the route dialog uses; same matrix, same cap.
         EsriDarkTiles.applyNavy(map)
         map.setMultiTouchControls(true)
+        // Build #88: hide osmdroid's built-in +/− zoom buttons — they
+        // sit bottom-center, exactly where the status pill is, so on
+        // Casey's phone (screenshot 6721, recording) only two white
+        // slivers showed above the pill. Custom +/− buttons (same
+        // style as the home button, right side above the pill) call
+        // the same controller.zoomIn()/zoomOut() — no zoom change.
+        map.setBuiltInZoomControls(false)
         map.setUseDataConnection(true)
         // Build #85: a home fallback centre (Glasgow, KY — Casey's town),
         // so the map shows familiar tiles on the first swipe even before
@@ -103,7 +114,26 @@ class LiveMap(
         map.overlays.add(routeLine)
         map.overlays.add(positionOverlay)
         root.findViewById<View>(R.id.liveMapBack).setOnClickListener { onBack() }
+        // Build #88: home / reposition button — centres the map on the
+        // last known fix at the current zoom. No fix yet = no-op.
+        root.findViewById<View>(R.id.liveHomeBtn).setOnClickListener { recenter() }
+        // Build #88: custom zoom buttons (built-ins hidden above) —
+        // same one-level steps the built-in buttons did, so the map's
+        // min/max zoom still apply; behaviour unchanged.
+        root.findViewById<View>(R.id.liveZoomInBtn).setOnClickListener { map.controller.zoomIn() }
+        root.findViewById<View>(R.id.liveZoomOutBtn).setOnClickListener { map.controller.zoomOut() }
         setRecording(false)
+    }
+
+    /** Home button: re-centre on the last known real fix at the current
+     * zoom. Real location only — never the Glasgow fallback, never a
+     * fake. No fix yet: nothing happens. While recording the map
+     * already follows every fix (onFix), so this is a no-op then; it
+     * matters when not recording, after the user has panned away. */
+    fun recenter() {
+        val fix = lastFix ?: return
+        map.controller.setCenter(fix)
+        map.invalidate()
     }
 
     fun onResume() = map.onResume()
@@ -138,6 +168,7 @@ class LiveMap(
         distVal.text = String.format(Locale.US, "%.1f mi", distMi)
         timeVal.text = fmtDur(rideSeconds)
         val pos = GeoPoint(f.lat, f.lon)
+        lastFix = pos
         // Heading arrow only while actually moving — a stopped chip can
         // keep reporting its last bearing, which would point a lie.
         positionOverlay.setPosition(pos, if (speedMph >= 1.0) f.bearingDeg else null)

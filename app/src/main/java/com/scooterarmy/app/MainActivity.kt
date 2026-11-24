@@ -124,6 +124,10 @@ class MainActivity : Activity() {
     private var satUsed = -1
     private var dualBand = false
     private var fullscreen = false
+    /** Double-tap speedo-only toggle (Build #88): the dial alone,
+     * centered and big, in either orientation. Transient — cleared on
+     * rotation (onConfigurationChanged) and on entering fullscreen. */
+    private var speedoOnlyToggle = false
     // Last GPS bearing, for the dial heading below the 50 (look-pro).
     // Only set from a usable fix; cleared when the lock is lost, so a
     // stale bearing never shows as a heading.
@@ -285,11 +289,33 @@ class MainActivity : Activity() {
 
         val gesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                toggleFullscreen()
+                // Build #88: double-tap is the speedo-only toggle in
+                // EITHER orientation (Casey Nov 23, corrected: not
+                // landscape-only) — the dial alone, centered and big;
+                // double-tap again restores that orientation's normal
+                // layout. Fullscreen keeps its own toggle: a double-tap
+                // while fullscreen exits fullscreen instead. A proper
+                // double-tap detector (not a tap count), so single taps
+                // do nothing and the swipe-to-map flings in
+                // dispatchTouchEvent are untouched.
+                if (fullscreen) {
+                    toggleFullscreen()
+                } else {
+                    speedoOnlyToggle = !speedoOnlyToggle
+                    applyChromeVisibility()
+                }
                 return true
             }
         })
-        binding.gaugeWrap.setOnTouchListener { _, event ->
+        // Build #88: the detector sits on the ScrollView, not the gauge,
+        // so the whole main screen double-taps (dial, boxes, trip
+        // panel) and each event reaches the detector exactly once.
+        // Buttons still eat their own taps (START RIDE etc. keep
+        // working); the detector returns false for everything but a
+        // double-tap, so scrolling and the swipe navigation are
+        // unaffected. The live-map page is a sibling of the ScrollView,
+        // so map taps never reach this detector.
+        binding.scrollView.setOnTouchListener { _, event ->
             gesture.onTouchEvent(event)
         }
 
@@ -529,7 +555,19 @@ class MainActivity : Activity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        // Build #88: rotation always shows the NORMAL layout for the new
+        // orientation — the double-tap speedo-only toggle is a transient
+        // viewing state, not a mode that survives rotation.
+        speedoOnlyToggle = false
         applyChromeVisibility()
+        // Build #88: re-assert AFTER the layout pass. The first pass can
+        // still measure with the previous orientation's window, which
+        // left the first landscape layout sized from portrait numbers
+        // until a swipe-back re-ran the chrome pass (Casey, Nov 23).
+        // The post is idempotent: with fresh metrics it returns the
+        // same size. (The Build #80 posted fit is still gone — this
+        // posts the chrome pass, not a fit.)
+        binding.scrollView.post { applyChromeVisibility() }
     }
 
     override fun onRequestPermissionsResult(
@@ -561,14 +599,23 @@ class MainActivity : Activity() {
 
     private fun toggleFullscreen() {
         fullscreen = !fullscreen
+        // Build #88: entering fullscreen clears the double-tap
+        // speedo-only toggle, so exiting fullscreen always returns to
+        // the normal layout, never to the solo dial.
+        speedoOnlyToggle = false
         applyChromeVisibility()
     }
 
     private fun applyChromeVisibility() {
-        val speedoOnly = isLandscape() || fullscreen
-        // Landscape (not fullscreen): gauge on the LEFT, live trip panel
-        // on the RIGHT — Speedo-style. Fullscreen stays speedo-only.
-        val landscapePanel = isLandscape() && !fullscreen
+        // Build #88: speedo-only is a double-tap toggle (speedoOnlyToggle)
+        // in EITHER orientation — the dial alone, centered and big. It
+        // hides the same chrome as landscape/fullscreen, but shows no
+        // fullscreen overlays (no fsHint/fsInfoRow) and keeps the TOP
+        // SPEED chip (part of the dial).
+        val speedoOnly = isLandscape() || fullscreen || speedoOnlyToggle
+        // Landscape (not fullscreen, not speedo-only): gauge on the LEFT,
+        // live trip panel on the RIGHT — Speedo-style.
+        val landscapePanel = isLandscape() && !fullscreen && !speedoOnlyToggle
         val gone = View.GONE
         val vis = View.VISIBLE
         binding.headerRow.visibility = if (speedoOnly) gone else vis
@@ -580,6 +627,21 @@ class MainActivity : Activity() {
             if (speedoOnly || runs.isEmpty()) gone else vis
         binding.sessLive.visibility =
             if (speedoOnly) gone else if (sessionActive) vis else gone
+        // Build #88: innerCol is only padding when every box inside it
+        // is GONE (landscape / fullscreen / double-tap solo) — its 16dp
+        // vertical padding would otherwise sit under the dial as dead
+        // space, pushing the dial 45px high and off-centre. Hide the
+        // container when it is empty; it stays visible whenever anything
+        // inside it shows (the GPS diagnostics row is the one that can
+        // show in landscape — its visibility is set by applySettings and
+        // read here, so diagnostics still work).
+        binding.innerCol.visibility =
+            if (binding.gpsInfo.visibility == vis ||
+                binding.diagRow.visibility == vis ||
+                binding.rideBox.visibility == vis ||
+                binding.runBox.visibility == vis ||
+                binding.bvlCard.visibility == vis ||
+                binding.sessLive.visibility == vis) vis else gone
         binding.fsHint.visibility = if (fullscreen) vis else gone
         binding.fsInfoRow.visibility = if (fullscreen) vis else gone
         binding.topSpdBox.visibility = if (fullscreen) gone else vis
@@ -620,17 +682,26 @@ class MainActivity : Activity() {
         // displayMetrics and stays put until the next chrome pass
         // (rotation, fullscreen toggle, resume).
         val dm = resources.displayMetrics
-        // Build #83: prefer the ScrollView's ACTUALLY MEASURED height (the
-        // real window) over displayMetrics.heightPixels, which is the display
-        // height as seen at onCreate and can be stale (Build #82's gauge
-        // measured 996px on-device vs the 1091px displayMetrics dictates).
-        // Before the first layout pass the ScrollView is 0 tall, so fall
-        // back to displayMetrics then; onResume re-asserts with the real
-        // height, so the final size is always from the real window.
-        val winH = if (binding.scrollView.height > 0) binding.scrollView.height else dm.heightPixels
+        // Build #88: size from the CURRENT window, never a stale cache.
+        // WindowManager.currentWindowMetrics (API 30+) is the window as
+        // it is right now; displayMetrics can still hold the previous
+        // orientation (Build #82: gauge 996px vs the 1091px
+        // displayMetrics dictates), and a View's measured height is by
+        // definition the PREVIOUS layout's — on the first pass after a
+        // rotation scrollView.height is still the portrait height, which
+        // sized the first landscape layout from portrait numbers until
+        // a swipe-back re-ran this pass (Casey, Nov 23). Before API 30
+        // fall back to displayMetrics; onResume re-asserts with the
+        // real height, so the final size is always from the real window.
+        val wm = getSystemService(WindowManager::class.java)
+        val winBounds =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) wm?.currentWindowMetrics?.bounds else null
+        val winW = winBounds?.width() ?: dm.widthPixels
+        val winH = winBounds?.height()
+            ?: if (binding.scrollView.height > 0) binding.scrollView.height else dm.heightPixels
         val (gw, gh) = gaugeSizeForScreen(
-            dm.widthPixels, winH, dm.density,
-            isLandscape(), fullscreen
+            winW, winH, dm.density,
+            isLandscape(), fullscreen, speedoOnlyToggle
         )
         layoutGaugeSize(gw, gh, speedoOnly)
         // TOP SPEED chip hardening (Build #78): the chip is in the
@@ -661,7 +732,7 @@ class MainActivity : Activity() {
      * activity calls it anymore. */
     private fun layoutGaugeSize(gw: Int, gh: Int, speedoOnly: Boolean) {
         val dm = resources.displayMetrics
-        val landscapePanel = isLandscape() && !fullscreen
+        val landscapePanel = isLandscape() && !fullscreen && !speedoOnlyToggle
         val lp = binding.gaugeWrap.layoutParams as LinearLayout.LayoutParams
         lp.width = gw
         lp.height = gh
@@ -672,9 +743,13 @@ class MainActivity : Activity() {
         landLp.width =
             if (landscapePanel) 0 else LinearLayout.LayoutParams.MATCH_PARENT
         landLp.weight = if (landscapePanel) 1f else 0f
-        landLp.height =
-            if (landscapePanel) LinearLayout.LayoutParams.MATCH_PARENT
-            else LinearLayout.LayoutParams.WRAP_CONTENT
+        // Build #88: the trip panel hugs its content (WRAP_CONTENT)
+        // instead of stretching to the gauge height (MATCH_PARENT) —
+        // the old stretch left a huge empty steel box under the trip
+        // numbers in landscape (Casey, Nov 23). The gaugeRow's
+        // CENTER_VERTICAL gravity centres the compact panel against
+        // the tall dial.
+        landLp.height = LinearLayout.LayoutParams.WRAP_CONTENT
         binding.landPanel.layoutParams = landLp
         binding.contentCol.gravity =
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
@@ -1017,7 +1092,7 @@ class MainActivity : Activity() {
         val acc = if (l.hasAccuracy()) l.accuracy else 999f
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
-        binding.giAcc.text = acc.roundToInt().toString()
+        binding.giAcc.text = "${acc.roundToInt()}m"
         binding.giAcc.setTextColor(Color.parseColor("#ffcc00"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
@@ -1029,7 +1104,7 @@ class MainActivity : Activity() {
         val acc = if (l.hasAccuracy()) l.accuracy else 999f
         binding.giStatus.text = "ASSISTED"
         binding.giStatus.setTextColor(Color.parseColor("#cccccc"))
-        binding.giAcc.text = acc.roundToInt().toString()
+        binding.giAcc.text = "${acc.roundToInt()}m"
         binding.giAcc.setTextColor(Color.parseColor("#ffcc00"))
         binding.acctxt.text = "±${acc.roundToInt()}m"
         setSdot("warn")
@@ -1265,7 +1340,9 @@ class MainActivity : Activity() {
             }
         }
         val accEl = binding.giAcc
-        accEl.text = acc.roundToInt().toString()
+        // Build #88: the strip accuracy carries its unit — "4m", metres,
+        // like the "±14m" the landscape panel and the header already show.
+        accEl.text = "${acc.roundToInt()}m"
         accEl.setTextColor(
             when {
                 acc < 5 -> Color.parseColor("#39ff14")

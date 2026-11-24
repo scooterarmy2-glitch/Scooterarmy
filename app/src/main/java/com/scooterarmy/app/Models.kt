@@ -14,7 +14,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 87
+const val BUILD_NUMBER = 88
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {
@@ -93,27 +93,26 @@ data class FixData(
     val bearingDeg: Float?     // direction of travel, when the chip reports one
 )
 
-/** 16-point compass: 0° = N, 90° = E, 180° = S, 270° = W. Pure, harness-tested. */
+/** 8-point compass (Build #88, Casey Nov 23: degrees go away — the dial
+ * shows the point only: N, NE, E, SE, S, SW, W, NW). 0° = N, 90° = E,
+ * 180° = S, 270° = W. Pure, harness-tested. */
 fun compassPoint(deg: Float?): String {
     if (deg == null || deg.isNaN()) return "—"
-    val points = arrayOf(
-        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
-    )
+    val points = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
     val norm = ((deg % 360f) + 360f) % 360f
-    return points[((norm + 11.25f) / 22.5f).toInt() % 16]
+    return points[((norm + 22.5f) / 45f).toInt() % 8]
 }
 
 /**
- * Dial heading label, look-pro: "NW 315°" while moving with a real bearing,
- * "—" when stopped or when the chip reports no bearing — never a faked
- * heading. The speed gate matters: a stopped chip can keep reporting its
- * last bearing, so bearing alone is not proof of travel.
+ * Dial heading label, look-pro: the compass point ONLY while moving
+ * with a real bearing ("NW"), "—" when stopped or when the chip reports
+ * no bearing — never a faked heading, never degrees (Build #88). The
+ * speed gate matters: a stopped chip can keep reporting its last
+ * bearing, so bearing alone is not proof of travel.
  */
 fun headingLabel(bearingDeg: Float?, speedMph: Double): String {
     if (bearingDeg == null || speedMph < 1.0) return "—"
-    val deg = ((bearingDeg.roundToInt() % 360) + 360) % 360
-    return "${compassPoint(bearingDeg)} $deg°"
+    return compassPoint(bearingDeg)
 }
 
 /**
@@ -176,6 +175,21 @@ fun fitGaugeForViewport(
 }
 
 /**
+ * Landscape gauge size (Build #88, Casey Nov 23: "make the speedo
+ * REALLY big" in landscape): the dial fills the window HEIGHT — the
+ * binding constraint in landscape — minus a small margin, while
+ * leaving the trip panel a usable width (360dp). Pure, harness-tested.
+ * At 2340x1080 @2.8125: min(1035, 1328) = 1035 (was 990 under the old
+ * min(w,h)-32dp formula). Floored at 320px so very small windows still
+ * get a usable dial and the panel keeps 320dp.
+ */
+fun landscapeGaugeSize(wPx: Int, hPx: Int, density: Float): Int {
+    val byHeight = hPx - (16f * density).toInt()
+    val byWidth = wPx - (360f * density).toInt()
+    return maxOf(320, minOf(byHeight, byWidth))
+}
+
+/**
  * Gauge size from the WINDOW metrics only, Build #81 (replaces the
  * Build #80 layout-listener fit as the size the activity actually
  * uses): the portrait gauge is the smaller of (screen width + 8dp,
@@ -196,23 +210,38 @@ fun fitGaugeForViewport(
  * ScrollView scrolls the overflow instead of shrinking the dial to
  * nothing. Fullscreen / landscape branches are the pre-#81 formulas,
  * unchanged. Pure, harness-tested.
+ *
+ * Build #88: `solo` is the double-tap speedo-only mode (Casey Nov 23) —
+ * everything but the dial hidden, dial centered and big, in EITHER
+ * orientation. Portrait solo is edge-to-edge like the normal portrait
+ * gauge (width + 8dp) with no column reserve (the column is hidden);
+ * landscape solo fills the height like fullscreen landscape.
  */
 fun gaugeSizeForScreen(
     wPx: Int,
     hPx: Int,
     density: Float,
     landscape: Boolean,
-    fullscreen: Boolean
+    fullscreen: Boolean,
+    solo: Boolean = false
 ): Pair<Int, Int> {
     val reservedPx = (460f * density).toInt()
     val full = wPx + (8 * density).toInt()
     return when {
+        solo && !landscape -> {
+            val s = maxOf(320, minOf(full, hPx - (32 * density).toInt()))
+            s to s
+        }
+        solo && landscape -> {
+            val s = maxOf(320, minOf(wPx, hPx) - (16 * density).toInt())
+            s to s
+        }
         fullscreen && !landscape -> {
             val s = minOf((wPx * 0.92).toInt(), (hPx * 0.62).toInt())
             s to s
         }
         landscape && !fullscreen -> {
-            val sq = minOf(wPx, hPx) - (32 * density).toInt()
+            val sq = landscapeGaugeSize(wPx, hPx, density)
             sq to sq
         }
         landscape || fullscreen -> {
