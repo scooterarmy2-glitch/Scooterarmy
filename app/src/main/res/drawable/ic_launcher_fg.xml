@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher foreground (Build #88 recolor): same speedo motif as
+     before — outer arc ring, needle, centre hub, hash top-right —
+     now in the app's blue/white style (was orange/red, left out of
+     the #87 recolor). Arc + hash LED-blue #00b4ff; needle + hub
+     white, like the in-app dial. Background (ic_launcher_bg.xml)
+     stays solid black #080808. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -7,25 +13,25 @@
 
     <!-- Outer arc ring -->
     <path
-        android:strokeColor="#FF4400"
+        android:strokeColor="#00b4ff"
         android:strokeWidth="5"
         android:fillColor="@android:color/transparent"
         android:pathData="M 25,72 A 32,32 0 1,1 83,72"/>
 
     <!-- Needle -->
     <path
-        android:fillColor="#FF4400"
+        android:fillColor="#FFFFFF"
         android:pathData="M 54,54 L 38,28 L 52,54 Z"/>
 
     <!-- Center hub -->
     <path
-        android:fillColor="#CC1A00"
+        android:fillColor="#FFFFFF"
         android:pathData="M 54,54 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"/>
 
     <!-- Hash symbol top-right -->
     <path
-        android:fillColor="#FF4400"
-        android:strokeColor="#FF4400"
+        android:fillColor="#00b4ff"
+        android:strokeColor="#00b4ff"
         android:strokeWidth="1.5"
         android:pathData="M72,18 L70,26 M76,18 L74,26 M69,21 L77,21 M68,24 L76,24"/>
 </vector>

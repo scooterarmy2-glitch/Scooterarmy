@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home / reposition button background (Build #88): a LED-blue ring
+     on solid black, matching the chips' pill look. A shape, not a
+     bitmap — no intrinsic minimum size. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#080808" />
+    <stroke
+        android:width="2dp"
+        android:color="#00b4ff" />
+</shape>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zoom-in mark (Build #88): a white plus drawn as two bars — a
+     vector shape, never a font glyph (same rule as the home target:
+     a glyph that the font lacks would render as a blank box).
+     Used on the live map's custom zoom-in button, over the shared
+     btn_home_bg (black circle, blue ring). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:strokeColor="#ffffff"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M12,5 L12,19 M5,12 L19,12" />
+</vector>
