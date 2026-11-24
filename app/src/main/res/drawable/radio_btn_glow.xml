@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings radio button (Build #86, LED glow): the selected dot is a
-     glowing vivid-orange ring + core, the unselected ring is dim grey —
-     the same LED language as the dial. Replaces the flat theme radio on
-     every Settings RadioButton (the Off preset uses radio_btn_glow_red). -->
+<!-- Settings radio button (Build #86 glow, Build #87 blue): the
+     selected dot is a glowing bright-blue ring + core, the unselected
+     ring is dim grey — the same LED language as the dial. Replaces the
+     flat theme radio on every Settings RadioButton (the Off preset uses
+     radio_btn_glow_red). -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true">
         <layer-list
@@ -13,15 +14,15 @@
                     <gradient
                         android:type="radial"
                         android:gradientRadius="12dp"
-                        android:startColor="#66ff6a00"
-                        android:endColor="#00ff6a00" />
+                        android:startColor="#6600b4ff"
+                        android:endColor="#0000b4ff" />
                 </shape>
             </item>
             <item>
                 <shape android:shape="oval">
                     <stroke
                         android:width="2dp"
-                        android:color="#ff6a00" />
+                        android:color="#00b4ff" />
                 </shape>
             </item>
             <item
@@ -29,7 +30,7 @@
                 android:height="12dp"
                 android:gravity="center">
                 <shape android:shape="oval">
-                    <solid android:color="#ff6a00" />
+                    <solid android:color="#00b4ff" />
                 </shape>
             </item>
         </layer-list>

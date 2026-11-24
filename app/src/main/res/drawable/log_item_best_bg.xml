@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Best-run log row (web .hist-item.best: amber-tinted border + top edge).
+<!-- Best-run log row (Build #87): blue border + blue top edge —
+     "best" is a distinction, not a warning, so it takes the primary.
      Build #86: <bitmap> layer STRIPPED (same 1000px floor defect).
      Brushed look comes from the code-built BrushedPanelDrawable
      (LOG_ITEM_BEST in Backgrounds.kt); this XML is the flat fallback.
@@ -7,20 +8,20 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#0e0c07" />
+            <solid android:color="#0a1424" />
             <corners android:radius="6dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <gradient android:startColor="#80000000" android:endColor="#b3000000" android:angle="270" />
-            <stroke android:width="1dp" android:color="#4a3200" />
+            <stroke android:width="1dp" android:color="#00b4ff" />
             <corners android:radius="6dp" />
         </shape>
     </item>
     <item android:left="6dp" android:right="6dp" android:top="0dp" android:height="1dp" android:gravity="top">
         <shape android:shape="rectangle">
-            <solid android:color="#664500" />
+            <solid android:color="#3300b4ff" />
         </shape>
     </item>
 </layer-list>

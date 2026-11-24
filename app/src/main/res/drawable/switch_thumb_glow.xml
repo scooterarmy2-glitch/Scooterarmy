@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings switch thumb (Build #86, LED glow): when ON the thumb is a
-     glowing vivid-orange dot (soft halo + solid core); when OFF it is a
-     plain dim-grey dot. The track stays the theme tint. Replaces the flat
-     theme thumb on the spike-guard, alert-beep and diagnostics switches. -->
+<!-- Settings switch thumb (Build #86 glow, Build #87 blue): when ON the
+     thumb is a glowing bright-blue dot (soft halo + solid core); when OFF
+     it is a plain dim-grey dot. The track stays the theme tint. Replaces
+     the flat theme thumb on the spike-guard, alert-beep and diagnostics
+     switches. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true">
         <layer-list
@@ -13,8 +14,8 @@
                     <gradient
                         android:type="radial"
                         android:gradientRadius="14dp"
-                        android:startColor="#66ff6a00"
-                        android:endColor="#00ff6a00" />
+                        android:startColor="#6600b4ff"
+                        android:endColor="#0000b4ff" />
                 </shape>
             </item>
             <item
@@ -22,7 +23,7 @@
                 android:height="16dp"
                 android:gravity="center">
                 <shape android:shape="oval">
-                    <solid android:color="#ff6a00" />
+                    <solid android:color="#00b4ff" />
                 </shape>
             </item>
         </layer-list>

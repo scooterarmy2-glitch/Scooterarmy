@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Live session strip: green-tinted, kept green so "live" still reads.
+<!-- Live session strip (Build #87): navy now, blue edge — the green
+     tint is gone; "live" reads from the LIVE badge and the live numbers.
      Build #85: the <bitmap> item is GONE. A <bitmap> layer reports the
      bitmap's intrinsic size (brushed_metal.jpg is 1600x1000) as the
      drawable's minimum, and Android floors wrap_content views at their
@@ -9,14 +10,14 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#001008" />
+            <solid android:color="#07172f" />
             <corners android:radius="6dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <gradient android:startColor="#6600220f" android:endColor="#80001008" android:angle="270" />
-            <stroke android:width="1dp" android:color="#005533" />
+            <gradient android:startColor="#66001020" android:endColor="#80001020" android:angle="270" />
+            <stroke android:width="1dp" android:color="#00b4ff" />
             <corners android:radius="6dp" />
         </shape>
     </item>
