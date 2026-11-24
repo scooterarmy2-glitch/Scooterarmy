@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings radio button, RED variant (Build #86): only the "Off — pure
+     GPS, no motion help" preset uses this. Off means the motion help is
+     DISABLED, so its ring is LED red (#ff2d1a) even when unselected —
+     the red flags the disabled state at a glance — and its selected dot
+     glows LED red instead of orange. The same red the app uses for
+     alerts and the high-speed zone. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <layer-list
+            android:width="24dp"
+            android:height="24dp">
+            <item>
+                <shape android:shape="oval">
+                    <gradient
+                        android:type="radial"
+                        android:gradientRadius="12dp"
+                        android:startColor="#66ff2d1a"
+                        android:endColor="#00ff2d1a" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="oval">
+                    <stroke
+                        android:width="2dp"
+                        android:color="#ff2d1a" />
+                </shape>
+            </item>
+            <item
+                android:width="12dp"
+                android:height="12dp"
+                android:gravity="center">
+                <shape android:shape="oval">
+                    <solid android:color="#ff2d1a" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <layer-list
+            android:width="24dp"
+            android:height="24dp">
+            <item>
+                <shape android:shape="oval">
+                    <stroke
+                        android:width="2dp"
+                        android:color="#ff2d1a" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

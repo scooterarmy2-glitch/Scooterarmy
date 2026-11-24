@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings SeekBar thumb (Build #86, LED glow): a glowing orange dot —
+     a soft radial halo behind a solid vivid-orange core, the same LED
+     language as the dial's needle and arc. Replaces the flat theme thumb
+     on all five Settings sliders. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="28dp"
+        android:height="28dp"
+        android:gravity="center">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="14dp"
+                android:startColor="#66ff6a00"
+                android:endColor="#00ff6a00" />
+        </shape>
+    </item>
+    <item
+        android:width="14dp"
+        android:height="14dp"
+        android:gravity="center">
+        <shape android:shape="oval">
+            <solid android:color="#ff6a00" />
+        </shape>
+    </item>
+</layer-list>

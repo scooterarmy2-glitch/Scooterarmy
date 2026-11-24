@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Build #79: photographic brushed-metal photo under a translucent dark
-     tint, so the panel reads as photographed material, not a gradient.
-     Border, radius and top highlight unchanged from Build #78. -->
+<!-- Build #86: <bitmap> layer STRIPPED — the bitmap's 1600x1000 intrinsic
+     size floored every panel at 1000px tall (the Build #79–#84 defect,
+     now on Logs and the route dialog too). The brushed look comes from
+     the code-built BrushedPanelDrawable (PANEL in Backgrounds.kt); this
+     XML is the flat fallback. Border, radius and top highlight unchanged. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#0a0908" />
             <corners android:radius="4dp" />
         </shape>
-    </item>
-    <item>
-        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
     </item>
     <item>
         <shape android:shape="rectangle">

@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Bordered frame for the route map (web .route-map: 1px #333, 8px radius).
-     Used as the MapView background with clipToOutline so the tiles get rounded corners. -->
+     Used as the MapView background with clipToOutline so the tiles get rounded corners.
+     Build #86: the fill is the deep dark navy of the tinted tiles (#07172f)
+     and the border is steel blue #5a7aa8 — the map's blue ties into the frame. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#0a1628" />
-    <stroke android:width="1dp" android:color="#333333" />
+    <solid android:color="#07172f" />
+    <stroke android:width="1dp" android:color="#5a7aa8" />
     <corners android:radius="12dp" />
 </shape>
