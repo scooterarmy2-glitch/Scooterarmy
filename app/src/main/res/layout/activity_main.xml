@@ -516,19 +516,25 @@
                 android:clipChildren="false"
                 android:orientation="vertical"
                 android:paddingLeft="14dp"
-                android:paddingTop="4dp"
+                android:paddingTop="0dp"
                 android:paddingRight="14dp"
                 android:paddingBottom="12dp">
 
                 <!-- GAUGE -->
 
 
-                <!-- GPS INFO PANEL -->
+                <!-- GPS INFO PANEL — Build #90 (Casey Nov 23): the strip
+                     sits DIRECTLY below the speedometer — no gap at all,
+                     even if it covers some of the ring glow at the bottom
+                     corners. innerCol paddingTop is 0 and this panel's
+                     top margin is 0, so the strip's top edge is flush
+                     with the dial's bottom edge (the rim's own ~1.7px
+                     inset is the whole remaining gap). -->
                 <LinearLayout
                     android:id="@+id/gpsInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="0dp"
                     android:background="@drawable/gps_info_bg"
                     android:elevation="4dp"
                     android:orientation="horizontal"
