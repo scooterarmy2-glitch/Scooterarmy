@@ -755,7 +755,12 @@ class MainActivity : Activity() {
             ?: if (binding.scrollView.height > 0) binding.scrollView.height else dm.heightPixels
         val (gw, gh) = gaugeSizeForScreen(
             winW, winH, dm.density,
-            isLandscape(), fullscreen, speedoOnlyToggle
+            isLandscape(), fullscreen, speedoOnlyToggle,
+            // Build #92: the portrait gauge height flexes with the
+            // recording state (trip box visible) so the column fits
+            // with no scroll in both states — sessionActive is set
+            // before this pass in start/stopSession.
+            recording = sessionActive
         )
         layoutGaugeSize(gw, gh, speedoOnly)
         // TOP SPEED chip hardening (Build #78): the chip is in the
@@ -811,7 +816,13 @@ class MainActivity : Activity() {
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
 
         // Speed number + overlay position scale with the gauge.
-        val gaugeScale = gw / (320f * dm.density)
+        // Build #92: scale on the DRAWN dial diameter — min(gw, gh)
+        // — not the container width. In every square case (solo,
+        // landscape, fullscreen, idle portrait) min == gw and this
+        // is identical; in portrait recording the gauge is shorter
+        // than it is wide, and the digit must track the smaller
+        // dial, not the full-width container.
+        val gaugeScale = minOf(gw, gh) / (320f * dm.density)
         binding.spdNum.setTextSize(
             TypedValue.COMPLEX_UNIT_SP, if (speedoOnly) 110f else 72f * gaugeScale
         )

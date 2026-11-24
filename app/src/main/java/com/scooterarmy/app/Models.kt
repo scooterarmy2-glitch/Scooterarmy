@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 91
+const val BUILD_NUMBER = 92
 
 /** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
  * recording — full blue <-> dimmed blue (the same rhythm as the STOP
@@ -392,7 +392,8 @@ fun gaugeSizeForScreen(
     density: Float,
     landscape: Boolean,
     fullscreen: Boolean,
-    solo: Boolean = false
+    solo: Boolean = false,
+    recording: Boolean = false
 ): Pair<Int, Int> {
     // Build #89: exactly the window width — never wider (that clips
     // the rim) and never narrower (that leaves black margins).
@@ -425,12 +426,54 @@ fun gaugeSizeForScreen(
             s to s
         }
         else -> {
-            // Build #89: literally the window width — no height
-            // reserve, no bleed. See the comment above.
-            val s = maxOf(320, full)
-            s to s
+            // Build #92 (Casey Nov 24): the main screen MUST fit
+            // within the viewport with NO scrolling, in BOTH states —
+            // the #91 design (gauge = window width, ScrollView
+            // absorbs the recording overflow of 87px on his phone)
+            // is reversed. The dial flexes to exactly what is left
+            // after the fixed chrome, so the whole column always
+            // equals the viewport. Width stays edge-to-edge (gw =
+            // window width); only the HEIGHT shrinks, and only as
+            // much as the fit requires. Chrome totals are sim-
+            // measured at all four shapes (max, dp): header 62 +
+            // divider 1 + gaps 4 + strip 54 + ride 105 + run 181 +
+            // inter-box margins 2x6 + innerCol bottom padding 12 =
+            // 431dp idle; + trip box 52dp = 483dp recording.
+            // Floor 240px (not the old 320px — 320 would overflow
+            // the 720x1280 recording state by 4px); the floor never
+            // engages on the four shapes, it only guards degenerate
+            // screens. Solo / landscape / fullscreen branches above
+            // are untouched.
+            val gh = portraitGaugeHeightForFit(wPx, hPx, density, recording)
+            full to gh
         }
     }
+}
+
+/**
+ * Build #92: portrait gauge HEIGHT for a no-scroll fit. The fixed
+ * chrome (header, trip box when recording, strip, RIDE box, TIMED
+ * box, margins, paddings) is a constant in dp — every chrome dim
+ * is dp/sp-based, so it scales with density and never with the
+ * window. The gauge takes the window height minus the chrome,
+ * capped at the window width (it never gets wider than the
+ * screen), floored at GAUGE_MIN_PX. Pure function of window
+ * metrics + recording state, same as gaugeSizeForScreen.
+ */
+const val PORTRAIT_CHROME_IDLE_DP = 431f
+const val PORTRAIT_CHROME_RECORDING_DP = 483f
+const val GAUGE_MIN_PX = 240
+
+fun portraitGaugeHeightForFit(
+    wPx: Int,
+    hPx: Int,
+    density: Float,
+    recording: Boolean
+): Int {
+    val chromeDp =
+        if (recording) PORTRAIT_CHROME_RECORDING_DP else PORTRAIT_CHROME_IDLE_DP
+    val chromePx = (chromeDp * density).toInt()
+    return maxOf(GAUGE_MIN_PX, minOf(wPx, hPx - chromePx))
 }
 
 /** Which way a fling goes, for the swipe navigation (Build #81). */
