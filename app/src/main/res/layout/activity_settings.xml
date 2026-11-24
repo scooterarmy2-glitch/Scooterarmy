@@ -73,6 +73,7 @@
                 <RadioButton
                     android:id="@+id/presetBike"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Bike — steady, vibration-proof (default)"
@@ -82,6 +83,7 @@
                 <RadioButton
                     android:id="@+id/presetResponsive"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Responsive — quicker, for the car"
@@ -91,6 +93,7 @@
                 <RadioButton
                     android:id="@+id/presetOff"
                     android:button="@drawable/radio_btn_glow_red"
+                    android:drawablePadding="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Off — pure GPS, no motion help"
@@ -100,6 +103,7 @@
                 <RadioButton
                     android:id="@+id/presetCustom"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Custom — your sliders below"
@@ -257,6 +261,8 @@
                 <RadioButton
                     android:id="@+id/lock5"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5 m"
@@ -266,6 +272,8 @@
                 <RadioButton
                     android:id="@+id/lock10"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="10 m"
@@ -275,6 +283,7 @@
                 <RadioButton
                     android:id="@+id/lock20"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="20 m"
@@ -300,6 +309,8 @@
                 <RadioButton
                     android:id="@+id/reject05"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0.5 m/s"
@@ -309,6 +320,8 @@
                 <RadioButton
                     android:id="@+id/reject10"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1.0 m/s"
@@ -318,6 +331,7 @@
                 <RadioButton
                     android:id="@+id/reject20"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="2.0 m/s"
@@ -469,6 +483,8 @@
                 <RadioButton
                     android:id="@+id/idle1"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1 min"
@@ -478,6 +494,8 @@
                 <RadioButton
                     android:id="@+id/idle5"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5 min"
@@ -487,6 +505,8 @@
                 <RadioButton
                     android:id="@+id/idle10"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="10 min"
@@ -496,6 +516,7 @@
                 <RadioButton
                     android:id="@+id/idleOff"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Off"
@@ -573,6 +594,8 @@
                 <RadioButton
                     android:id="@+id/gauge100"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="100 mph"
@@ -582,6 +605,8 @@
                 <RadioButton
                     android:id="@+id/gauge140"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
+                    android:layout_marginRight="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="140 mph"
@@ -591,6 +616,7 @@
                 <RadioButton
                     android:id="@+id/gauge180"
                     android:button="@drawable/radio_btn_glow"
+                    android:drawablePadding="8dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="180 mph"
