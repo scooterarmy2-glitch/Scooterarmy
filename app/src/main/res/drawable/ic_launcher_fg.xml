@@ -4,12 +4,30 @@
      now in the app's blue/white style (was orange/red, left out of
      the #87 recolor). Arc + hash LED-blue #00b4ff; needle + hub
      white, like the in-app dial. Background (ic_launcher_bg.xml)
-     stays solid black #080808. -->
+     stays solid black #080808.
+     Build #90: GLOWING icon (Casey Nov 23) — a soft blue halo is
+     baked in behind the motif: a radial gradient centred on the hub,
+     bright blue at the centre fading to transparent at the edge, so
+     the icon glows blue on the home screen like the dial glows
+     in-app. Motif and shape unchanged — glow only. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Blue glow halo behind the motif (radial, centre -> edge) -->
+    <path
+        android:pathData="M54,54 m-48,0 a48,48 0 1,0 96,0 a48,48 0 1,0 -96,0">
+        <gradient
+            android:type="radial"
+            android:centerX="54"
+            android:centerY="54"
+            android:gradientRadius="48"
+            android:startColor="#6600b4ff"
+            android:centerColor="#2200b4ff"
+            android:endColor="#0000b4ff" />
+    </path>
 
     <!-- Outer arc ring -->
     <path
