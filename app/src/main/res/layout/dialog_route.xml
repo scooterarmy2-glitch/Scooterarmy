@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ROUTE dialog (look-pro, from the approved map render): dark Esri map,
      bright blue route, green Start / red End pins, one stats row
-     (distance / time / top speed, the ride's real numbers), Export Data
-     card with blue Export GPX / green Export CSV. NO headline — Casey
-     explicitly cut the "GPX + CSV EXPORT. YOURS TO KEEP." line. -->
+     (distance / time / top speed, the ride's real numbers), Export GPX /
+     Export CSV buttons. NO headline — Casey explicitly cut the
+     "GPX + CSV EXPORT. YOURS TO KEEP." line. Build #90: FULL SCREEN
+     (root match_parent, map 0dp + weight 1 — the map takes all remaining
+     space) and the "Export Data" title row is GONE (Casey Nov 23) — the
+     export buttons stay exactly as they are. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@drawable/dialog_bg"
     android:orientation="vertical"
     android:padding="16dp">
@@ -24,7 +27,8 @@
     <org.osmdroid.views.MapView
         android:id="@+id/routeMap"
         android:layout_width="match_parent"
-        android:layout_height="340dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="12dp"
         android:background="@drawable/map_frame_bg"
         android:clipToOutline="true" />
@@ -121,47 +125,9 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Export Data card (map render): blue check + title + subline. -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/exportCheck"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/btn_blue"
-            android:fontFamily="sans-serif"
-            android:gravity="center"
-            android:text="✓"
-            android:textColor="#ffffff"
-            android:textSize="16sp" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/orbitron_900"
-                android:text="Export Data"
-                android:textColor="#ffffff"
-                android:textSize="15sp" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/share_tech_mono"
-                android:text="Share your ride data easily"
-                android:textColor="#888888"
-                android:textSize="11sp" />
-        </LinearLayout>
-    </LinearLayout>
-
+    <!-- Build #90: the "Export Data" title row is GONE (Casey Nov 23) —
+         no title, no "Share your ride data easily" subtitle. The export
+         buttons below stay exactly as they are. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

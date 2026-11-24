@@ -43,6 +43,7 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/brandHash"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/orbitron_900"
@@ -52,6 +53,7 @@
                     android:textSize="18sp" />
 
                 <TextView
+                    android:id="@+id/brandText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/orbitron_900"
@@ -106,109 +108,9 @@
                     android:textColor="#bbbbbb"
                     android:textSize="12sp" />
 
-                <!-- SUMMARY CARD -->
-                <LinearLayout
-                    android:id="@+id/summaryCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/panel_bg"
-                    android:elevation="4dp"
-                    android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_marginTop="-14dp"
-                        android:layout_marginBottom="11dp"
-                        android:background="@drawable/accent_top" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
-                            android:text="TOTAL DISTANCE"
-                            android:textColor="#cccccc"
-                            android:textSize="8sp" />
-
-                        <TextView
-                            android:id="@+id/sumDist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:fontFamily="@font/orbitron_900"
-                            android:text="0.00 mi"
-                            android:textColor="@color/chrome"
-                            android:textSize="28sp" />
-
-                        <TextView
-                            android:id="@+id/sumDistSub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:text="0 rides"
-                            android:textColor="#aaaaaa"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:background="#252525" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/orbitron_700"
-                            android:letterSpacing="0.2"
-                            android:text="TOTAL MOVING TIME"
-                            android:textColor="#cccccc"
-                            android:textSize="8sp" />
-
-                        <TextView
-                            android:id="@+id/sumTime"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:fontFamily="@font/orbitron_900"
-                            android:text="0:00"
-                            android:textColor="@color/chrome"
-                            android:textSize="28sp" />
-
-                        <TextView
-                            android:id="@+id/sumTimeSub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/share_tech_mono"
-                            android:text="0 runs"
-                            android:textColor="#aaaaaa"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
+                <!-- Build #90 (Casey Nov 23): the totals/summary box is
+                     GONE — no TOTAL DISTANCE / TOTAL MOVING TIME card.
+                     The screen starts with the RIDES section. -->
 
                 <!-- RIDES -->
                 <LinearLayout
