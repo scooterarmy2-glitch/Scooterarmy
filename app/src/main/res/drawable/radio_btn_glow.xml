@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings radio button (Build #86 glow, Build #87 blue): the
-     selected dot is a glowing bright-blue ring + core, the unselected
-     ring is dim grey — the same LED language as the dial. Replaces the
-     flat theme radio on every Settings RadioButton (the Off preset uses
-     radio_btn_glow_red). -->
+<!-- Settings radio button (Build #86 glow, Build #87 blue, Build #88
+     add-on fix): the selected dot is a glowing bright-blue ring + core,
+     the unselected ring is a dim grey empty circle. Both states are a
+     true 24dp: every shape carries an explicit <size> and every
+     layer-list item an explicit width/height. The previous version put
+     android:width/height only on the <layer-list> root, which Android
+     ignores for intrinsic size — the drawable sized itself from the only
+     item with an explicit size (the 12dp core), so the checked dot drew
+     at 12dp and the unchecked ring (no sized item at all) collapsed to
+     zero and vanished entirely. Replaces the flat theme radio on every
+     Settings RadioButton (the Off preset uses radio_btn_glow_red). -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true">
-        <layer-list
-            android:width="24dp"
-            android:height="24dp">
-            <item>
+        <layer-list>
+            <item
+                android:width="24dp"
+                android:height="24dp">
                 <shape android:shape="oval">
+                    <size
+                        android:width="24dp"
+                        android:height="24dp" />
                     <gradient
                         android:type="radial"
                         android:gradientRadius="12dp"
@@ -18,8 +27,13 @@
                         android:endColor="#0000b4ff" />
                 </shape>
             </item>
-            <item>
+            <item
+                android:width="24dp"
+                android:height="24dp">
                 <shape android:shape="oval">
+                    <size
+                        android:width="24dp"
+                        android:height="24dp" />
                     <stroke
                         android:width="2dp"
                         android:color="#00b4ff" />
@@ -30,17 +44,23 @@
                 android:height="12dp"
                 android:gravity="center">
                 <shape android:shape="oval">
+                    <size
+                        android:width="12dp"
+                        android:height="12dp" />
                     <solid android:color="#00b4ff" />
                 </shape>
             </item>
         </layer-list>
     </item>
     <item>
-        <layer-list
-            android:width="24dp"
-            android:height="24dp">
-            <item>
+        <layer-list>
+            <item
+                android:width="24dp"
+                android:height="24dp">
                 <shape android:shape="oval">
+                    <size
+                        android:width="24dp"
+                        android:height="24dp" />
                     <stroke
                         android:width="2dp"
                         android:color="#888888" />

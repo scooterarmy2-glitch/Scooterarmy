@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings radio button, RED variant (Build #86): only the "Off — pure
-     GPS, no motion help" preset uses this. Off means the motion help is
-     DISABLED, so its ring is LED red (#ff2d1a) even when unselected —
-     the red flags the disabled state at a glance — and its selected dot
-     glows LED red instead of orange. The same red the app uses for
-     alerts and the high-speed zone. -->
+<!-- Settings radio button, RED variant (Build #86, Build #88 add-on
+     fix): only the "Off — pure GPS, no motion help" preset uses this.
+     Off means the motion help is DISABLED, so its ring is LED red
+     (#ff2d1a) even when unselected — the red flags the disabled state at
+     a glance — and its selected dot glows LED red instead of orange.
+     The same red the app uses for alerts and the high-speed zone.
+     Both states are a true 24dp: every shape carries an explicit <size>
+     and every layer-list item an explicit width/height (see
+     radio_btn_glow.xml — the previous version sized itself from the
+     12dp core item only, so the unchecked ring collapsed to zero). -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true">
-        <layer-list
-            android:width="24dp"
-            android:height="24dp">
-            <item>
+        <layer-list>
+            <item
+                android:width="24dp"
+                android:height="24dp">
                 <shape android:shape="oval">
+                    <size
+                        android:width="24dp"
+                        android:height="24dp" />
                     <gradient
                         android:type="radial"
                         android:gradientRadius="12dp"
@@ -19,8 +26,13 @@
                         android:endColor="#00ff2d1a" />
                 </shape>
             </item>
-            <item>
+            <item
+                android:width="24dp"
+                android:height="24dp">
                 <shape android:shape="oval">
+                    <size
+                        android:width="24dp"
+                        android:height="24dp" />
                     <stroke
                         android:width="2dp"
                         android:color="#ff2d1a" />
@@ -31,17 +43,23 @@
                 android:height="12dp"
                 android:gravity="center">
                 <shape android:shape="oval">
+                    <size
+                        android:width="12dp"
+                        android:height="12dp" />
                     <solid android:color="#ff2d1a" />
                 </shape>
             </item>
         </layer-list>
     </item>
     <item>
-        <layer-list
-            android:width="24dp"
-            android:height="24dp">
-            <item>
+        <layer-list>
+            <item
+                android:width="24dp"
+                android:height="24dp">
                 <shape android:shape="oval">
+                    <size
+                        android:width="24dp"
+                        android:height="24dp" />
                     <stroke
                         android:width="2dp"
                         android:color="#ff2d1a" />
