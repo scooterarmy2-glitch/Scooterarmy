@@ -48,7 +48,7 @@
                     android:fontFamily="@font/orbitron_900"
                     android:letterSpacing="0.06"
                     android:text="#"
-                    android:textColor="#ff3300"
+                    android:textColor="#00b4ff"
                     android:textSize="18sp" />
 
                 <TextView

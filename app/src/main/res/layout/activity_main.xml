@@ -48,7 +48,7 @@
                         android:fontFamily="@font/orbitron_900"
                         android:letterSpacing="0.06"
                         android:text="#"
-                        android:textColor="#ff8c1a"
+                        android:textColor="#00b4ff"
                         android:textSize="18sp" />
 
                     <TextView
@@ -80,7 +80,7 @@
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp"
                     android:text="LOGS"
-                    android:textColor="#ff8c1a"
+                    android:textColor="#00b4ff"
                     android:textSize="12sp" />
 
                 <TextView
@@ -107,7 +107,7 @@
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:layout_gravity="end"
-                        android:background="@drawable/dot_amber" />
+                        android:background="@drawable/dot_yellow" />
 
                     <TextView
                         android:id="@+id/acctxt"
@@ -184,7 +184,7 @@
                             android:fontFamily="@font/orbitron_900"
                             android:letterSpacing="-0.03"
                             android:padding="16dp"
-                            android:shadowColor="#ff6a00"
+                            android:shadowColor="#00b4ff"
                             android:shadowDx="0"
                             android:shadowDy="0"
                             android:shadowRadius="32"
@@ -214,8 +214,8 @@
                         android:layout_marginEnd="12dp"
                         android:background="@drawable/top_spd_bg"
                         android:elevation="4dp"
-                        android:outlineAmbientShadowColor="#ff6a00"
-                        android:outlineSpotShadowColor="#ff6a00"
+                        android:outlineAmbientShadowColor="#00b4ff"
+                        android:outlineSpotShadowColor="#00b4ff"
                         android:gravity="center_horizontal"
                         android:minWidth="64dp"
                         android:orientation="vertical"
@@ -229,7 +229,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
                             android:text="TOP SPEED"
-                            android:textColor="#ff8c1a"
+                            android:textColor="#00b4ff"
                             android:textSize="7sp" />
 
                         <TextView
@@ -238,12 +238,12 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_900"
                             android:letterSpacing="0.02"
-                            android:shadowColor="#ff6a00"
+                            android:shadowColor="#00b4ff"
                             android:shadowDx="0"
                             android:shadowDy="0"
                             android:shadowRadius="12"
                             android:text="0"
-                            android:textColor="@color/amber"
+                            android:textColor="#ffffff"
                             android:textSize="22sp" />
 
                         <TextView
@@ -252,7 +252,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/orbitron_700"
                             android:text="MPH"
-                            android:textColor="#ff8c1a"
+                            android:textColor="#00b4ff"
                             android:textSize="7sp" />
                     </LinearLayout>
 
@@ -270,7 +270,7 @@
                             android:fontFamily="@font/orbitron_700"
                             android:letterSpacing="0.2"
                             android:text="ACQUIRING"
-                            android:textColor="#ff8c1a"
+                            android:textColor="#00b4ff"
                             android:textSize="11sp" />
 
                         <TextView
@@ -405,7 +405,7 @@
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="@font/orbitron_900"
                                 android:text="—"
-                                android:textColor="@color/amber"
+                                android:textColor="@color/blue"
                                 android:textSize="18sp" />
                         </LinearLayout>
 
@@ -480,7 +480,7 @@
                             android:fontFamily="@font/orbitron_900"
                             android:gravity="end"
                             android:text="0.000"
-                            android:textColor="@color/amber"
+                            android:textColor="@color/blue"
                             android:textSize="20sp" />
                     </LinearLayout>
 
@@ -729,8 +729,8 @@
                                 android:layout_marginLeft="6dp"
                                 android:fontFamily="@font/orbitron_900"
                                 android:text="—"
-                                android:textColor="@color/green"
-                                android:shadowColor="#5939ff14"
+                                android:textColor="#ffffff"
+                                android:shadowColor="#5900b4ff"
                                 android:shadowDx="0"
                                 android:shadowDy="0"
                                 android:shadowRadius="6"
@@ -839,12 +839,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/btn_amber_chamfer"
+                        android:background="@drawable/btn_start"
                         android:elevation="6dp"
                         android:fontFamily="@font/orbitron_700"
                         android:letterSpacing="0.2"
-                        android:outlineAmbientShadowColor="#ff6a00"
-                        android:outlineSpotShadowColor="#ff6a00"
+                        android:outlineAmbientShadowColor="#00b4ff"
+                        android:outlineSpotShadowColor="#00b4ff"
                         android:text="START RIDE"
                         android:shadowColor="#59ffffff"
                         android:shadowDx="0"
@@ -970,7 +970,7 @@
                         android:letterSpacing="0.05"
                         android:paddingTop="4dp"
                         android:paddingBottom="4dp"
-                        android:shadowColor="#40ff6a00"
+                        android:shadowColor="#4000b4ff"
                         android:shadowDx="0"
                         android:shadowDy="0"
                         android:shadowRadius="16"
@@ -1012,14 +1012,14 @@
                             android:layout_height="40dp"
                             android:layout_marginRight="4dp"
                             android:layout_weight="1"
-                            android:background="@drawable/btn_orange"
+                            android:background="@drawable/btn_primary"
                             android:elevation="6dp"
                             android:fontFamily="@font/orbitron_700"
                             android:gravity="center"
                             android:letterSpacing="0.12"
                             android:maxLines="1"
-                            android:outlineAmbientShadowColor="#ff6a00"
-                            android:outlineSpotShadowColor="#ff6a00"
+                            android:outlineAmbientShadowColor="#00b4ff"
+                            android:outlineSpotShadowColor="#00b4ff"
                             android:text="START TIMED RUN"
                             android:shadowColor="#59ffffff"
                         android:shadowDx="0"
@@ -1058,8 +1058,8 @@
                     android:layout_marginTop="10dp"
                     android:background="@drawable/live_strip_bg"
                     android:elevation="4dp"
-                    android:outlineAmbientShadowColor="#39ff14"
-                    android:outlineSpotShadowColor="#39ff14"
+                    android:outlineAmbientShadowColor="#00b4ff"
+                    android:outlineSpotShadowColor="#00b4ff"
                     android:orientation="horizontal"
                     android:padding="10dp"
                     android:visibility="gone">
@@ -1077,7 +1077,7 @@
                             android:fontFamily="@font/orbitron_700"
                             android:letterSpacing="0.2"
                             android:text="TOP SPEED"
-                            android:textColor="#006633"
+                            android:textColor="#5a7aa8"
                             android:textSize="7sp" />
 
                         <TextView
@@ -1087,14 +1087,14 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/orbitron_900"
                             android:text="0"
-                            android:textColor="@color/green"
+                            android:textColor="#ffffff"
                             android:textSize="16sp" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="1dp"
                         android:layout_height="match_parent"
-                        android:background="#003318" />
+                        android:background="#22384f" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -1109,7 +1109,7 @@
                             android:fontFamily="@font/orbitron_700"
                             android:letterSpacing="0.2"
                             android:text="DISTANCE"
-                            android:textColor="#006633"
+                            android:textColor="#5a7aa8"
                             android:textSize="7sp" />
 
                         <TextView
@@ -1119,14 +1119,14 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/orbitron_900"
                             android:text="0.0"
-                            android:textColor="@color/green"
+                            android:textColor="#ffffff"
                             android:textSize="16sp" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="1dp"
                         android:layout_height="match_parent"
-                        android:background="#003318" />
+                        android:background="#22384f" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -1141,7 +1141,7 @@
                             android:fontFamily="@font/orbitron_700"
                             android:letterSpacing="0.2"
                             android:text="DURATION"
-                            android:textColor="#006633"
+                            android:textColor="#5a7aa8"
                             android:textSize="7sp" />
 
                         <TextView
@@ -1151,7 +1151,7 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/orbitron_900"
                             android:text="0:00"
-                            android:textColor="@color/green"
+                            android:textColor="#ffffff"
                             android:textSize="16sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -1216,7 +1216,7 @@
                                 android:layout_marginTop="3dp"
                                 android:fontFamily="@font/orbitron_900"
                                 android:text="—"
-                                android:textColor="@color/amber"
+                                android:textColor="@color/blue"
                                 android:textSize="30sp" />
                         </LinearLayout>
 

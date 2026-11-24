@@ -186,7 +186,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="4dp"
             android:layout_weight="1"
-            android:background="@drawable/btn_export_csv"
+            android:background="@drawable/btn_blue"
             android:fontFamily="@font/orbitron_900"
             android:text="Export CSV"
             android:textColor="#ffffff"

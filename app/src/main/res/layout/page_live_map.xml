@@ -34,7 +34,7 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center"
                 android:text="‹"
-                android:textColor="#ff8c1a"
+                android:textColor="#00b4ff"
                 android:textSize="28sp" />
 
             <TextView
@@ -62,7 +62,7 @@
                 android:id="@+id/liveSpeedChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/chip_pill_amber"
+                android:background="@drawable/chip_pill_blue"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
                 android:paddingLeft="12dp"
@@ -207,6 +207,6 @@
         android:paddingRight="16dp"
         android:paddingBottom="8dp"
         android:text="Not recording"
-        android:textColor="#ff8c1a"
+        android:textColor="#00b4ff"
         android:textSize="12sp" />
 </FrameLayout>

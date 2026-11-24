@@ -23,7 +23,7 @@
         android:fontFamily="@font/orbitron_900"
         android:letterSpacing="-0.02"
         android:padding="16dp"
-        android:shadowColor="#ff6a00"
+        android:shadowColor="#00b4ff"
         android:shadowDx="0"
         android:shadowDy="0"
         android:shadowRadius="24"
@@ -36,7 +36,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_700"
         android:letterSpacing="0.3"
-        android:textColor="@color/amber"
+        android:textColor="@color/blue"
         android:textSize="11sp" />
 
     <LinearLayout
