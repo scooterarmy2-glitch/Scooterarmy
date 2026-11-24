@@ -5,7 +5,7 @@
         <item name="android:statusBarColor">#080808</item>
         <item name="android:navigationBarColor">#080808</item>
         <item name="android:windowFullscreen">true</item>
-        <!-- Ember accent so cursors / selection handles match the app instead of the light-theme teal. -->
-        <item name="android:colorAccent">#ff6a00</item>
+        <!-- Blue accent (Build #87) so cursors / selection handles match the app instead of the light-theme teal. -->
+        <item name="android:colorAccent">#00b4ff</item>
     </style>
 </resources>
