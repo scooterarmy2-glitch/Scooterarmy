@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Build #79: photographic brushed-metal photo under a translucent dark
-     tint, replacing the flat gradient. -->
+<!-- Build #86: <bitmap> layer STRIPPED — the bitmap's 1600x1000 intrinsic
+     size floored the Logs header at 1000px tall (the Build #79–#84
+     defect). The brushed look comes from the code-built
+     BrushedPanelDrawable (HEADER in Backgrounds.kt); this XML is the
+     flat fallback. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#0f0d08" />
         </shape>
-    </item>
-    <item>
-        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
     </item>
     <item>
         <shape android:shape="rectangle">

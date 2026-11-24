@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Build #79: photographic brushed-metal photo under a translucent dark
-     tint. LED-orange top strip, border and radius (Build #81). -->
+<!-- Build #86: <bitmap> layer STRIPPED — the bitmap's 1600x1000 intrinsic
+     size floored every dialog at 1000px tall (the Build #79–#84
+     defect, now on the route + log-detail dialogs). The brushed look
+     comes from the code-built BrushedPanelDrawable (DIALOG in
+     Backgrounds.kt); this XML is the flat fallback. LED-orange top
+     strip, border and radius unchanged. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#0e0c08" />
             <corners android:radius="8dp" />
         </shape>
-    </item>
-    <item>
-        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
     </item>
     <item>
         <shape android:shape="rectangle">

@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Best-run log row (web .hist-item.best: amber-tinted border + top edge).
-     Build #79: photographic brushed-metal photo under a translucent dark
-     tint. Amber border and top strip unchanged. -->
+     Build #86: <bitmap> layer STRIPPED (same 1000px floor defect).
+     Brushed look comes from the code-built BrushedPanelDrawable
+     (LOG_ITEM_BEST in Backgrounds.kt); this XML is the flat fallback.
+     Amber border and top strip unchanged. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#0e0c07" />
             <corners android:radius="6dp" />
         </shape>
-    </item>
-    <item>
-        <bitmap android:src="@drawable/brushed_metal" android:gravity="center" />
     </item>
     <item>
         <shape android:shape="rectangle">
