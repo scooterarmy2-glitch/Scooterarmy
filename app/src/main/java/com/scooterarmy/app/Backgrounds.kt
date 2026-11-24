@@ -83,7 +83,7 @@ private object BrushedCache {
  * LOG_ITEM_BEST, DIALOG). */
 enum class PanelVariant {
     HEADER, PANEL, GPS, CHIP, LIVE, FS,
-    CHIP_PLAIN, CHIP_BLUE, PILL, LOG_ITEM, LOG_ITEM_BEST, DIALOG
+    CHIP_PLAIN, CHIP_BLUE, PILL, LOG_ITEM, LOG_ITEM_BEST, DIALOG, DIALOG_FULL
 }
 
 /**
@@ -331,6 +331,17 @@ fun brushedPanelBackground(resources: Resources, variant: PanelVariant): Drawabl
         PanelVariant.DIALOG -> BrushedPanelDrawable(
             bitmap, baseColor = 0xff0a1424.toInt(), tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
             strokeColor = 0xff00b4ff.toInt(), radiusDp = 8f,
+            topBorderColor = 0xff00b4ff.toInt(), topBorderHeightDp = 2f,
+            topBorderInsetDp = 12f, density = density
+        )
+        // DIALOG_FULL is DIALOG with SQUARE corners (radius 0) — the
+        // route view in Build #91 is truly full-screen, so rounded
+        // corners would show the Logs screen underneath at the four
+        // corners. Same LED-blue border + top strip. The log-detail
+        // dialog keeps the rounded DIALOG variant (it stays floating).
+        PanelVariant.DIALOG_FULL -> BrushedPanelDrawable(
+            bitmap, baseColor = 0xff0a1424.toInt(), tintTop = TINT_TOP, tintBottom = TINT_BOTTOM,
+            strokeColor = 0xff00b4ff.toInt(), radiusDp = 0f,
             topBorderColor = 0xff00b4ff.toInt(), topBorderHeightDp = 2f,
             topBorderInsetDp = 12f, density = density
         )

@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
  * derive the label from BuildConfig.VERSION_CODE again: VERSION_CODE is 5
  * (the Play version code), so the header read "Build 5" on Builds #81/#82
  * even though the APK was Build #81/#82. Bump this constant every build. */
-const val BUILD_NUMBER = 90
+const val BUILD_NUMBER = 91
 
 /** Build #88 add-on: the "#" in "#SAMO" flashes while a ride is
  * recording — full blue <-> dimmed blue (the same rhythm as the STOP
@@ -124,9 +124,10 @@ fun needleBaseExtentUnits(): Double =
  * is DIAGONAL across the dial (GaugeView: chromeDialShader) so the
  * shine band sweeps across the dial like light catching metal, and
  * the ticks + top band match each other. (The header title used to
- * share these stops vertically; Build #90 revised made the title
- * ENGRAVED instead — see ENGRAVED_* below — while the dial keeps
- * the chrome.) */
+ * share these stops vertically; Build #90 briefly made the title
+ * ENGRAVED instead, but Casey cut that in Build #91 — the title is
+ * back to the #89 blue "#" + chrome-gradient text, while the dial
+ * keeps the chrome.) */
 val CHROME_STOPS: List<Pair<Float, Int>> = listOf(
     0.00f to 0xFFECECEC.toInt(),  // bright silver top edge
     0.14f to 0xFFFFFFFF.toInt(),  // SHINE — near-white specular band
@@ -140,9 +141,9 @@ val CHROME_STOPS: List<Pair<Float, Int>> = listOf(
 
 /** Diagonal chrome gradient across a square region (the dial): top-left
  * to bottom-right, so the shine band sweeps across the dial like light
- * catching metal. Same stops as the title used to use — the DIAL keeps
- * the chrome (Casey Nov 23: item 7, ticks + top band stay chrome even
- * though the title went engraved instead). */
+ * catching metal. The DIAL keeps the chrome (Casey Nov 23: ticks +
+ * top band stay chrome); the header title is back to its #89
+ * blue "#" + chrome-gradient text (Build #91). */
 fun chromeDialShader(left: Float, top: Float, right: Float, bottom: Float): LinearGradient =
     LinearGradient(
         left, top, right, bottom,
@@ -150,32 +151,6 @@ fun chromeDialShader(left: Float, top: Float, right: Float, bottom: Float): Line
         CHROME_STOPS.map { it.first }.toFloatArray(),
         Shader.TileMode.CLAMP
     )
-
-/**
- * ENGRAVED title, Build #90 revised (Casey Nov 23 — SUPERSEDES the
- * chrome title): the "#SAMO GPS" header title is engraved INTO the
- * brushed-steel header, like polished metal engraving. NOT raised,
- * NOT chrome, NOT a gradient: a subtle inset look — a DARK engraved
- * letter body (darker than the steel panel, so the cut reads as a
- * recess) with a fine BRIGHT highlight along the LOWER edge (light
- * catching the bottom edge of the cut; the top inner wall of the cut
- * sits in shadow, which the dark body gives for free). Polished, not
- * flat: the edge is near-white with a cold silver tint, the body is
- * near-black with a cold tint, and the edge is softened by a small
- * blur radius so it reads as caught light, not a hard duplicate.
- *
- * Implemented with ONE paint shadow (TextView.setShadowLayer): the
- * body is the textColor, the shadow is the bright edge drawn 1dp
- * BELOW the glyphs (dy positive) with a small radius. A paint has
- * only one shadow layer, so the engraved title carries NO blue glow
- * shadow — the old brandHash blue glow went with the blue "#".
- * The recording-only "#" flash still works: it animates the
- * brandHash VIEW alpha (ObjectAnimator on "alpha"), which is
- * independent of the paint color/shadow. */
-val ENGRAVED_BODY_COLOR = 0xFF14161A.toInt()   // near-black, cold — the cut
-val ENGRAVED_EDGE_COLOR = 0xFFE9EDF2.toInt()   // near-white, cold silver — caught light
-const val ENGRAVED_EDGE_DY_DP = 1f             // edge sits 1dp below the glyphs
-const val ENGRAVED_EDGE_RADIUS_DP = 0.75f      // slight softening — light, not a hard copy
 
 /** One recorded GPS point on a ride route. t = GPS fix clock (elapsed-realtime ms). */
 data class RoutePoint(val lat: Double, val lon: Double, val spd: Double, val t: Long) {

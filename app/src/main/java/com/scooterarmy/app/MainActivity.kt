@@ -71,6 +71,15 @@ class MainActivity : Activity() {
     private lateinit var settings: AppSettings
     private lateinit var imuBridge: ImuBridge
     private lateinit var liveMap: LiveMap
+    /** Build #91: the LANDSCAPE live map — a second LiveMap bound to
+     *  the landPanel column on the main screen (same Esri tiles +
+     *  route + labels as the swipe page). Created once in
+     *  setupLiveMapPage; null-safe everywhere it is used, and driven
+     *  by the same fix/session/lifecycle forwards as the swipe page.
+     *  Its chips row is absent (LiveMap chrome is optional now) —
+     *  the compact trip stats below the map are landPanel's own
+     *  views, driven by updateLandPanel(). */
+    private var landLiveMap: LiveMap? = null
     /** Live-map page root (page_live_map inflated as a direct child of
      *  rootLayout, Build #81) — GONE while the speedometer shows. */
     private lateinit var liveRoot: View
@@ -242,26 +251,22 @@ class MainActivity : Activity() {
         rides = store.rides
         runs = store.runs
 
-        // Build #90 revised (Casey Nov 23 — chrome title is OUT): the
-        // "#SAMO GPS" title is ENGRAVED into the brushed-steel header
-        // — dark cut body + a fine bright edge along the bottom of
-        // each letter (ENGRAVED_* spec, Models.kt). Same treatment on
-        // "#" and "SAMO GPS" so the whole wordmark reads as one
-        // engraving. The recording-only "#" flash still works: it
-        // animates the brandHash VIEW alpha, not the paint.
-        val density = resources.displayMetrics.density
-        applyEngravedTitle(binding.brandText, density)
-        applyEngravedTitle(binding.brandHash, density)
+        // Build #91 (Casey Nov 24 — the engraved title is OUT, back
+        // to #89 exactly): blue "#" gradient + chrome-gradient
+        // "SAMO GPS", with the recording-only "#" flash (0.10 / 800ms)
+        // and the blue glow on the "#" restored.
+        applyChromeGradient(binding.brandText)
+        applyBrandGradient(binding.brandHash)
         // Brushed-steel panel backgrounds (Build #85, Backgrounds.kt):
         // code-built drawables with zero minimum size, so no panel can
         // floor a wrap_content view's height (the Build #79–#84 bug).
         // The app background itself is plain black (#080808).
         applyPanelBackgrounds()
         // LED glows (density-scaled so they render the same on every screen).
-        // Build #87: bright blue, like the map — the speed digit and
-        // the timer glow blue. The brand hash does NOT get a blue glow
-        // any more: a paint has one shadow layer, and the engraved
-        // title's shadow IS its bright lower edge (Build #90 revised).
+        // Build #87: bright blue, like the map — the brand hash, the speed
+        // digit and the timer all glow blue.
+        val density = resources.displayMetrics.density
+        binding.brandHash.setShadowLayer(8f * density, 0f, 0f, Color.parseColor("#00b4ff"))
         binding.spdNum.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#00b4ff"))
         binding.timerBig.setShadowLayer(16f * density, 0f, 0f, Color.parseColor("#4000b4ff"))
         binding.spdUnit.text = "MPH"
@@ -384,6 +389,13 @@ class MainActivity : Activity() {
             settings.idleMin
         }
         binding.rootLayout.addView(liveRoot)
+        // Build #91: second LiveMap for the landscape main screen —
+        // bound to the landPanel column (the map + badge + pill inside
+        // it; no chips row, no back/zoom/home buttons — LiveMap's
+        // chrome is optional, the map + route + labels are the same).
+        landLiveMap = LiveMap(binding.landPanel, onBack = {}) {
+            settings.idleMin
+        }
     }
 
     /** Show the live map (swipe-right from the speedo). */
@@ -511,6 +523,7 @@ class MainActivity : Activity() {
         startLocation()
         imuBridge.start()
         if (::liveMap.isInitialized) liveMap.onResume()
+        landLiveMap?.onResume()
         uiHandler.post(fixAgeTick)
         uiHandler.post(displayTick)
         // Resume anything the pause interrupted: a run's timer, the armed
@@ -542,6 +555,7 @@ class MainActivity : Activity() {
         stopLocation()
         imuBridge.stop()
         if (::liveMap.isInitialized) liveMap.onPause()
+        landLiveMap?.onPause()
         uiHandler.removeCallbacks(timerTick)
         uiHandler.removeCallbacks(fixAgeTick)
         uiHandler.removeCallbacks(liveTick)
@@ -564,6 +578,7 @@ class MainActivity : Activity() {
         try { toneGen?.release() } catch (_: Exception) {}
         toneGen = null
         if (::liveMap.isInitialized) liveMap.onDestroy()
+        landLiveMap?.onDestroy()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -681,6 +696,10 @@ class MainActivity : Activity() {
         binding.topSpdBox.visibility =
             if (fullscreen || speedoOnlyToggle) gone else vis
         binding.landPanel.visibility = if (landscapePanel) vis else gone
+        // Build #91: the landscape map was created while GONE — force
+        // a tile re-request + redraw the moment it becomes visible,
+        // same as the swipe page does in showLiveMapPage().
+        if (landscapePanel) landLiveMap?.refresh()
         binding.gaugeRow.orientation =
             if (landscapePanel) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
         binding.gaugeRow.gravity =
@@ -778,13 +797,15 @@ class MainActivity : Activity() {
         landLp.width =
             if (landscapePanel) 0 else LinearLayout.LayoutParams.MATCH_PARENT
         landLp.weight = if (landscapePanel) 1f else 0f
-        // Build #88: the trip panel hugs its content (WRAP_CONTENT)
-        // instead of stretching to the gauge height (MATCH_PARENT) —
-        // the old stretch left a huge empty steel box under the trip
-        // numbers in landscape (Casey, Nov 23). The gaugeRow's
-        // CENTER_VERTICAL gravity centres the compact panel against
-        // the tall dial.
-        landLp.height = LinearLayout.LayoutParams.WRAP_CONTENT
+        // Build #91: the landscape column is the LIVE MAP + the compact
+        // trip stats below it — it must stretch to the full gauge
+        // height (MATCH_PARENT) so the map is tall; the map itself
+        // takes the remaining space (weight 1) above the stats bar.
+        // (Build #88's WRAP_CONTENT hug-content was for the old trip
+        // panel, which is gone.) In portrait the column is GONE, so
+        // WRAP_CONTENT there is only a formality.
+        landLp.height = if (landscapePanel) LinearLayout.LayoutParams.MATCH_PARENT
+            else LinearLayout.LayoutParams.WRAP_CONTENT
         binding.landPanel.layoutParams = landLp
         binding.contentCol.gravity =
             if (speedoOnly) Gravity.CENTER_VERTICAL else Gravity.TOP
@@ -815,13 +836,20 @@ class MainActivity : Activity() {
      *  gauge while a ride runs; top speed + GPS status + last ride when
      *  no ride is running; timed-run target + timer when one is armed or
      *  running. No-op unless the panel is actually showing. */
+    /** Build #91: the landscape column is the LIVE MAP + the compact
+     * trip stats bar below it — the same trip box as portrait (TOP
+     * SPEED / DISTANCE / DURATION), driven here. The old big TRIP
+     * panel is gone: no TRIP title, no AVG SPEED, no GPS line, no
+     * last-ride line. STOP RIDE and the timed-run row stay (they only
+     * ever showed while recording / timing, below the stats bar).
+     * Called on every chrome pass and every fix/tick while recording,
+     * like before — the guards (panel hidden / portrait / fullscreen)
+     * are unchanged. */
     private fun updateLandPanel() {
         if (!::binding.isInitialized) return
         if (binding.landPanel.visibility != View.VISIBLE) return
         if (!isLandscape() || fullscreen) return
         if (sessionActive) {
-            binding.landTitle.text = "RIDE LIVE"
-            binding.landTitle.setTextColor(Color.parseColor("#39ff14"))
             val start = sessionStart
             val durSec = if (start != null)
                 Math.round((Date().time - start.time) / 1000.0).toInt() else 0
@@ -829,44 +857,13 @@ class MainActivity : Activity() {
             binding.landDist.text = String.format("%.2f mi", distMi)
             binding.landTime.text = fmtDur(durSec)
             binding.landTopSpd.text = "${sessionTopSpd.roundToInt()} mph"
-            val hrs = durSec / 3600.0
-            binding.landAvgSpd.text =
-                if (hrs > 0) String.format("%.1f mph", distMi / hrs) else "0.0 mph"
             binding.landStopBtn.visibility = View.VISIBLE
-            binding.landLastRide.visibility = View.GONE
         } else {
-            binding.landTitle.text = "TRIP"
-            binding.landTitle.setTextColor(Color.parseColor("#cccccc"))
             binding.landDist.text = "—"
             binding.landTime.text = "—"
             binding.landTopSpd.text = "${allTimeTopSpd.roundToInt()} mph"
-            val last = rides.firstOrNull()
-            binding.landAvgSpd.text =
-                last?.let { rideAvgSpeedRow(it)?.second } ?: "—"
             binding.landStopBtn.visibility = View.GONE
-            if (last != null) {
-                binding.landLastRide.visibility = View.VISIBLE
-                binding.landLastRide.text =
-                    "LAST RIDE — ${last.dist} · ${last.dur} · TOP ${last.topSpd}"
-            } else {
-                binding.landLastRide.visibility = View.GONE
-            }
         }
-        // GPS line: fix quality + satellites + accuracy + quality label.
-        val quality = when {
-            !gpsReady -> "—"
-            lastAcc <= 5 -> "EXCELLENT"
-            lastAcc <= 10 -> "GOOD"
-            else -> "FAIR"
-        }
-        val status = when {
-            lastSig >= 3 -> "LOCKED"
-            lastSig >= 1 -> "WEAK"
-            else -> "POOR"
-        }
-        val sats = if (satUsed >= 0) "$satUsed SATS" else "— SATS"
-        val acc = if (lastAcc < 900) "±${lastAcc.roundToInt()}m" else "±—"
-        binding.landGps.text = "$status · $sats · $acc · $quality"
         // Timed run: target + timer state when armed, running, or done.
         if (state == RunState.IDLE) {
             binding.landRunRow.visibility = View.GONE
@@ -883,22 +880,28 @@ class MainActivity : Activity() {
         }
     }
 
-    /** Build #90 revised: ENGRAVED title (Casey Nov 23 — the chrome
-     * title is OUT). The text is cut INTO the brushed-steel header:
-     * a dark body (ENGRAVED_BODY_COLOR) with ONE paint shadow — a
-     * fine bright edge (ENGRAVED_EDGE_COLOR) 1dp BELOW the glyphs,
-     * slightly softened, like light catching the bottom edge of the
-     * cut. The shadow's dy is positive (below); the dark body gives
-     * the shadowed top wall for free. No gradient, no blue glow: a
-     * paint has a single shadow layer, so the engraved edge IS the
-     * shadow. The "#" flash is unaffected — it animates the VIEW
-     * alpha, and the same treatment applies to "#" and "SAMO GPS". */
-    private fun applyEngravedTitle(tv: android.widget.TextView, density: Float) {
-        tv.setTextColor(ENGRAVED_BODY_COLOR)
-        tv.setShadowLayer(
-            ENGRAVED_EDGE_RADIUS_DP * density, 0f,
-            ENGRAVED_EDGE_DY_DP * density, ENGRAVED_EDGE_COLOR
-        )
+    /** Build #91: title back to #89 exactly (Casey Nov 24 — the
+     * engraved title is OUT). "SAMO GPS" gets the vertical chrome
+     * gradient (white -> silver -> white -> grey); the "#" gets its
+     * own LED-blue gradient + the blue glow shadow set in onCreate.
+     * Both are applied after layout (tv.post) so the gradient spans
+     * the measured text height. The "#" flash is unaffected — it
+     * animates the brandHash VIEW alpha, not the paint. */
+    private fun applyChromeGradient(tv: android.widget.TextView) {
+        tv.post {
+            if (tv.height > 0) {
+                tv.paint.shader = LinearGradient(
+                    0f, 0f, 0f, tv.height.toFloat(),
+                    intArrayOf(
+                        Color.WHITE, Color.parseColor("#bbbbbb"),
+                        Color.parseColor("#eeeeee"), Color.parseColor("#999999")
+                    ),
+                    floatArrayOf(0f, 0.4f, 0.6f, 1f),
+                    Shader.TileMode.CLAMP
+                )
+                tv.invalidate()
+            }
+        }
     }
 
     /** Brushed-steel panel backgrounds (Build #85): every panel and chip
@@ -917,16 +920,34 @@ class MainActivity : Activity() {
         binding.diagRow.background = brushedPanelBackground(res, PanelVariant.PANEL)
         binding.rideBox.background = brushedPanelBackground(res, PanelVariant.PANEL)
         binding.runBox.background = brushedPanelBackground(res, PanelVariant.PANEL)
-        binding.landPanel.background = brushedPanelBackground(res, PanelVariant.PANEL)
+        // Build #91: landPanel is the map column now (no background
+        // of its own — the map frame + stats bar carry theirs); the
+        // compact stats bar gets the code-built panel background.
+        binding.landStats.background = brushedPanelBackground(res, PanelVariant.PANEL)
         binding.bvlCard.background = brushedPanelBackground(res, PanelVariant.PANEL)
         binding.topSpdBox.background = brushedPanelBackground(res, PanelVariant.CHIP)
         binding.sessLive.background = brushedPanelBackground(res, PanelVariant.LIVE)
         binding.fsInfoRow.background = brushedPanelBackground(res, PanelVariant.FS)
     }
 
-    // (No second title helper: "#" gets the SAME engraved treatment
-    // as "SAMO GPS" — one wordmark, one cut. The old blue "#" gradient
-    // and its blue glow shadow are gone with the chrome title.)
+    /** LED-blue gradient for the "#" in the brand, matching the map.
+     * Build #87: light blue -> bright blue — the primary is blue now. */
+    private fun applyBrandGradient(tv: android.widget.TextView) {
+        tv.post {
+            if (tv.height > 0) {
+                tv.paint.shader = LinearGradient(
+                    0f, 0f, 0f, tv.height.toFloat(),
+                    intArrayOf(
+                        Color.parseColor("#7dd3ff"),
+                        Color.parseColor("#00b4ff")
+                    ),
+                    floatArrayOf(0f, 1f),
+                    Shader.TileMode.CLAMP
+                )
+                tv.invalidate()
+            }
+        }
+    }
 
     private fun setBtn(btn: Button, enabled: Boolean) {
         btn.isEnabled = enabled
@@ -1238,6 +1259,11 @@ class MainActivity : Activity() {
                 sessionSeconds(), sessionRoute
             )
         }
+        // Build #91: the landscape map gets the same fix.
+        landLiveMap?.onFix(
+            f, sessionActive, currentSpd, sessionDist / 1609.34,
+            sessionSeconds(), sessionRoute
+        )
 
         setSdot("active")
     }
@@ -1582,6 +1608,7 @@ class MainActivity : Activity() {
         uiHandler.post(liveTick)
         resetIdleTimer()
         if (::liveMap.isInitialized) liveMap.onSessionStart()
+        landLiveMap?.onSessionStart()
     }
 
     private fun stopSession() {
@@ -1596,6 +1623,7 @@ class MainActivity : Activity() {
         uiHandler.removeCallbacks(liveTick)
         uiHandler.removeCallbacks(idleStop)
         if (::liveMap.isInitialized) liveMap.onSessionStop()
+        landLiveMap?.onSessionStop()
         stopPulseAnimator?.cancel()
         binding.sessBtn.alpha = 1f
         // Build #88 add-on: recording ended — stop the "#" flash and
@@ -1647,6 +1675,7 @@ class MainActivity : Activity() {
         binding.liveDist.text = dist
         binding.liveDur.text = fmtDur(durSec)
         if (::liveMap.isInitialized) liveMap.tick(durSec)
+        landLiveMap?.tick(durSec)
         updateLandPanel()
     }
 

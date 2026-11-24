@@ -47,16 +47,23 @@ class LiveMap(
     private val idleMin: () -> Int
 ) {
     private val map: MapView = root.findViewById(R.id.liveMap)
-    private val speedVal: TextView = root.findViewById(R.id.liveSpeedVal)
-    private val distVal: TextView = root.findViewById(R.id.liveDistVal)
-    private val timeVal: TextView = root.findViewById(R.id.liveTimeVal)
-    private val liveBadge: TextView = root.findViewById(R.id.liveBadge)
-    private val statusPill: TextView = root.findViewById(R.id.liveStatusPill)
+    // Build #91: the chrome is OPTIONAL — the swipe page has the full
+    // chips row + badge + pill + back/zoom/home buttons, but the
+    // landscape embed (a second LiveMap bound to the landPanel column)
+    // has only the map + badge + pill. Nullable everywhere, guarded
+    // everywhere: a missing chip/button is skipped, never a crash.
+    // The map, route line, labels overlay and position dot are NOT
+    // optional — they are the live map itself.
+    private val speedVal: TextView? = root.findViewById(R.id.liveSpeedVal)
+    private val distVal: TextView? = root.findViewById(R.id.liveDistVal)
+    private val timeVal: TextView? = root.findViewById(R.id.liveTimeVal)
+    private val liveBadge: TextView? = root.findViewById(R.id.liveBadge)
+    private val statusPill: TextView? = root.findViewById(R.id.liveStatusPill)
     // Chip containers (Build #86 ids in page_live_map.xml) — their
     // backgrounds are set in code below, same recipe as the main screen.
-    private val speedChip: View = root.findViewById(R.id.liveSpeedChip)
-    private val distChip: View = root.findViewById(R.id.liveDistChip)
-    private val timeChip: View = root.findViewById(R.id.liveTimeChip)
+    private val speedChip: View? = root.findViewById(R.id.liveSpeedChip)
+    private val distChip: View? = root.findViewById(R.id.liveDistChip)
+    private val timeChip: View? = root.findViewById(R.id.liveTimeChip)
 
     private val density = map.context.resources.displayMetrics.density
     private val routeLine = Polyline().apply {
@@ -85,10 +92,10 @@ class LiveMap(
         // distance/time chips take the steel-blue secondary accent
         // (CHIP_PLAIN), echoing the map's blue route line.
         val res = map.context.resources
-        speedChip.background = brushedPanelBackground(res, PanelVariant.CHIP_BLUE)
-        distChip.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
-        timeChip.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
-        statusPill.background = brushedPanelBackground(res, PanelVariant.PILL)
+        speedChip?.background = brushedPanelBackground(res, PanelVariant.CHIP_BLUE)
+        distChip?.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
+        timeChip?.background = brushedPanelBackground(res, PanelVariant.CHIP_PLAIN)
+        statusPill?.background = brushedPanelBackground(res, PanelVariant.PILL)
         map.setTileSource(EsriDarkTiles.source())
         // Navy + zoom cap (Build #86: map max 18, source max 16) —
         // after setTileSource, so the tiles overlay exists for the tint.
@@ -118,15 +125,15 @@ class LiveMap(
         // on top of the labels).
         EsriDarkTiles.addLabelsOverlay(map)
         map.overlays.add(positionOverlay)
-        root.findViewById<View>(R.id.liveMapBack).setOnClickListener { onBack() }
+        root.findViewById<View>(R.id.liveMapBack)?.setOnClickListener { onBack() }
         // Build #88: home / reposition button — centres the map on the
         // last known fix at the current zoom. No fix yet = no-op.
-        root.findViewById<View>(R.id.liveHomeBtn).setOnClickListener { recenter() }
+        root.findViewById<View>(R.id.liveHomeBtn)?.setOnClickListener { recenter() }
         // Build #88: custom zoom buttons (built-ins hidden above) —
         // same one-level steps the built-in buttons did, so the map's
         // min/max zoom still apply; behaviour unchanged.
-        root.findViewById<View>(R.id.liveZoomInBtn).setOnClickListener { map.controller.zoomIn() }
-        root.findViewById<View>(R.id.liveZoomOutBtn).setOnClickListener { map.controller.zoomOut() }
+        root.findViewById<View>(R.id.liveZoomInBtn)?.setOnClickListener { map.controller.zoomIn() }
+        root.findViewById<View>(R.id.liveZoomOutBtn)?.setOnClickListener { map.controller.zoomOut() }
         setRecording(false)
     }
 
@@ -169,9 +176,9 @@ class LiveMap(
         rideSeconds: Int,
         route: List<RoutePoint>
     ) {
-        speedVal.text = "${speedMph.roundToInt()} mph"
-        distVal.text = String.format(Locale.US, "%.1f mi", distMi)
-        timeVal.text = fmtDur(rideSeconds)
+        speedVal?.text = "${speedMph.roundToInt()} mph"
+        distVal?.text = String.format(Locale.US, "%.1f mi", distMi)
+        timeVal?.text = fmtDur(rideSeconds)
         val pos = GeoPoint(f.lat, f.lon)
         lastFix = pos
         // Heading arrow only while actually moving — a stopped chip can
@@ -201,7 +208,7 @@ class LiveMap(
     /** Once a second while a ride runs (live tick) — keeps ride time fresh
      *  even between GPS fixes. */
     fun tick(rideSeconds: Int) {
-        timeVal.text = fmtDur(rideSeconds)
+        timeVal?.text = fmtDur(rideSeconds)
     }
 
     fun onSessionStart() {
@@ -231,8 +238,8 @@ class LiveMap(
 
     private fun setRecording(isRecording: Boolean) {
         recording = isRecording
-        liveBadge.visibility = if (isRecording) View.VISIBLE else View.GONE
-        statusPill.text = liveStatusText(isRecording, idleMin())
+        liveBadge?.visibility = if (isRecording) View.VISIBLE else View.GONE
+        statusPill?.text = liveStatusText(isRecording, idleMin())
     }
 
     /** Glowing current-position dot + heading arrow, drawn over the map. */

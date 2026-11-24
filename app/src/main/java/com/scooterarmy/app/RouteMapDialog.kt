@@ -271,8 +271,12 @@ object RouteMapDialog {
         // XMLs floored this dialog's root and stats panel at 1000px
         // (the Build #79–#84 bitmap-floor defect), pushing the Export
         // GPX / Export CSV buttons below the screen.
+        // Build #91: the root takes DIALOG_FULL — square corners, so
+        // the truly full-screen window shows no Logs screen at the
+        // corners (the rounded DIALOG variant stays on the log-detail
+        // dialog, which is still floating).
         binding.root.background =
-            brushedPanelBackground(context.resources, PanelVariant.DIALOG)
+            brushedPanelBackground(context.resources, PanelVariant.DIALOG_FULL)
         binding.routeStatsPanel.background =
             brushedPanelBackground(context.resources, PanelVariant.PANEL)
         binding.routeTitle.text = "ROUTE — ${ride.name}"
@@ -280,7 +284,14 @@ object RouteMapDialog {
         binding.statTimeVal.text = ride.dur
         binding.statTopVal.text = ride.topSpd
 
-        val dialog = Dialog(context)
+        // Build #91: TRULY full-screen dialog — the theme is the fix.
+        // Build #90's plain Dialog() used the default FLOATING dialog
+        // theme, so setLayout(MATCH_PARENT) still left an inset panel
+        // with the Logs header peeking above it. RouteFullscreenDialog
+        // (themes.xml) is non-floating + fullscreen, so the window
+        // covers the entire display edge-to-edge. The theme MUST be
+        // passed to the constructor — it is read there, not later.
+        val dialog = Dialog(context, R.style.RouteFullscreenDialog)
         dialog.setContentView(binding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
@@ -337,13 +348,19 @@ object RouteMapDialog {
         binding.routeClose.setOnClickListener { dialog.dismiss() }
         dialog.setOnDismissListener { map.onPause() }
         dialog.show()
-        // Build #90 (Casey Nov 23: the route dialog was "a small box
-        // floating on the screen with dead space around it"): FULL
-        // SCREEN — the window fills the display and the map takes all
-        // remaining space (dialog_route.xml: root match_parent, map
-        // 0dp + weight 1), so the stats + export buttons + CLOSE stay
-        // in flow below the map and are always reachable. The decor
-        // padding is cleared so no floating-box margin survives.
+        // Build #91 (Casey Nov 24 — the route view must be TRULY full
+        // screen): the #90 MATCH_PARENT resize was not enough, because
+        // a plain Dialog() is a FLOATING window — the window manager
+        // insets it from the display edges and never lets it cover the
+        // status-bar area, so the Logs header peeked above it. The
+        // non-floating fullscreen theme (constructor, above) is the
+        // real fix; these flags finish it: FLAG_LAYOUT_NO_LIMITS lets
+        // the window extend under the status + navigation bars (full
+        // display, cutout included), and the immersive flags keep the
+        // system bars hidden while the route is up, same as the main
+        // screen's setImmersive(). The ROUTE title, map, stats row,
+        // Export GPX / Export CSV and CLOSE all live inside this
+        // full-screen window — nothing of the Logs screen shows.
         dialog.window?.apply {
             setLayout(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -351,6 +368,14 @@ object RouteMapDialog {
             )
             setBackgroundDrawableResource(android.R.color.transparent)
             decorView.setPadding(0, 0, 0, 0)
+            addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+            decorView.systemUiVisibility =
+                android.view.View.SYSTEM_UI_FLAG_FULLSCREEN or
+                android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
         }
         map.onResume()
     }
